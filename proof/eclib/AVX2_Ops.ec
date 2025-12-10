@@ -1308,7 +1308,7 @@ module OpsV = {
   }
 
   proc iVPMOVMSKB_u256u32(x: vt32u8): W32.t = {
-    return VPMOVMSKB_u256u32 x;
+    return MOVEMASK_32u8 x;
   }
 
   proc iVMOVSLDUP_256_16u16(x: vt16u16): vt16u16 = {

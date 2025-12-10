@@ -1,0 +1,33 @@
+name: Benchmarks
+permissions:
+  contents: read
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  NIXPKGS_ALLOW_UNFREE: 1
+
+jobs:
+    benchmark:
+        name: Benchmarks
+        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+        steps:
+        - uses: actions/checkout@v4
+          with:
+            submodules: recursive
+        - uses: cachix/install-nix-action@v31
+          with:
+            nix_path: nixpkgs=channel:nixos-unstable              
+        - run: nix-shell --arg full false --run "echo Dependencies OK…"
+        - run: nix-shell --arg full false --run "make -C bench run"
+        - run: |
+            echo "## Benchmark Results" >> $GITHUB_STEP_SUMMARY
+            echo '| **Implementation** | **KeyPair Cycles** | **Enc Cycles** | **Dec Cycles** |' >> $GITHUB_STEP_SUMMARY
+            echo '| ----- | ----- | ------ | ------ |' >> $GITHUB_STEP_SUMMARY
+            for f in bench/bin/*.out; do
+              DATA=$(cat $f)
+              echo "| **${f}** ${DATA}" >> $GITHUB_STEP_SUMMARY
+            done  

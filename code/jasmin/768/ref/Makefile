@@ -13,6 +13,8 @@ OS     := $(shell uname -s)
 default: test speed
 
 test: test/test_kem
+	./test/test_kem
+
 
 speed: test/speed_kem
 

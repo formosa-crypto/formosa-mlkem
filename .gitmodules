@@ -13,5 +13,6 @@
 [submodule "code/kyber"]
 	path = code/kyber
 	url = https://github.com/pq-crystals/kyber.git
-[submodule "formosa-keccak/"]
-	branch = bdep
+[submodule "bench/src/mlkem-native"]
+	path = bench/src/mlkem-native
+	url = https://github.com/pq-code-package/mlkem-native.git

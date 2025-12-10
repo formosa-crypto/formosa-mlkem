@@ -17,6 +17,11 @@ inline fn __gen_matrix_buf_rejection_filter48
 , reg u256 ones
 , #msf reg u64 ms
 ) -> reg ptr u16[MLKEM_N], reg u64
+requires {is_arr_init(buf,0,BUF_size) && is_arr_init(sst,0,2048) && 
+          0<= (int) counter && (int) counter + 32 <= MLKEM_N &&
+          0 <= (int) buf_offset && (int) buf_offset + 24 + 32 <= BUF_size}
+ensures { \all (k \in 0:((2*MLKEM_N))) ((is_arr_init(pol,k,1) || ((int) counter * 2 <= k && k< 2* (int) result.1)) ? is_arr_init(result.0,k,1) : true) }
+ensures {(int) counter <=(int) result.1 && (int) result.1 <= MLKEM_N}
 {
   reg u256 f0 f1 g0 g1;
   reg u256 shuffle_0 shuffle_1 shuffle_t;
@@ -168,6 +173,7 @@ inline fn __write_u128_boundchk
 , reg u128 data
 , #msf reg u64 ms
 ) -> reg ptr u16[MLKEM_N], #msf reg u64
+ensures { \all (k \in 0:((2*MLKEM_N))) (is_arr_init(result.0,k,1) == (is_arr_init(pol,k,1) || (2* (int)ctr <= k && k< 2*(int) ctr + max(0,min(16,2 * (MLKEM_N - (int) ctr)))))) }
 {
   reg u64 data_u64;
   reg bool condition_8 condition_4 condition_2 condition_1;
@@ -228,6 +234,11 @@ inline fn __gen_matrix_buf_rejection_filter24
 , reg u256 ones
 , #msf reg u64 ms
 ) -> reg ptr u16[MLKEM_N], reg u64, #msf reg u64
+requires {is_arr_init(buf,0,BUF_size) && is_arr_init(sst,0,2048) &&
+          0<= (int) counter &&  (int) counter < MLKEM_N &&
+          0 <= (int) buf_offset && (int) buf_offset + 32 < BUF_size}
+ensures { \all (k \in 0:(2*MLKEM_N)) ((is_arr_init(pol,k,1) || (2 * (int) counter <= k && k< 2 * (int) result.1)) ? is_arr_init(result.0,k,1) : true) }
+ensures {(int) counter <= result.1 }
 {
   reg u256 f0 g0 g1;
   reg u256 shuffle_0 shuffle_t;
@@ -287,6 +298,10 @@ fn _gen_matrix_buf_rejection
 , reg u64 buf_offset			// start looking at... (bytes)
 
 ) -> reg ptr u16[MLKEM_N], reg u64	// pol. and counter
+requires {is_arr_init(buf,0,BUF_size) && 0<= (int) counter &&  (int) counter <= MLKEM_N &&
+          0 <= (int) buf_offset && (int) buf_offset < BUF_size}
+ensures { \all (k \in 0:(2*MLKEM_N)) ((is_arr_init(pol,k,1) || (2* (int) counter <= k && k< 2* (int) result.1)) ? is_arr_init(result.0,k,1) : true) }
+ensures {(int)counter<=result.1}
 {
   reg bool condition_loop;
   reg ptr u8[2048] sst;
@@ -356,6 +371,7 @@ inline fn gen_matrix_get_indexes(
   reg u64 _t)
   ->
   reg u64
+requires {0 <= b + (_t << (MLKEM_K + 1)) && b + ( _t << (MLKEM_K + 1)) <= 32 * (MLKEM_K-2) - 8}
 {
   reg u64 t;
   reg ptr u8[IDX_TABLE_SIZE] idxs;
@@ -373,6 +389,8 @@ fn __gen_matrix_fill_polynomial
 ( reg mut ptr u16[MLKEM_N] pol
 , reg mut ptr u8[BUF_size] buf
 ) -> reg ptr u16[MLKEM_N], reg ptr u8[BUF_size]
+requires {is_arr_init(buf, 0, BUF_size)}
+ensures { is_arr_init(result.0,0,MLKEM_N * 2) && is_arr_init(result.1,0,BUF_size)}
 {
   reg u64 counter, buf_offset;
 
@@ -395,6 +413,9 @@ fn _gen_matrix_sample_four_polynomials
 , reg u64 pos_entry
 , reg u64 transposed
 ) -> reg ptr u16[4*MLKEM_N], reg ptr u8[BUF_size * 4]
+requires {is_arr_init(rho,0,32) && 0 <= pos_entry + (transposed << (MLKEM_K + 1)) &&
+          pos_entry + (transposed << (MLKEM_K + 1)) <= 32 * (MLKEM_K-2) - 8}
+ensures { is_arr_init(result.0,0,2048)}
 {
   reg ptr u16[MLKEM_N] pol;
   stack u256[25] state;
@@ -432,6 +453,8 @@ inline fn __gen_matrix_sample_one_polynomial
 , reg ptr u8[32] rho
 , reg u16 rc
 ) -> reg ptr u16[MLKEM_N], reg ptr u8[BUF_size]
+requires {is_arr_init(rho,0,32)}
+ensures { is_arr_init(result.0,0,MLKEM_N * 2) && is_arr_init(result.1,0,BUF_size)}
 {
   reg u256[7] stavx2;
   stack u8[2] pos;

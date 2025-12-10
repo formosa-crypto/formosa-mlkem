@@ -97,13 +97,11 @@ int main(int argc, char**argv)
   qsort(cycles_enc,RUNS,sizeof(uint64_t),cmp_uint64);
   qsort(cycles_dec,RUNS,sizeof(uint64_t),cmp_uint64);
 
-  for(run = 0; run < RUNS; run++)
-  {
-    printf("%" PRIu64 ",%" PRIu64 ",%"  PRIu64 "\n",
-      cycles_keypair[run],
-      cycles_enc[run],
-      cycles_dec[run]);
-  }
+
+  printf("|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|",
+      median_runs(cycles_keypair),
+      median_runs(cycles_enc),
+      median_runs(cycles_dec));
 
   free(_ps);
   free(_ss);
