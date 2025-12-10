@@ -256,7 +256,6 @@ case (256 <= (8 * i + k) %/ 10 < 512) => ?;
   by rewrite getvE offunvE 1:/# /= /lift_array256 /subarray256 mapiE 1:/# /= initiE 1:/# /=. 
 qed.
 
-   
 lemma i_polyvec_compress_corr_h _aw  : 
     hoare [Jkem768.M.__i_polyvec_compress  :
              pos_bound768_cxq a 0 768 2 /\
@@ -291,22 +290,23 @@ cfold ^i0<-.
 wp -5.
 
 conseq (: a = _aw /\
-   Array768.all (fun bv => W16.zero \sle bv /\ bv \sle (of_int (2 * 3329))) a
-   ==> rp = init_960_8 (fun i =>
+   Array768.all (fun bv => W16.zero \sle bv /\ bv \slt (of_int (2 * 3329))) a
+   ==> rp = let cc = init_768_10 (fun i => compress10_circuit _aw.[i]) in
+   init_960_8 (fun i =>
      W8.init (fun j =>
-       (compress10_circuit _aw.[(i*8+j) %/ 10]).[(i*8+j) %% 10]))); last by circuit.
+       (cc.[(i*8+j) %/ 10]).[(i*8+j) %% 10]))); last by circuit.
         
        
 (* BDEP pre conseq *)
-+ move => &hr />; rewrite /pos_bound768_cxq qE /= /(\sle) allP /=  => Hb i ib /=.
++ move => &hr />; rewrite /pos_bound768_cxq qE /= /(\sle) /(\slt) allP /=  => Hb i ib /=.
   rewrite /(to_sint W16.zero) /= /(W16.smod 0) /=.
   rewrite /(to_sint (W16.of_int 6658)) /= /(W16.smod 6658) /= /#.
   
 (* BDEP post conseq *)
 
 (* We start with some boilerplate *)
-move => &hr [#]/= H0 <- rr ->; rewrite /= /init_960_8 tP => i ib.
-rewrite wordP => k kb; rewrite !initiE 1..3:/# /=.
+move => &hr [#]/= H0 <- rr ->; rewrite /= /init_960_8 /init_768_10 tP => i ib.
+rewrite wordP => k kb; rewrite !initiE 1..3:/# /= initiE 1:/# /=.
 rewrite encode_vec_compress_bits //=.
 by apply compress10_circuit_sem.
 qed.
@@ -396,7 +396,7 @@ lemma polyvec_add_corr  _a _b ab bb:
            signed_bound768_cxq res 0 768 (ab + bb) /\ 
            forall k, 0 <= k < 768 =>
               incoeff (to_sint res.[k]) = _a.[k] + _b.[k] ]  = 1%r 
-    by admit. (* conseq move => abb bbb; conseq polyvec_add_ll (polyvec_add_corr_h  _a _b ab bb abb bbb).  *)
+    by  move => abb bbb; conseq polyvec_add_ll (polyvec_add_corr_h  _a _b ab bb abb bbb).  
 
 lemma polyvec_add_corr_impl  ab bb:
     0 <= ab <= 6 => 0 <= bb <= 3 =>
@@ -471,7 +471,7 @@ lemma polyvec_reduce_corr  _a :
           _a = lift_array768 r ==> 
           _a = lift_array768 res /\
           forall k, 0 <= k < 768 => bpos16 res.[k] (2*q)]  = 1%r 
-   by admit. (* conseq polyvec_reduce_ll (polyvec_reduce_corr_h  _a). *)
+   by  conseq polyvec_reduce_ll (polyvec_reduce_corr_h  _a). 
 
 (******************************************************)
 (* Fix me: these are all very similar *)
@@ -703,9 +703,6 @@ lemma polyvec_decompress_corr _aw :
 
 
 (********** BEGIN BDEP PROOF OF FROMBYTES **************)
-
-op frombytes_circuit(c : W12.t) : W16.t = 
-  zeroextu16 c.
 
 lemma polyvec_frombytes_ll : islossless Jkem768.M.__i_polyvec_frombytes.
 proc; inline *;wp. 
@@ -1074,7 +1071,7 @@ lemma polyvec_invntt_corr _r:
       ==> 
      scale_polyvec (invnttv (lift_polyvec _r)) (incoeff Fq.SignedReductions.R) = lift_polyvec res /\
             forall (k : int), 0 <= k && k < 768 => b16 res.[k] (q) ]  = 1%r   
-   by admit. (* conseq conseq polyvec_invntt_ll (polyvec_invntt_correct_h _r). *)
+   by conseq polyvec_invntt_ll (polyvec_invntt_correct_h _r). 
 
 (******************************************************)
 
@@ -1184,8 +1181,7 @@ lemma polyvec_pointwise_acc_corr _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 (_r : coeff
     lift_array256 res =  _r /\
     forall (k : int), 0 <= k && k < 256 => 
         bpos16 res.[k] (2 * q)
-  ]  = 1%r by admit. 
-(*    move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 _r _ _ _ _) => //. *)
+  ]  = 1%r by   move => *;conseq polyvec_pointwise_acc_ll (polyvec_pointwise_acc_corr_h _a0 _a1 _a2 _b0 _b1 _b2 _p0 _p1 _p2 _r _ _ _ _) => //. 
 
 
 (******************************************************)

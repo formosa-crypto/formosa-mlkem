@@ -597,7 +597,7 @@ cfold ^i1<-.
 wp -4. 
 
 conseq (: a = _aw /\
-   Array1024.all (fun bv => W16.zero \sle bv /\ bv \sle (of_int (2 * 3329))) a
+   Array1024.all (fun bv => W16.zero \sle bv /\ bv \slt (of_int (2 * 3329))) a
    ==> init_1408_8 (fun i => rp.[i]) = init_1408_8 (fun i =>
      W8.init (fun j =>
        (compress11_circuit _aw.[(i*8+j) %/ 11]).[(i*8+j) %% 11]))); last by admit.
@@ -605,7 +605,7 @@ conseq (: a = _aw /\
 
       
 (* BDEP pre conseq *)
-+ move => &hr />; rewrite /pos_bound1024_cxq qE /= /(\sle) allP /=  => Hb i ib /=.
++ move => &hr />; rewrite /pos_bound1024_cxq qE /= /(\sle) /(\slt) allP /=  => Hb i ib /=.
   rewrite /(to_sint W16.zero) /= /(W16.smod 0) /=.
   rewrite /(to_sint (W16.of_int 6658)) /= /(W16.smod 6658) /= /#.
   
@@ -703,10 +703,6 @@ qed.
 
 (********** BEGIN BDEP PROOF OF DECOMPRESS **************)
 
-op decompress5_circuit(c : W5.t) : W16.t =
-  truncateu16 (srl_32 (((zeroextu5_32 c) * W32.of_int 3329) + W32.of_int 16) (W32.of_int 5)).
-op pcond_true5(_: W5.t) = true.
-
 lemma poly_decompress_ll : islossless Jkem1024_avx2.M._i_poly_decompress.
  proc; inline *;wp. cfold 5; unroll for ^while;auto. 
 qed.
@@ -730,7 +726,7 @@ cfold 5.
 unroll for ^while.
 cfold ^i<-.
 wp -2.
-simplify.
+
 conseq (: _ ==> rp = init_256_16 (fun i =>
      decompress5_circuit (W5.init (fun (j : int) => _a.[(i*5 + j) %/ 8].[(i*5 + j) %% 8])))); last  by circuit.
 
@@ -776,11 +772,6 @@ qed.
 
 
 (********** BEGIN BDEP PROOF OF COMPRESS  **************)
-op compress5_circuit(a : W16.t) : W5.t = 
-   if (a \ult W16.of_int 3329) then  
-   truncateu32_5 (srl_32 ((sll_32 (zeroextu32 a) (W32.of_int 5) + W32.of_int 1664) * W32.of_int 40318) (W32.of_int 27))
-   else 
-   truncateu32_5 (srl_32 ((sll_32 (zeroextu32 (W16_sub a (W16.of_int 3329))) (W32.of_int 5) + W32.of_int 1664) * W32.of_int 40318) (W32.of_int 27)).  
 
 lemma i_poly_compress_corr_ll : islossless Jkem1024_avx2.M._i_poly_compress.
 proof.
@@ -816,14 +807,14 @@ cfold ^i0<-.
 wp -3.
 
 conseq (: a = _aw /\
-   Array256.all (fun bv => W16.zero \sle bv /\ bv \sle (of_int (2 * 3329))) a
+   Array256.all (fun bv => W16.zero \sle bv /\ bv \slt (of_int (2 * 3329))) a
    ==> rp = init_160_8 (fun i =>
      W8.init (fun j =>
        (compress5_circuit _aw.[(i*8+j) %/ 5]).[(i*8+j) %% 5]))); last by circuit.
         
        
 (* BDEP pre conseq *)
-+ move => &hr />; rewrite /pos_bound256_cxq qE /= /(\sle) allP /=  => Hb i ib /=.
++ move => &hr />; rewrite /pos_bound256_cxq qE /= /(\sle) /(\slt) allP /=  => Hb i ib /=.
   rewrite /(to_sint W16.zero) /= /(W16.smod 0) /=.
   rewrite /(to_sint (W16.of_int 6658)) /= /(W16.smod 6658) /= /#.
   
@@ -865,10 +856,6 @@ qed.
 (********** BEGIN BDEP PROOF OF FROMBYTES **************)
 
 from JazzEC require import WArray384.
-
-op frombytes_circuit(c : W12.t) : W16.t = 
-  zeroextu16 c.
-
 
 lemma polyvec_frombytes_ll : islossless Jkem1024_avx2.M.__i_polyvec_frombytes.
 proc; inline *;wp. 
@@ -945,7 +932,7 @@ have : Array1024.all (fun w => bpos16 w (2*q))
     (nttunpackv
        (init_1024_16
           (fun (i : int) =>
-             Top.frombytes_circuit
+             frombytes_circuit
                (W12.init
                   (fun (j : int) =>
                      let idx = i * 12 + j in let aidx = idx %/ 8 in let bidx = idx %% 8 in a{hr}.[aidx].[bidx]))))); last first.

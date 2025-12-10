@@ -1161,6 +1161,18 @@ apply eq_in_mkseq => i i_bnd;
 smt(Array32.initE).
 qed.
 
+op init_1088_8(f : int -> W8.t) = Array1088.init f.
+bind op [W8.t & Array1088.t] init_1088_8 "ainit".
+realize bvainitP by admit.
+
+op init_768_10(f : int -> W10.t) = Array768.init f.
+bind op [W10.t & Array768.t] init_768_10 "ainit".
+realize bvainitP by admit.
+
+op init_1024_11(f : int -> W11.t) = Array1024.init f.
+bind op [W11.t & Array1024.t] init_1024_11 "ainit".
+realize bvainitP by admit.
+
 op init_1568_8 (f: int -> W8.t) : W8.t Array1568.t = Array1568.init f.
 
 bind op [W8.t & Array1568.t] init_1568_8 "ainit".
