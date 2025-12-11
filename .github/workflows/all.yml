@@ -5,9 +5,9 @@ permissions:
 on:
   workflow_dispatch:
   push:
-    branches: ["bdep_comments_prune", "main"]
+    branches: ["bdep_comments_prune", "master"]
   pull_request:
-    branches: ["main"]
+    branches: ["master"]
     
 env:
   NIXPKGS_ALLOW_UNFREE: 1
