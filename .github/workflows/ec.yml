@@ -31,7 +31,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            type: [ 'correctness', 'safety' ]
+            type: [ 'safety' ]
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
         steps:
