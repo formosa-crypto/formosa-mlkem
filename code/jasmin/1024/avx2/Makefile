@@ -50,7 +50,11 @@ test/test_keccak_ref.s: ../../common/ref/mlkem_keccak_ref.jazz
 test/test_keccak_avx2.s: ../../common/avx2/mlkem_keccak_avx2.jazz
 	$(JASMINC) -o $@ $(JFLAGS) $<
 
-
+pqcp: $(JINC)  jkem.s
+	$(JASMINC) -ptyping $(JFLAGS) jkem.jazz > jkem_pqcp.jazz
+	$(JASMINC) -o jkem_pqcp.s $(JFLAGS) jkem_pqcp.jazz
+	diff jkem_pqcp.s jkem.s > /dev/null; \
+	if [ $$? -eq 0 ]; then echo "\nALL GOOD!"; else echo "\n!!!ASSEMBLY FILE AFTER TYPING NOT SAME!!!"; fi
 
 .PHONY: ct clean
 
