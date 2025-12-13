@@ -3,7 +3,6 @@
 -include ../../../Makefile.conf
 
 CKP    := ../../../kyber/ref
-CC     ?= arch -x86_64 gcc
 CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer -Wno-implicit-function-declaration -D KYBER_K=4
 JFLAGS := ${JADDFLAGS}
 OS     := $(shell uname -s)
@@ -17,7 +16,7 @@ test: test/test_kem
 
 speed: test/speed_kem
 
-keccak_test: test/test_keccak test/test_oldkeccak 
+keccak_test: test/test_keccak
 
 JINC = kem.jinc ../../common/avx2/params.jinc params.jinc ../../common/avx2/consts.jinc ../../common/avx2/verify.jinc ../../common/avx2/reduce.jinc \
        ../../common/avx2/polyvec.jinc polyvec.jinc ../../common/avx2/poly.jinc poly.jinc indcpa.jinc gen_matrix.jinc ../../common/avx2/mlkem_keccak_avx2.jinc
@@ -29,9 +28,6 @@ SOURCES = $(CKP)/verify.c $(CKP)/randombytes.c $(CKP)/poly.c $(CKP)/polyvec.c \
           $(JASMIN)/syscall/jasmin_syscall.c
 
 test/test_keccak: test/test_keccak.c test/test_keccak_ref.s test/test_keccak_avx2.s
-	$(CC) $(CFLAGS) -o $@ $^
-
-test/test_oldkeccak: test/test_keccak.c test/test_keccak_oldref.s test/test_keccak_oldavx2.s
 	$(CC) $(CFLAGS) -o $@ $^
 
 test/test_kem: test/test_kem.c $(JINC) $(SOURCES) jkem.s

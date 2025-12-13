@@ -404,7 +404,7 @@ bind circuit
  VPACKSS_16u16  <-   "VPACKSS_16u16",
  VPUNPCKL_16u8  <- "VPUNPCKL_16u8",
  VPINC_8u8      <- "VPINC_8u8" 
-  from "/Users/mbb/Desktop/avx2.spec".
+  from "/usr/local/lib/easycrypt/config/avx2.spec".
 
 from JazzEC require import Array16.
 op init_array16_w16(f : int -> W16.t) = Array16.init f.

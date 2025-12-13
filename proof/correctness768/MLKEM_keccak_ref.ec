@@ -24,30 +24,30 @@ from JazzEC require import Jkem768 WArray200.
 from Keccak require import Keccakf1600_ref Keccak1600_ref.
 
 equiv state_init_ref_eq:
- M.__state_init_ref ~ Jazz_ref.M.__state_init_ref
+ M.__state_init_ref ~ Keccak1600_Jazz.M.__state_init_ref
  : ={arg} ==> ={res}
  by sim.
 
 equiv addratebit_avx2_eq:
- M.__addratebit_ref ~ Jazz_ref.M.__addratebit_ref
+ M.__addratebit_ref ~ Keccak1600_Jazz.M.__addratebit_ref
  : ={arg} ==> ={res}
  by sim.
 
 (****************************************************************************)
 (****************************************************************************)
-from Keccak require Keccak1600_array_ref.
+from Keccak require import Keccak1600_fixedsizes_ref.
 
 (****************************************************************************)
 from JazzEC require import Array32 WArray32.
 
-clone Keccak1600_array_ref.KeccakArrayRef as A32ref
- with op aSIZE <- 32,
+clone Keccak1600_fixedsizes_ref.KeccakArrayRef as A32ref
+ with op _ASIZE <- 32,
       theory A <- Array32,
       theory WA <- WArray32
-      proof aSIZE_ge0 by done.
+      proof _ASIZE_ge0 by done.
 
 equiv a32__squeeze_array_ref_eq:
- M.a32____squeeze_array_ref ~ A32ref.M(A32ref.P).__squeeze_array_ref
+ M.a32____squeeze_ref ~ A32ref.MM.__squeeze_ref
  : ={arg} ==> ={res}
  by sim.
 
@@ -55,250 +55,210 @@ equiv a32__squeeze_array_ref_eq:
 (****************************************************************************)
 from JazzEC require import Array33 WArray33.
 
-clone Keccak1600_array_ref.KeccakArrayRef as A33ref
- with op aSIZE <- 33,
+clone KeccakArrayRef as A33ref
+ with op _ASIZE <- 33,
       theory A <- Array33,
       theory WA <- WArray33
-      proof aSIZE_ge0 by done.
-
+      proof _ASIZE_ge0 by done.
      
-equiv a33__absorb_array_ref_eq:
- M.a33____absorb_array_ref ~ A33ref.M(A33ref.P).__absorb_array_ref
+equiv a33__absorb_ref_eq:
+ M.a33____absorb_ref ~ A33ref.MM.__absorb_ref
  : ={arg} ==> ={res}
  by sim.
 
 (****************************************************************************)
 from JazzEC require import Array34 WArray34.
 
-clone Keccak1600_array_ref.KeccakArrayRef as A34ref
- with op aSIZE <- 34,
+clone KeccakArrayRef as A34ref
+ with op _ASIZE <- 34,
       theory A <- Array34,
       theory WA <- WArray34
-      proof aSIZE_ge0 by done.
+      proof _ASIZE_ge0 by done.
 
-equiv a34__absorb_array_ref_eq:
- M.a34____absorb_array_ref ~ A34ref.M(A34ref.P).__absorb_array_ref
+equiv a34__absorb_ref_eq:
+ M.a34____absorb_ref ~ A34ref.MM.__absorb_ref
  : ={arg} ==> ={res}
  by sim.
 
 (****************************************************************************)
 from JazzEC require import Array64 WArray64.
 
-clone Keccak1600_array_ref.KeccakArrayRef as A64ref
- with op aSIZE <- 64,
+clone KeccakArrayRef as A64ref
+ with op _ASIZE <- 64,
       theory A <- Array64,
       theory WA <- WArray64
-      proof aSIZE_ge0 by done.
+      proof _ASIZE_ge0 by done.
 
-equiv a64__absorb_array_ref_eq:
- M.a64____absorb_array_ref ~ A64ref.M(A64ref.P).__absorb_array_ref
+equiv a64__absorb_ref_eq:
+ M.a64____absorb_ref ~ A64ref.MM.__absorb_ref
  : ={arg} ==> ={res}
  by sim.
 
-equiv a64__squeeze_array_ref_eq:
- M.a64____squeeze_array_ref ~ A64ref.M(A64ref.P).__squeeze_array_ref
+equiv a64__squeeze_ref_eq:
+ M.a64____squeeze_ref ~ A64ref.MM.__squeeze_ref
  : ={arg} ==> ={res}
  by sim.
 
 (****************************************************************************)
 from JazzEC require import Array128 WArray128.
 
-clone Keccak1600_array_ref.KeccakArrayRef as A128ref
- with op aSIZE <- 128,
+clone KeccakArrayRef as A128ref
+ with op _ASIZE <- 128,
       theory A <- Array128,
       theory WA <- WArray128
-      proof aSIZE_ge0 by done.
+      proof _ASIZE_ge0 by done.
 
-equiv a128__squeeze_array_ref_eq:
- M.a128____squeeze_array_ref ~ A128ref.M(A128ref.P).__squeeze_array_ref
+equiv a128__squeeze_ref_eq:
+ M.a128____squeeze_ref ~ A128ref.MM.__squeeze_ref
  : ={arg} ==> ={res}
  by sim.
 
 (****************************************************************************)
 from JazzEC require import Array168 WArray168.
 
-clone Keccak1600_array_ref.KeccakArrayRef as A168ref
- with op aSIZE <- 168,
+clone KeccakArrayRef as A168ref
+ with op _ASIZE <- 168,
       theory A <- Array168,
       theory WA <- WArray168
-      proof aSIZE_ge0 by done.
+      proof _ASIZE_ge0 by done.
  
-equiv a168__dumpstate_array_ref_eq:
- M.a168____dumpstate_array_ref ~ A168ref.M(A168ref.P).__dumpstate_array_ref
+equiv a168__dumpstate_ref_eq:
+ M.a168____dumpstate_ref ~ A168ref.MM.__dumpstate_ref
  : ={arg} ==> ={res}
  by sim.
 
 (****************************************************************************)
 from JazzEC require import Array1088 WArray1088.
 
-clone Keccak1600_array_ref.KeccakArrayRef as A1088ref
- with op aSIZE <- 1088,
+clone KeccakArrayRef as A1088ref
+ with op _ASIZE <- 1088,
       theory A <- Array1088,
       theory WA <- WArray1088
-      proof aSIZE_ge0 by done.
+      proof _ASIZE_ge0 by done.
  
-equiv a1088__absorb_array_ref_eq:
- M.a1088____absorb_array_ref ~ A1088ref.M(A1088ref.P).__absorb_array_ref
+equiv a1088__absorb_ref_eq:
+ M.a1088____absorb_ref ~ A1088ref.MM.__absorb_ref
  : ={arg} ==> ={res}
  by sim.
 
 (****************************************************************************)
 from JazzEC require import Array1184 WArray1184.
 
-clone Keccak1600_array_ref.KeccakArrayRef as A1184ref
- with op aSIZE <- 1184,
+clone KeccakArrayRef as A1184ref
+ with op _ASIZE <- 1184,
       theory A <- Array1184,
       theory WA <- WArray1184
-      proof aSIZE_ge0 by done.
+      proof _ASIZE_ge0 by done.
  
-equiv a1184__absorb_array_ref_eq:
- M.a1184____absorb_array_ref ~ A1184ref.M(A1184ref.P).__absorb_array_ref
+equiv a1184__absorb_ref_eq:
+ M.a1184____absorb_ref ~ A1184ref.MM.__absorb_ref
  : ={arg} ==> ={res}
  by sim.
 
 (****************************************************************************)
 (****************************************************************************)
 
+print M.
 module K = {
   proc _shake256_128_33(out : W8.t Array128.t, in_0 : W8.t Array33.t) :
     W8.t Array128.t = {
     var st_s : W64.t Array25.t;
     var st : W64.t Array25.t;
-    var offset : W64.t;
     var _0 : int;
-    var _1 : W64.t;
-    var _2 : W64.t;
-    var _3 : W64.t Array25.t;
+    var _1 : W64.t Array25.t;
     
-    _3 <- witness;
+    _1 <- witness;
     st <- witness;
     st_s <- witness;
     st <- st_s;
-    st <@ Jazz_ref.M.__state_init_ref(st);
-    offset <- W64.zero;
-    (st, _0, _1) <@
-      A33ref.M(A33ref.P).__absorb_array_ref(st, 0, in_0, offset, 33, 136, 31);
-    offset <- W64.zero;
-    (out, _2, _3) <@
-      A128ref.M(A128ref.P).__squeeze_array_ref(out, offset, 128, st, 136);
+    st <@ Keccak1600_Jazz.M.__state_init_ref(st);
+    (st, _0) <@ A33ref.MM.__absorb_ref(st, 0, in_0, 31, 136);
+    (_1, out) <@ A128ref.MM.__squeeze_ref(st, out, 136);
     
     return out;
   }
-  
-  proc _shake256_1120_32(out : W8.t Array32.t, in0 : W8.t Array32.t, in1 : W8.t Array1088.t) : W8.t Array32.t = {
+  proc _shake256_A32__A1120(out : W8.t Array32.t, in0 : W8.t Array32.t, in1 : W8.t Array1088.t) :
+    W8.t Array32.t = {
     var st_s : W64.t Array25.t;
     var st : W64.t Array25.t;
-    var aT : int;
-    var _0 : W64.t;
+    var _0 : int;
     var _1 : int;
-    var _2 : W64.t;
-    var _3 : W64.t;
-    var _4 : W64.t Array25.t;
+    var _2 : W64.t Array25.t;
     
-    _4 <- witness;
+    _2 <- witness;
     st <- witness;
     st_s <- witness;
     st <- st_s;
-    st <@ Jazz_ref.M.__state_init_ref(st);
-    (st, _1, _2) <@ A32ref.M(A32ref.P).__absorb_array_ref(st, 0, in0, W64.zero, 32, 136, 0);
-    (st, _1, _0) <@ A1088ref.M(A1088ref.P).__absorb_array_ref(st, 32, in1, W64.zero, 1088, 136, 31);
-    (out, _3, _4) <@ A32ref.M(A32ref.P).__squeeze_array_ref(out, W64.zero, 32, st, 136);
+    st <@ Keccak1600_Jazz.M.__state_init_ref(st);
+    (st, _0) <@ A32ref.MM.__absorb_ref(st, 0, in0, 0, 136);
+    (st, _1) <@ A1088ref.MM.__absorb_ref(st, 32, in1, 31, 136);
+    (_2, out) <@ A32ref.MM.__squeeze_ref(st, out, 136);
     
     return out;
   }
-  
-  proc _sha3512_33(out : W8.t Array64.t, in_0 : W8.t Array33.t) :
-    W8.t Array64.t = {
-    var st_s : W64.t Array25.t;
-    var st : W64.t Array25.t;
-    var offset : W64.t;
-    var _0 : int;
-    var _1 : W64.t;
-    var _2 : W64.t;
-    var _3 : W64.t Array25.t;
-    
-    _3 <- witness;
+  proc _sha3_512A_A33 (out:W8.t Array64.t, in_0:W8.t Array33.t) : W8.t Array64.t = {
+    var st_s:W64.t Array25.t;
+    var st:W64.t Array25.t;
+    var  _0:int;
+    var  _1:W64.t Array25.t;
+     _1 <- witness;
     st <- witness;
     st_s <- witness;
     st <- st_s;
-    st <@ Jazz_ref.M.__state_init_ref(st);
-    offset <- W64.zero;
-    (st, _0, _1) <@
-      A33ref.M(A33ref.P).__absorb_array_ref(st, 0, in_0, offset, 33, 72, 6);
-    offset <- W64.zero;
-    (out, _2, _3) <@ A64ref.M(A64ref.P).__squeeze_array_ref(out, offset, 64, st, 72);
-    
+    st <@ Keccak1600_Jazz.M.__state_init_ref (st);
+    (* Erased call to spill *)
+    (st,  _0) <@ A33ref.MM.__absorb_ref (st, 0, in_0, 6, 72);
+    (* Erased call to unspill *)
+    ( _1, out) <@ A64ref.MM.__squeeze_ref (st, out, 72);
     return out;
   }
-  
-  proc _shake128_absorb34(st : W64.t Array25.t, in_0 : W8.t Array34.t) :
-    W64.t Array25.t = {
-    var offset : W64.t;
-    var _0 : int;
-    var _1 : W64.t;
-    
-    st <@ Jazz_ref.M.__state_init_ref(st);
-    offset <- W64.zero;
-    (st, _0, _1) <@
-      A34ref.M(A34ref.P).__absorb_array_ref(st, 0, in_0, offset, 34, 168, 31);
-    
+  proc _shake128_absorb34 (st:W64.t Array25.t, in_0:W8.t Array34.t) : 
+  W64.t Array25.t = {
+    var  _0:int;
+    st <@ Keccak1600_Jazz.M.__state_init_ref (st);
+    (st,  _0) <@ A34ref.MM.__absorb_ref (st, 0, in_0, 31, 168);
     return st;
   }
-  
-  proc _shake128_squeezeblock(st : W64.t Array25.t, out : W8.t Array168.t) :
-    W64.t Array25.t * W8.t Array168.t = {
-    var offset : W64.t;
-    var _0 : W64.t;
-    
-    st <@ Jazz_ref.M._keccakf1600_ref(st);
-    offset <- W64.zero;
-    (out, _0) <@ A168ref.M(A168ref.P).__dumpstate_array_ref(out, offset, 168, st);
-    
+  proc _shake128_squeezeblock (st:W64.t Array25.t, out:W8.t Array168.t) : 
+  W64.t Array25.t * W8.t Array168.t = {
+    var  _0:int;
+    (* Erased call to spill *)
+    st <@ Keccak1600_Jazz.M._keccakf1600_ref (st);
+    (* Erased call to unspill *)
+    (out,  _0) <@ A168ref.MM.__dumpstate_ref (out, 0, 168, st);
     return (st, out);
   }
-  
-  proc _isha3_256_A1184(out : W8.t Array32.t, in_0 :  W8.t Array1184.t) : W8.t Array32.t = {
-    var st_s : W64.t Array25.t;
-    var st : W64.t Array25.t;
-    var offset : W64.t;
-    var _0 : int;
-    var _1 : W64.t;
-    var _2 : W64.t;
-    var _3 : W64.t Array25.t;
-    
-    _3 <- witness;
+  proc _sha3_256A_A1184 (out:W8.t Array32.t, in_0:W8.t Array1184.t) : 
+  W8.t Array32.t = {
+    var st_s:W64.t Array25.t;
+    var st:W64.t Array25.t;
+    var  _0:int;
+    var  _1:W64.t Array25.t;
+     _1 <- witness;
     st <- witness;
     st_s <- witness;
+    (* Erased call to spill *)
     st <- st_s;
-    st <@ Jazz_ref.M.__state_init_ref(st);
-    (st, _0, _1) <@ A1184ref.M(A1184ref.P).__absorb_array_ref(st, 0, in_0, W64.zero, 1184, 136, 6);
-    offset <- W64.zero;
-    (out, _2, _3) <@ A32ref.M(A32ref.P).__squeeze_array_ref(out, offset, 32, st, 136);
-    
+    st <@ Keccak1600_Jazz.M.__state_init_ref (st);
+    (st,  _0) <@ A1184ref.MM.__absorb_ref (st, 0, in_0, 6, 136);
+    (* Erased call to unspill *)
+    ( _1, out) <@ A32ref.MM.__squeeze_ref (st, out, 136);
     return out;
   }
-  
-  proc _sha3_512_64(out : W8.t Array64.t, in_0 : W8.t Array64.t) :
-    W8.t Array64.t = {
-    var st_s : W64.t Array25.t;
-    var st : W64.t Array25.t;
-    var offset : W64.t;
-    var _0 : int;
-    var _1 : W64.t;
-    var _2 : W64.t;
-    var _3 : W64.t Array25.t;
-    
-    _3 <- witness;
+  proc _sha3_512A_A64 (out:W8.t Array64.t, in_0:W8.t Array64.t) : W8.t Array64.t = {
+    var st_s:W64.t Array25.t;
+    var st:W64.t Array25.t;
+    var  _0:int;
+    var  _1:W64.t Array25.t;
+     _1 <- witness;
     st <- witness;
     st_s <- witness;
     st <- st_s;
-    st <@ Jazz_ref.M.__state_init_ref(st);
-    offset <- W64.zero;
-    (st, _0, _1) <@
-      A64ref.M(A64ref.P).__absorb_array_ref(st, 0, in_0, offset, 64, 72, 6);
-    offset <- W64.zero;
-    (out, _2, _3) <@ A64ref.M(A64ref.P).__squeeze_array_ref(out, offset, 64, st, 72);
-    
+    st <@ Keccak1600_Jazz.M.__state_init_ref (st);
+    (* Erased call to spill *)
+    (st,  _0) <@ A64ref.MM.__absorb_ref (st, 0, in_0, 6, 72);
+    (* Erased call to unspill *)
+    ( _1, out) <@ A64ref.MM.__squeeze_ref (st, out, 72);
     return out;
   }
 }.
@@ -312,60 +272,63 @@ from JazzEC require import Array1152 Array960.
 (****************************************************************************)
  
 equiv sha3512_33_eq:
-  M._sha3_512A_A33 ~ K._sha3512_33
+  M._sha3_512A_A33 ~ K._sha3_512A_A33
  : ={arg} ==> ={res}. 
 by proc; inline *; sim; wp; sim.
 qed.
 
 hoare sha3512_33_h' seed : 
- K._sha3512_33
+ K._sha3_512A_A33
  : arg.`2 = seed
  ==>
     Array32.init (fun i => res.[i]) = (SHA3_512_33_64 seed).`1
  /\ Array32.init(fun i => res.[32 + i]) = (SHA3_512_33_64 seed).`2.
 proof.
 proc.
-ecall (A64ref.squeeze_array_ref_h out offset 64 st 72) => /=.
-wp; ecall (A33ref.absorb_array_ref_h [<:W8.t>] in_0 offset 33 72 6).
+ecall (A64ref.squeeze_ref_h out st 72) => /=.
+wp; ecall (A33ref.absorb_ref_h [<:W8.t>] in_0 72 6).
 wp; ecall (state_init_ref_h 72).
-auto => /> &m []st2 ?? /= -> ?.
-move=> []out?st1 /= Eout ??; rewrite /SHA3_512_33_64 /=.
+auto => /> []st2 /= ->.
+move=> []/=st1 out ? Eout; rewrite /SHA3_512_33_64 /=.
 have EEout: out = Array64.of_list W8.zero (SHA3_512 (to_list seed)).
- rewrite Eout tP => i Hi.
- rewrite filliE 1:/# Hi /= get_of_list 1://; congr.
- rewrite /SHA3_512 /KECCAK1600; congr; 1:smt(); congr; 1..2:smt().
- by apply eq_in_mkseq => k Hk.
+ apply Array64.to_list_inj.
+ rewrite Eout of_listK; smt(size_SQUEEZE1600).
 split; rewrite tP => i Hi.
  by rewrite initiE 1:// get_of_list 1:// nth_take 1..2:/# EEout get_of_list /#.
 by rewrite initiE 1:// get_of_list 1:// nth_drop 1..2:/# EEout /= get_of_list /#.
 qed.
 
-lemma sha3512_33_ll: islossless K._sha3512_33.
+lemma sha3512_33_ll: islossless K._sha3_512A_A33.
 proof.
 proc.
-call A64ref.squeeze_array_ref_ll.
-wp; call A33ref.absorb_array_ref_ll.
+call A64ref.squeeze_ref_ll.
+wp; call A33ref.absorb_ref_ll.
 wp; call state_init_ref_ll.
 by auto.
 qed.
 
 phoare sha3512_33_ph' seed : 
- [ K._sha3512_33
+ [ K._sha3_512A_A33
  : arg.`2 = seed
  ==>
     Array32.init (fun i => res.[i]) = (SHA3_512_33_64 seed).`1
  /\ Array32.init(fun i => res.[32 + i]) = (SHA3_512_33_64 seed).`2
  ] = 1%r.
-proof. by admit. (* conseq sha3512_33_ll (sha3512_33_h' seed).*) qed.
+proof. by conseq sha3512_33_ll (sha3512_33_h' seed). qed.
 
 phoare sha3_512_33_64 seed : 
- [ Jkem768.M._sha3_512A_A33
+ [ M._sha3_512A_A33
  : arg.`2 = seed
  ==>
    Array32.init (fun i => res.[i]) = (SHA3_512_33_64 seed).`1
  /\ Array32.init(fun i => res.[32 + i]) = (SHA3_512_33_64 seed).`2
  ] = 1%r.
-proof. by admit. (* conseq sha3512_33_eq (sha3512_33_ph' seed) => /> /#. *) qed.
+proof.
+admit.
+(* ??? this anomaly persists!!! anomaly: File "src/ecCoreFol.ml", line 339, characters 2-8: Assertion failed
+by conseq sha3512_33_eq (sha3512_33_ph' seed) => /> /#.
+*)
+qed.
 
 (****************************************************************************)
 
@@ -384,10 +347,11 @@ hoare shake128_absorb34_h' (seed : W8.t Array34.t):
             (seed.[33]).
 proof.
 proc.
-ecall (A34ref.absorb_array_ref_h [<:W8.t>] in_0 offset 34 168 31).
+ecall (A34ref.absorb_ref_h [<:W8.t>] in_0 168 31).
 wp; ecall (state_init_ref_h 168).
-auto => /> []st1 ?? /= -> ?.
+auto => /> []st1 ? /= ->.
 rewrite /SHAKE128_ABSORB_34; congr; 1..2:smt().
+rewrite /to_list.
 rewrite /sub (:34=32+2) 1:// mkseq_add 1..2://; congr.
  by apply eq_in_mkseq => i Hi /=; rewrite initiE /#.
 by rewrite /mkseq -iotaredE /=.
@@ -396,7 +360,7 @@ qed.
 lemma shake128_absorb34_ll: islossless K._shake128_absorb34.
 proof.
 proc.
-call A34ref.absorb_array_ref_ll.
+call A34ref.absorb_ref_ll.
 wp; call state_init_ref_ll.
 by auto.
 qed.
@@ -419,7 +383,10 @@ phoare shake_absorb (seed : W8.t Array34.t):
             (seed.[32])
             (seed.[33])
  ] = 1%r.
-proof. by admit. (* conseq shake128_absorb34_eq (shake128_absorb34_ph' seed) => /> /#. *) qed. 
+proof. 
+(* ??? This anomaly persists: anomaly: File "src/ecCoreFol.ml", line 339, characters 2-8: Assertion failed *)
+by admit. (* conseq shake128_absorb34_eq (shake128_absorb34_ph' seed) => /> /#. *)
+qed. 
 
 (****************************************************************************)
  
@@ -435,7 +402,7 @@ hoare shake128_squeezeblock_h' state :
  ==> res = SHAKE128_SQUEEZE_168 state.
 proof.
 proc.
-ecall (A168ref.dumpstate_array_ref_h out offset 168 st).
+ecall (A168ref.dumpstate_ref_h out 0 168 st).
 wp; ecall (keccakf1600_ref_h st).
 auto => /> &m []st1 ? /= @/SHAKE128_SQUEEZE_168 -> ? /=; split.
  by rewrite /st_i iter1.
@@ -446,7 +413,7 @@ qed.
 lemma shake128_squeezeblock_ll: islossless K._shake128_squeezeblock.
 proof.
 proc.
-call A168ref.dumpstate_array_ref_ll.
+call A168ref.dumpstate_ref_ll.
 wp; call keccakf1600_ref_ll.
 by auto.
 qed.
@@ -463,7 +430,10 @@ phoare shake_squeeze state :
  : arg.`1 = state
  ==> res = SHAKE128_SQUEEZE_168 state
  ] = 1%r.
-proof. by admit. (*  conseq shake128_squeezeblock_eq (shake128_squeezeblock_ph' state) => /> /#.*) qed. 
+proof.
+(* ??? anomaly persists! *)
+ by admit. (*  conseq shake128_squeezeblock_eq (shake128_squeezeblock_ph' state) => /> /#.*)
+qed. 
 
 (****************************************************************************)
 equiv shake256_128_33_eq:
@@ -479,24 +449,23 @@ hoare shake256_128_33_h' seed :
             seed.[32].
 proof.
 proc.
-ecall (A128ref.squeeze_array_ref_h out offset 128 st 136).
-wp; ecall (A33ref.absorb_array_ref_h [<:W8.t>] in_0 offset 33 136 31).
+ecall (A128ref.squeeze_ref_h out st 136).
+wp; ecall (A33ref.absorb_ref_h [<:W8.t>] in_0 136 31).
 wp; call (state_init_ref_h 136).
-auto => /> &m []st1 ?? /= ->?.
-move=> []out ? ? /= -> ??.
-rewrite tP=> i Hi; rewrite filliE 1:/# Hi /SHAKE256_33_128 get_of_list 1:/# /=.
-congr; rewrite /SHAKE256 /KECCAK1600; congr; 1:smt().
-congr; 1..2:smt().
-rewrite /sub (:33=32+1) 1:// mkseq_add 1..2://; congr.
- by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
-by rewrite /mkseq -iotaredE /=.
+auto => /> []st1 ? /= -> []? out /= ? H.
+apply Array128.to_list_inj; rewrite H.
+rewrite of_listK.
+ by rewrite size_SQUEEZE1600.
+rewrite /SHAKE256 /KECCAK1600; congr => //.
+congr=> //.
+by rewrite /to_list /mkseq -iotaredE /=.
 qed.
 
 lemma shake256_128_33_ll: islossless K._shake256_128_33.
 proof.
 proc.
-call A128ref.squeeze_array_ref_ll.
-wp; call A33ref.absorb_array_ref_ll.
+call A128ref.squeeze_ref_ll.
+wp; call A33ref.absorb_ref_ll.
 wp; call state_init_ref_ll.
 by auto.
 qed.
@@ -517,57 +486,66 @@ phoare shake256_33_128 seed :
             (Array32.init (fun i => seed.[i]))
             seed.[32]
  ] = 1%r.
-proof. by admit. (*  by conseq shake256_128_33_eq (shake256_128_33_ph' seed) => /> /#. *) qed.
+proof. 
+(* ??? This anomaly persists!!! *)
+by admit. (*  by conseq shake256_128_33_eq (shake256_128_33_ph' seed) => /> /#. *)
+qed.
 
 lemma shake256_33_128_ll: islossless M._shake256_128_33.
-proof. by admit. (*  conseq shake256_128_33_eq shake256_128_33_ll => /> /#.*) qed.
+proof.
+(* ??? This anomaly persists!!! *)
+by admit. (*  conseq shake256_128_33_eq shake256_128_33_ll => /> /#.*)
+qed.
 
 (****************************************************************************)
 
 equiv isha3_256_A1184_eq:
-  M._sha3_256A_A1184 ~ K._isha3_256_A1184
+  M._sha3_256A_A1184 ~ K._sha3_256A_A1184
  : ={arg} ==> ={res}.
 by proc; inline *; sim; wp; sim.
 qed.
 
-
 hoare isha3_256_A1184_h' in_: 
- K._isha3_256_A1184
+ K._sha3_256A_A1184
  : arg.`2 = in_
  ==> 
 res = SHA3_256_1184_32
             (Array1152.init (fun k => in_.[k]),
              Array32.init (fun k => in_.[1152+k])).
 proc.
-ecall (A32ref.squeeze_array_ref_h out offset 32 st 136).
-wp; ecall (A1184ref.absorb_array_ref_h [<:W8.t>]  in_0 W64.zero  1184 136 6).
+ecall (A32ref.squeeze_ref_h out st 136).
+wp; ecall (A1184ref.absorb_ref_h [<:W8.t>] in_0 136 6).
 call (state_init_ref_h 136).
-auto => /> &m. 
-move=> []out ?? -> /= ??H0 H1 H2; rewrite tP => i Hi.
-rewrite /SHA3_256_1184_32 get_of_list 1:// /=.
-rewrite /SHA3_256 /KECCAK1600 H0 fillE /= initiE //= Hi /=; congr; congr; 1:smt(); congr; 1..2:smt().
-rewrite /sub /to_list;apply (eq_from_nth witness);1:smt(size_cat size_mkseq).
+auto => /> []st at /= -> []st1 at1 /= ? H.
+apply Array32.to_list_inj; rewrite H.
+rewrite of_listK; first smt(size_SQUEEZE1600).
+rewrite /SHA3_256 /KECCAK1600; congr => //.
+congr=> //.
+rewrite /to_list.
+apply (eq_from_nth witness);1:smt(size_cat size_mkseq).
 move => k; rewrite size_mkseq /= => *;rewrite nth_cat  /= !size_mkseq /= /max /=.
 case (k<1152) => *;by rewrite !nth_mkseq 1,2:/# initiE /=/#.  
 qed.
 
-lemma isha3_256_A1184_ll: islossless K._isha3_256_A1184.
+lemma isha3_256_A1184_ll: islossless K._sha3_256A_A1184.
 proc.
-call A32ref.squeeze_array_ref_ll.
-wp; call A1184ref.absorb_array_ref_ll.
+call A32ref.squeeze_ref_ll.
+wp; call A1184ref.absorb_ref_ll.
 wp; call state_init_ref_ll.
 by auto.
 qed.
 
 phoare isha3_256_A1184_ph' in_: 
- [ K._isha3_256_A1184
+ [ K._sha3_256A_A1184
  : arg.`2 = in_
  ==>
    res = SHA3_256_1184_32
             (Array1152.init (fun k => in_.[k]),
              Array32.init (fun k => in_.[1152+k]))
  ] = 1%r.
-proof. by admit. (*  conseq isha3_256_A1184_ll (isha3_256_A1184_h' in_). *) qed.
+proof.
+by conseq isha3_256_A1184_ll (isha3_256_A1184_h' in_).
+qed.
 
 phoare pkH_sha in_: 
  [ Jkem768.M._sha3_256A_A1184
@@ -577,56 +555,64 @@ phoare pkH_sha in_:
             (Array1152.init (fun k => in_.[k]),
              Array32.init (fun k => in_.[1152+k]))
  ] = 1%r.
-proof. by admit. (* conseq isha3_256_A1184_eq (isha3_256_A1184_ph' in_) => /> /#.*)  qed.
+proof.
+(* ??? Anomaly persists *)
+by admit. (* conseq isha3_256_A1184_eq (isha3_256_A1184_ph' in_) => /> /#.*)
+qed.
 
 (****************************************************************************)
  
 equiv shake256_1120_32_eq:
-  M._shake256_A32__A1120 ~ K._shake256_1120_32
+  M._shake256_A32__A1120 ~ K._shake256_A32__A1120
  : ={arg} ==> ={res}.
 by proc; inline *; sim; wp; sim.
 qed.
 
 hoare shake256_1120_32_h' in0_ in1_: 
- K._shake256_1120_32
+ K._shake256_A32__A1120
  : arg.`2 = in0_ /\ arg.`3 = in1_
  ==> res = SHAKE_256_1120_32
         in0_ 
         ( Array960.init (fun k => in1_.[k])
         , Array128.init (fun k => in1_.[960+k])).
 proc.
-ecall (A32ref.squeeze_array_ref_h out W64.zero 32 st 136).
-wp; ecall (A1088ref.absorb_array_ref_h (to_list in0)  in1 W64.zero  1088 136 31).
-ecall (A32ref.absorb_array_ref_h [<:W8.t>] in0 W64.zero 32 136 0).
+ecall (A32ref.squeeze_ref_h out st 136).
+wp; ecall (A1088ref.absorb_ref_h (to_list in0) in1 136 31).
+ecall (A32ref.absorb_ref_h [<:W8.t>] in0 136 0).
 call (state_init_ref_h 136).
-auto => /> &hr out1; rewrite !size_to_list /= => ???? out2 H2? out3 ->??. 
-rewrite /SHAKE_256_1120_32 tP => i Hi /=; rewrite initiE 1:// /= fillE initiE 1:/# /= Hi /= /SHAKE256 /KECCAK1600; congr;congr;1:smt(). 
-rewrite H2;congr;1,2:by smt().
-rewrite -catA; congr.
-rewrite /sub /to_list;apply (eq_from_nth witness);1:smt(size_cat size_mkseq).
+auto => /> []st1? /= ? ?.
+rewrite !size_to_list /= => [[st2 ?]] /= -> []st3? -> /= H.
+apply Array32.to_list_inj; rewrite H of_listK.
+ smt(size_SQUEEZE1600).
+rewrite /SHAKE256 /KECCAK1600; congr => //.
+congr => //=.
+rewrite -catA; congr => //.
+rewrite /to_list;apply (eq_from_nth witness);1:smt(size_cat size_mkseq).
 move => k; rewrite size_mkseq /= => *;rewrite nth_cat  /= !size_mkseq /= /max /=.
-case (k<960) => *;by rewrite !nth_mkseq 1,2:/# initiE /=/#.  
+by case (k<960) => *; rewrite !nth_mkseq 1,2:/# initiE /=/#.  
 qed.
 
-lemma shake256_1120_32_ll: islossless K._shake256_1120_32.
+lemma shake256_1120_32_ll: islossless K._shake256_A32__A1120.
 proof.
 proc.
-call A32ref.squeeze_array_ref_ll => /=.
-call A1088ref.absorb_array_ref_ll.
-call A32ref.absorb_array_ref_ll.
+call A32ref.squeeze_ref_ll => /=.
+call A1088ref.absorb_ref_ll.
+call A32ref.absorb_ref_ll.
 call state_init_ref_ll.
 by auto => />.
 qed. 
 
 phoare shake256_1120_32_ph' in0_ in1_: 
- [ K._shake256_1120_32
+ [ K._shake256_A32__A1120
  :  arg.`2 = in0_ /\ arg.`3 = in1_
  ==> res = SHAKE_256_1120_32
         in0_ 
         ( Array960.init (fun k => in1_.[k])
         , Array128.init (fun k => in1_.[960+k]))
  ] = 1%r.
-proof. by admit. (* by conseq shake256_1120_32_ll (shake256_1120_32_h' in0_ in1_). *) qed. 
+proof.
+by conseq shake256_1120_32_ll (shake256_1120_32_h' in0_ in1_).
+qed. 
 
 phoare j_shake in0_ in1_: 
  [ Jkem768.M._shake256_A32__A1120
@@ -636,19 +622,22 @@ phoare j_shake in0_ in1_:
         ( Array960.init (fun k => in1_.[k])
         , Array128.init (fun k => in1_.[960+k]))
  ] = 1%r.
-proof. by admit. (*by conseq shake256_1120_32_eq (shake256_1120_32_ph' in0_ in1_) => /> /#. *) qed.
+proof.
+(* ??? Anomaly persists! *)
+by admit. (*by conseq shake256_1120_32_eq (shake256_1120_32_ph' in0_ in1_) => /> /#. *)
+qed.
 
 (****************************************************************************)
 
 equiv sha3_512_64_eq:
-  M._sha3_512A_A64 ~ K._sha3_512_64
+  M._sha3_512A_A64 ~ K._sha3_512A_A64
  : ={arg} ==> ={res}.
 by proc; inline *; sim; wp; sim.
 qed.
 
 
 hoare sha3_512_64_h' buf:
- K._sha3_512_64
+ K._sha3_512A_A64
  : arg.`2 = buf
  ==>
    let bytes = SHA3_512_64_64
@@ -660,37 +649,38 @@ hoare sha3_512_64_h' buf:
                        else bytes.`2.[k-32]).
 proof.
 proc.
-ecall (A64ref.squeeze_array_ref_h out offset 64 st 72).
-wp; ecall (A64ref.absorb_array_ref_h [<:W8.t>] in_0 offset 64 72 6).
+ecall (A64ref.squeeze_ref_h out st 72).
+wp; ecall (A64ref.absorb_ref_h [<:W8.t>] in_0 72 6).
 wp; call (state_init_ref_h 72).
-auto => /> &m []st1 ?? /= ->?.
-move=> []out ? ? /= -> ??.
-rewrite tP=> i Hi; rewrite filliE 1:/# Hi /SHA3_512_64_64 initiE 1:/# /=.
-rewrite /SHA3_512 /KECCAK1600; case:(i<32) =>C.
- rewrite get_of_list 1:/# !nth_take 1..6:/# /=; congr; congr; 1:smt().
- congr; 1..2:smt().
-  rewrite /sub (:64=32+32) 1:// mkseq_add 1..2:/#; congr.
-   by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
+auto => /> []st1? /= ->.
+move=> []st2 out /= ?H.
+print Array64.of_listK.
+rewrite -(Array64.to_listK W8.zero) H tP => i Hi.
+rewrite get_of_list // /SHA3_512_64_64 initiE //=.
+case: (i<32) => C.
+ rewrite get_of_list 1:/# eq_sym nth_take 1..2:/#.
+ congr; rewrite /SHA3_512 /KECCAK1600; congr => //; congr=>//.
+ rewrite /to_list (:64=32+32) 1:// mkseq_add 1..2:/#; congr.
   by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
- smt().
-rewrite get_of_list 1:/# !nth_drop 1..2:/# /=; congr; congr; 1:smt().
-congr; 1..2:smt().
-rewrite /sub (:64=32+32) 1:// mkseq_add 1..2:/#; congr.
+ by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
+rewrite get_of_list 1:/# eq_sym nth_drop 1..2:/#.
+rewrite /SHA3_512 /KECCAK1600; congr => //; congr=>//.
+rewrite /to_list (:64=32+32) 1:// mkseq_add 1..2:/#; congr => //; congr=> //.
  by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
 by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
 qed.
 
-lemma sha3_512_64_ll: islossless K._sha3_512_64.
+lemma sha3_512_64_ll: islossless K._sha3_512A_A64.
 proof.
 proc.
-call A64ref.squeeze_array_ref_ll.
-wp; call A64ref.absorb_array_ref_ll.
+call A64ref.squeeze_ref_ll.
+wp; call A64ref.absorb_ref_ll.
 wp; call state_init_ref_ll.
 by auto.
 qed.
 
 phoare sha3_512_64_ph' buf:
- [ K._sha3_512_64
+ [ K._sha3_512A_A64
  : arg.`2 = buf
  ==>
    let bytes = SHA3_512_64_64
@@ -701,7 +691,9 @@ phoare sha3_512_64_ph' buf:
                        then bytes.`1.[k]
                        else bytes.`2.[k-32])
  ] = 1%r.
-proof. by admit. (* by conseq sha3_512_64_ll (sha3_512_64_h' buf). *) qed.
+proof.
+by conseq sha3_512_64_ll (sha3_512_64_h' buf).
+qed.
 
 phoare sha_g buf: 
  [ Jkem768.M._sha3_512A_A64
@@ -715,4 +707,7 @@ phoare sha_g buf:
                        then bytes.`1.[k]
                        else bytes.`2.[k-32])
  ] = 1%r.
-proof. by admit. (* by conseq sha3_512_64_eq (sha3_512_64_ph' buf) => /> /#. *) qed.
+proof.
+(* ??? Anomaly persists!!! *)
+by admit. (* by conseq sha3_512_64_eq (sha3_512_64_ph' buf) => /> /#. *)
+qed.
