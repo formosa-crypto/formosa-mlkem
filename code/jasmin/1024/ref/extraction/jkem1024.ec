@@ -287,6 +287,7 @@ module M = {
     s_e <- witness;
     e <- s_e;
     c <- 0;
+    (* Erased call to spill *)
     e <@ _pround_ref (e, a);
     (a, e) <- (swap_ e a);
     rC <- kECCAK1600_RC;
@@ -297,8 +298,10 @@ module M = {
     rC <- kECCAK1600_RC;
     rc <- rC.[(c + 1)];
     a.[0] <- (a.[0] `^` rc);
+    (* Erased call to unspill *)
     c <- (c + 2);
     while ((c < (24 - 1))) {
+      (* Erased call to spill *)
       e <@ _pround_ref (e, a);
       (a, e) <- (swap_ e a);
       rC <- kECCAK1600_RC;
@@ -309,6 +312,7 @@ module M = {
       rC <- kECCAK1600_RC;
       rc <- rC.[(c + 1)];
       a.[0] <- (a.[0] `^` rc);
+      (* Erased call to unspill *)
       c <- (c + 2);
     }
     return a;
