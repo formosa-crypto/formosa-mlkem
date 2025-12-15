@@ -84,11 +84,28 @@ jobs:
            else
               TARGET_DIR="proof/${{matrix.type}}/${{matrix.size}}/${{matrix.dir}}"
            fi
+           HTML_REPORT_DIR="reports/${{matrix.type}}/${{matrix.size}}/${{matrix.dir}}"
+           mkdir -p ${HTML_REPORT_DIR}
+           TSTATS_DIR=".tstats"
+           mkdir -p ${TSTATS_DIR}
+           ARTIFACT_NAME="easycrypt-heatmap-reports"
+           echo "## Report Execution Time EasyCrypt" >> "$GITHUB_STEP_SUMMARY"
+           echo '| **File** | **Report** |' >> "$GITHUB_STEP_SUMMARY"
+           echo '| :--- | :---: |' >> "$GITHUB_STEP_SUMMARY"
            for EC_FILE in ${TARGET_DIR}/*.ec; do
-              TSTATS_DIR=".tstats"
-              TSTATS_FILE="${TSTATS_DIR}/$(basename "${EC_FILE%.ec}.tstats")"
-              mkdir -p ${TSTATS_DIR}
-              nix-shell --run "easycrypt -tstats ${TSTATS_FILE} ${EC_FILE}"
-              python scripts/generate_heatmap.py ${EC_FILE} ${TSTATS_FILE}
+              if [ -e "$EC_FILE" ]; then
+                TSTATS_FILE="${TSTATS_DIR}/$(basename "${EC_FILE%.ec}.tstats")"
+                FILENAME_BASE="$(basename "${EC_FILE%.ec}")"
+                HTML_REPORT_PATH="${HTML_REPORT_DIR}/${FILENAME_BASE}.html"
+                nix-shell --run "easycrypt -tstats ${TSTATS_FILE} ${EC_FILE}"
+                python scripts/generate_heatmap.py ${EC_FILE} ${TSTATS_FILE} > ${HTML_REPORT_PATH}                
+                echo "| ${EC_FILE} | [${HTML_REPORT_PATH}](#user-content-artifact-${ARTIFACT_NAME}) |" >> "$GITHUB_STEP_SUMMARY"
+              fi
            done
+        - name: Upload Heatmap Artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: easycrypt-heatmap-reports
+            path: reports/
+            retention-days: 7
 
