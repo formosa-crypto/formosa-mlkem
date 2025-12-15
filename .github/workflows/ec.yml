@@ -58,4 +58,37 @@ jobs:
               "${{ matrix.type }}" \
               "${{ matrix.size }}" \
               "${{ matrix.dir }}"
+    heatmap_proofs:
+        name: Generate Heat-Map Proofs
+        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+          matrix:
+            type: ['correctness', 'safety']
+            size: [ '768', '1024' ]
+            dir: [ 'ref', 'avx2' ]
+        steps:
+        - uses: actions/checkout@v4
+        - name: Install Nix
+          uses: cachix/install-nix-action@v31
+          with:
+            nix_path: nixpkgs=channel:nixos-unstable
+        - name: Check Dependencies
+          run: nix-shell --run "echo Dependencies OK…"
+        - name: Configure provers
+          run: nix-shell --run 'easycrypt why3config'
+        - name: Run ${{matrix.type}} Proofs MLKEM${{matrix.size}}(${{matrix.dir}})
+          run: |
+           if [ ${{matrix.type}} == "correctness" ] && [ ${{matrix.dir}} == "ref" ]; then
+              TARGET_DIR="proof/${{matrix.type}}/${{matrix.size}}"
+           else
+              TARGET_DIR="proof/${{matrix.type}}/${{matrix.size}}/${{matrix.dir}}"
+           fi
+           for EC_FILE in ${TARGET_DIR}/*.ec; do
+              TSTATS_DIR=".tstats"
+              TSTATS_FILE="${TSTATS_DIR}/$(basename "${EC_FILE%.ec}.tstats")"
+              mkdir -p ${TSTATS_DIR}
+              nix-shell --run "easycrypt -tstats ${TSTATS_FILE} ${EC_FILE}"
+              python scripts/generate_heatmap.py ${EC_FILE} ${TSTATS_FILE}
+           done
 
