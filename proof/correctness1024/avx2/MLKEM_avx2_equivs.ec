@@ -566,6 +566,16 @@ proc. cfold 11. unroll for ^while; wp => /=.
 inline *;unroll for ^while; do 4!(unroll for ^while);auto.
 qed.
 
+op init_1024_11 (f: int -> W11.t) : W11.t Array1024.t = Array1024.init f.
+
+bind op [W11.t & Array1024.t] init_1024_11 "ainit".
+realize bvainitP.
+proof.
+admit.
+qed.
+
+
+
 lemma auxcompress11_corr_h (_aw : W16.t Array1024.t):
     hoare[ AuxCompress11.__i_polyvec_compress  :
              a = _aw /\
@@ -597,10 +607,12 @@ cfold ^i1<-.
 wp -4. 
 
 conseq (: a = _aw /\
-   Array1024.all (fun bv => W16.zero \sle bv /\ bv \slt (of_int (2 * 3329))) a
-   ==> init_1408_8 (fun i => rp.[i]) = init_1408_8 (fun i =>
+   Array1024.all (fun bv => W16.zero \sle bv /\ bv \sle (of_int (2 * 3329))) a
+   ==> init_1408_8 (fun i => rp.[i]) = 
+   let out = init_1024_11 (fun i => compress11_circuit _aw.[i]) in
+   init_1408_8 (fun i =>
      W8.init (fun j =>
-       (compress11_circuit _aw.[(i*8+j) %/ 11]).[(i*8+j) %% 11]))); last by admit.
+       (out.[(i*8+j) %/ 11]).[(i*8+j) %% 11]))); last by admit. (* circuit. *)
        (* FIXME TAKES TOO LONG! by circuit *)
 
       
@@ -866,6 +878,8 @@ qed.
 
 op nttunpack_16 (rp : W16.t Array256.t) : W16.t Array256.t = init_256_16 (fun (i : int) => rp.[nttunpack_idx.[i]]).
 
+op subarray256 (x: W16.t Array1024.t) (i: int) = init_256_16 (fun j => x.[256*i + j]).
+
 
 op nttunpackv_16 (v : W16.t Array1024.t) : W16.t Array1024.t =
   init_1024_16
@@ -873,13 +887,13 @@ op nttunpackv_16 (v : W16.t Array1024.t) : W16.t Array1024.t =
        if 0 <= i < 256 then (nttunpack_16 (subarray256 v 0)).[i]
        else
          if 256 <= i < 512 then (nttunpack_16 (subarray256 v 1)).[i - 256]
-         else if 512 <= i < 768 then (nttunpack_16 (subarray256 v 2)).[i - 512] else (nttunpack (subarray256 v 3)).[i - 768]).
-
+         else if 512 <= i < 768 then (nttunpack_16 (subarray256 v 2)).[i - 512] else (nttunpack_16 (subarray256 v 3)).[i - 768]). (* FIXME : 0 -> i - 768 *)
+(*
 lemma nttunpackv_16E v: nttunpackv_16 v = nttunpackv v.
    rewrite /nttunpackv_16 /nttunpackv /nttunpack_16 /nttunpack.
    by rewrite /init_1024_16 /init_256_16.
    qed.
-
+*)
 lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t): 
     hoare [Jkem1024_avx2.M.__i_polyvec_frombytes  :
              a = _aw
@@ -919,8 +933,8 @@ conseq (: _ ==> r = nttunpackv_16 (init_1024_16 (fun i =>
          let bidx = idx %% 8 in
          _aw.[aidx].[bidx]
        )
-     )))); last by admit. (* FIXME: TAKES TOO LONG circuit. *)
-     
+     )))); last by circuit. (* FIXME: TAKES TOO LONG circuit. *)
+
 move => &hr <- rr ->.
 rewrite nttunpackv_16E;split.
 + rewrite  -nttunpackv_lift /lift_array1024 /=; congr; apply Array1024.tP => i ib.
