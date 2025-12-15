@@ -105,7 +105,7 @@ jobs:
         - name: Upload Heatmap Artifacts
           uses: actions/upload-artifact@v4
           with:
-            name: easycrypt-heatmap-reports
-            path: reports/
+            name: easycrypt-heatmap-reports-${{matrix.type}}-${{matrix.size}}-${{matrix.dir}}
+            path: reports/${{matrix.type}}/${{matrix.size}}/${{matrix.dir}}
             retention-days: 7
 
