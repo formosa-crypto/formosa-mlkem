@@ -1,7 +1,7 @@
 (* -------------------------------------------------------------------- *)
 (* ----- *) require import AllCore IntDiv List.
 from Jasmin require import JModel.
-require export Bindings.
+require export Mlkem_bindings.
 (* ----- *) require import Genbindings.
 (* ----- *) (* - *) import W8.
 

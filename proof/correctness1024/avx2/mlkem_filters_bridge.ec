@@ -464,7 +464,7 @@ seq 1 1 : (#{/~pol{1} = _p}pre /\ plist pol{1} (_ctr + to_uint t0_0{2}) = plist 
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite ifT /=;1:smt(W64.to_uint_cmp size_mkseq).
-    rewrite /extract_256_128 -get_w2bits -Bindings.BVA_truncate_Top_JWord_W256_t_Top_JWord_W128_t.bvtruncateP . 
+    rewrite /extract_256_128 -get_w2bits -Mlkem_bindings.BVA_truncate_Top_JWord_W256_t_Top_JWord_W128_t.bvtruncateP . 
     rewrite nth_take;1,2:smt(W64.to_uint_cmp size_mkseq).
     by rewrite initiE /=;smt(W64.to_uint_cmp size_mkseq).
 
@@ -552,7 +552,7 @@ seq 1 1 : (#{/~plist pol{1} (_ctr + to_uint t0_1{2}) = plist _p _ctr ++ mkseq ("
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite ifT /=;1:smt(W64.to_uint_cmp size_mkseq).
-    rewrite /extract_256_128 -get_w2bits -Bindings.BVA_truncate_Top_JWord_W256_t_Top_JWord_W128_t.bvtruncateP . 
+    rewrite /extract_256_128 -get_w2bits -Mlkem_bindings.BVA_truncate_Top_JWord_W256_t_Top_JWord_W128_t.bvtruncateP . 
     rewrite nth_take;1,2:smt(W64.to_uint_cmp size_mkseq).
     by rewrite initiE /=;smt(W64.to_uint_cmp size_mkseq).
 
@@ -654,7 +654,7 @@ conseq  (bridge48 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter48P (Array56.
     rewrite nth_mkseq;1:smt(size_ge0).
     rewrite Hl1;1:smt(size_ge0 size_map).   
     rewrite to_uint_eq.
-    rewrite -BVA_zextend_Top_Bindings_W12_t_Top_JWord_W16_t.bvzextendP.
+    rewrite -BVA_zextend_Top_Mlkem_bindings_W12_t_Top_JWord_W16_t.bvzextendP.
     have : nth witness (map W12.to_uint xx) i  = nth witness (map W16.to_uint yy) i by smt().
     do 2!(rewrite (nth_map witness);1: smt(size_ge0 size_map)). 
     done.
@@ -1221,7 +1221,7 @@ conseq  (bridge24 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter24P (Array32.
     rewrite nth_mkseq;1:smt(size_ge0).
     rewrite Hl1;1:smt(size_ge0 size_map size_take).   
     rewrite to_uint_eq.
-    rewrite -BVA_zextend_Top_Bindings_W12_t_Top_JWord_W16_t.bvzextendP.
+    rewrite -BVA_zextend_Top_Mlkem_bindings_W12_t_Top_JWord_W16_t.bvzextendP.
     have : nth witness (map W12.to_uint xx) i  = nth witness (map W16.to_uint yy) i by smt().
     do 2!(rewrite (nth_map witness); smt(size_ge0 @List)). 
     

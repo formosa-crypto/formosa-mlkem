@@ -158,7 +158,6 @@ equiv a1184__absorb_ref_eq:
 (****************************************************************************)
 (****************************************************************************)
 
-print M.
 module K = {
   proc _shake256_128_33(out : W8.t Array128.t, in_0 : W8.t Array33.t) :
     W8.t Array128.t = {
@@ -286,7 +285,7 @@ hoare sha3512_33_h' seed :
 proof.
 proc.
 ecall (A64ref.squeeze_ref_h out st 72) => /=.
-wp; ecall (A33ref.absorb_ref_h [<:W8.t>] in_0 72 6).
+wp; ecall (A33ref.absorb_ref_h [<:W8.t>] in_0 6 72).
 wp; ecall (state_init_ref_h 72).
 auto => /> []st2 /= ->.
 move=> []/=st1 out ? Eout; rewrite /SHA3_512_33_64 /=.
@@ -347,7 +346,7 @@ hoare shake128_absorb34_h' (seed : W8.t Array34.t):
             (seed.[33]).
 proof.
 proc.
-ecall (A34ref.absorb_ref_h [<:W8.t>] in_0 168 31).
+ecall (A34ref.absorb_ref_h [<:W8.t>] in_0 31 168).
 wp; ecall (state_init_ref_h 168).
 auto => /> []st1 ? /= ->.
 rewrite /SHAKE128_ABSORB_34; congr; 1..2:smt().
@@ -376,7 +375,7 @@ phoare shake128_absorb34_ph' (seed : W8.t Array34.t):
 proof. by conseq shake128_absorb34_ll (shake128_absorb34_h' seed). qed.
 
 phoare shake_absorb (seed : W8.t Array34.t): 
- [ Jkem768.M._shake128_absorb34
+ [ M._shake128_absorb34
  : arg.`2 = seed
  ==> res = SHAKE128_ABSORB_34 
             (Array32.init (fun k => seed.[k]))
@@ -426,7 +425,7 @@ phoare shake128_squeezeblock_ph' state :
 proof. by conseq shake128_squeezeblock_ll (shake128_squeezeblock_h' state). qed.
 
 phoare shake_squeeze state : 
- [ Jkem768.M._shake128_squeezeblock
+ [ M._shake128_squeezeblock
  : arg.`1 = state
  ==> res = SHAKE128_SQUEEZE_168 state
  ] = 1%r.
@@ -450,7 +449,7 @@ hoare shake256_128_33_h' seed :
 proof.
 proc.
 ecall (A128ref.squeeze_ref_h out st 136).
-wp; ecall (A33ref.absorb_ref_h [<:W8.t>] in_0 136 31).
+wp; ecall (A33ref.absorb_ref_h [<:W8.t>] in_0 31 136).
 wp; call (state_init_ref_h 136).
 auto => /> []st1 ? /= -> []? out /= ? H.
 apply Array128.to_list_inj; rewrite H.
@@ -480,7 +479,7 @@ phoare shake256_128_33_ph' seed :
 proof. by conseq shake256_128_33_ll (shake256_128_33_h' seed). qed.
 
 phoare shake256_33_128 seed : 
- [ Jkem768.M._shake256_128_33
+ [ M._shake256_128_33
  : arg.`2 = seed
  ==> res = SHAKE256_33_128
             (Array32.init (fun i => seed.[i]))
@@ -514,7 +513,7 @@ res = SHA3_256_1184_32
              Array32.init (fun k => in_.[1152+k])).
 proc.
 ecall (A32ref.squeeze_ref_h out st 136).
-wp; ecall (A1184ref.absorb_ref_h [<:W8.t>] in_0 136 6).
+wp; ecall (A1184ref.absorb_ref_h [<:W8.t>] in_0 6 136).
 call (state_init_ref_h 136).
 auto => /> []st at /= -> []st1 at1 /= ? H.
 apply Array32.to_list_inj; rewrite H.
@@ -548,7 +547,7 @@ by conseq isha3_256_A1184_ll (isha3_256_A1184_h' in_).
 qed.
 
 phoare pkH_sha in_: 
- [ Jkem768.M._sha3_256A_A1184
+ [ M._sha3_256A_A1184
  : arg.`2 = in_
  ==> 
   res = SHA3_256_1184_32
@@ -577,8 +576,8 @@ hoare shake256_1120_32_h' in0_ in1_:
         , Array128.init (fun k => in1_.[960+k])).
 proc.
 ecall (A32ref.squeeze_ref_h out st 136).
-wp; ecall (A1088ref.absorb_ref_h (to_list in0) in1 136 31).
-ecall (A32ref.absorb_ref_h [<:W8.t>] in0 136 0).
+wp; ecall (A1088ref.absorb_ref_h (to_list in0) in1 31 136).
+ecall (A32ref.absorb_ref_h [<:W8.t>] in0 0 136).
 call (state_init_ref_h 136).
 auto => /> []st1? /= ? ?.
 rewrite !size_to_list /= => [[st2 ?]] /= -> []st3? -> /= H.
@@ -615,7 +614,7 @@ by conseq shake256_1120_32_ll (shake256_1120_32_h' in0_ in1_).
 qed. 
 
 phoare j_shake in0_ in1_: 
- [ Jkem768.M._shake256_A32__A1120
+ [ M._shake256_A32__A1120
  :  arg.`2 = in0_ /\ arg.`3 = in1_
  ==> res = SHAKE_256_1120_32
         in0_ 
@@ -650,7 +649,7 @@ hoare sha3_512_64_h' buf:
 proof.
 proc.
 ecall (A64ref.squeeze_ref_h out st 72).
-wp; ecall (A64ref.absorb_ref_h [<:W8.t>] in_0 72 6).
+wp; ecall (A64ref.absorb_ref_h [<:W8.t>] in_0 6 72).
 wp; call (state_init_ref_h 72).
 auto => /> []st1? /= ->.
 move=> []st2 out /= ?H.
@@ -696,7 +695,7 @@ by conseq sha3_512_64_ll (sha3_512_64_h' buf).
 qed.
 
 phoare sha_g buf: 
- [ Jkem768.M._sha3_512A_A64
+ [ M._sha3_512A_A64
  : arg.`2 = buf
  ==>
    let bytes = SHA3_512_64_64

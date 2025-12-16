@@ -37,13 +37,13 @@ import MLKEM_PolyvecAVX.
 import MLKEM_PolyAVXVec.
 import MLKEM_PolyVecAVXVec.
 
-require import Bindings.
+require import Mlkem_bindings.
 
 
 import KMatrix Vector.
 
 from JazzEC require import WArray1088 WArray2048.
-require import Bindings BitEncoding.
+require import Mlkem_bindings BitEncoding.
 import BitChunking BS2Int.
 
 (********** BEGIN BDEP PROOF OF CSUBQ **************)

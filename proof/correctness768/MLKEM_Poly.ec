@@ -150,7 +150,7 @@ qed.
 
 (********** BEGIN BDEP PROOF OF TOMSG **************)
 
-require import Bindings BitEncoding.
+require import Mlkem_bindings BitEncoding.
 import BitChunking.
 
 op compress1_circuit(a : W16.t) : bool = 

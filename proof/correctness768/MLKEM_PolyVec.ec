@@ -181,7 +181,7 @@ qed.
 
 
 (********** BEGIN BDEP PROOF OF COMPRESS  **************)
-require import Bindings.
+require import Mlkem_bindings.
 
 lemma i_polyvec_compress_ll : islossless Jkem768.M.__i_polyvec_compress.
 proc.
