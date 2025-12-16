@@ -628,6 +628,7 @@ move => &hr [#]/= -> H0 rr; rewrite /= /init_1408_8 !tP => H i ib.
 rewrite H // initiE 1:/# /=.
 rewrite wordP => k kb; rewrite !initiE /= 1,2:/#.
 rewrite encode_vec_compress_bits //=.
+rewrite initiE 1:/# /=.
 by apply compress11_circuit_sem.
 qed.
 

@@ -783,9 +783,9 @@ auto => />/#.
 qed.
 
 equiv getnoiseequiv : 
-  Jkem1024.M._poly_getnoise ~Jkem1024.M._poly_getnoise :
+  Jkem1024.M._poly_getnoise ~ Jkem1024.M._poly_getnoise :
    ={arg} ==> ={res} /\
-   signed_bound_cxq res{1} 0 256 1.
+   signed_bound_cxq res{2} 0 256 1.
 have H : forall &m a,
    Pr[Jkem1024.M._poly_getnoise(a) @ &m : forall k, 0<=k<256 => -5 < to_sint res.[k] < 5] = 1%r.
 + move => &m a.
@@ -807,28 +807,27 @@ move => *; rewrite /signed_bound_cxq /b16 qE /#.
 qed.
 
 equiv getnoiseequiv2 : 
-   Jkem1024_avx2.M._poly_getnoise_eta2 ~M._poly_getnoise :
+   Jkem1024_avx2.M._poly_getnoise_eta2 ~ M._poly_getnoise :
    ={arg} ==> ={res}  /\
    signed_bound_cxq res{1} 0 256 1.
-symmetry.
-proc*. 
-symmetry.
+proc*.
 transitivity{1} { r <@ AuxMLKEMAvx2._poly_getnoise(rp,seed,nonce); } 
-     ( ={rp,seed,nonce}  ==> ={r})
-    ( ={rp,nonce} /\ seed{1} = s_seed{2} ==> ={r} /\  signed_bound_cxq r{1} 0 256 1);1,2:smt().
+     ( ={rp,nonce} /\ seed{1}=seed{2}  ==> ={r} )
+    ( ={rp,nonce} /\ seed{1}=s_seed{2} ==> ={r} /\ signed_bound_cxq r{1} 0 256 1 ); 1..2:smt().
 + inline {1} 1. inline {2} 1. 
   wp;call (getnoise_1x_equiv_avx).
   sp;conseq/>.
   (* Need to extend the keccak results to this one.
      Jkem1024_avx2.M._shake256_A128__A32_A1
   Jkem.M._shake256_128_33 *)
-  ecall {1} (shake256_128A_A33_ph seed0{1} nonce_s{1}).
+  ecall {1} (shake256_128A_A33_ph seed{1} nonce_s{1}).
   ecall {2} (shake256_33_128 (Array33.init                               
                                    (fun (i : int) =>                        
                                       if i = 32 then nonce0{2} else seed0{2}.[i]))).
   auto => /> &2 r0; rewrite /SHAKE256_33_128 /=.
   have <- := (Array128.to_listK W8.zero r0); rewrite of_listK;1:by rewrite size_to_list.
-  move => ->;congr;congr;congr.
+  move => ->.
+  congr;congr;congr.
   + apply (eq_from_nth witness);1: by rewrite !size_to_list.
     move => k;rewrite !size_to_list /= => ?.
     rewrite initiE 1:/# /= initiE 1:/# /= /#.
@@ -841,7 +840,6 @@ symmetry.
 call getnoiseequiv.
 auto => />.
 qed.
-
 
 import InnerPKE1024.
 
@@ -1011,7 +1009,7 @@ seq 2 2 : (#{/~skpv{1}}{~e{1}}{~skpv{2}}{~e{2}}pre /\
 (* First ip *)
 unroll for {2} ^while.
 seq 6 4: (#{/~pkpv{2}}pre /\ 
-              lift_array256 (subarray256 pkpv{1} 0) = nttunpack (lift_array256 (subarray256 pkpv{2} 0)) /\
+              lift_array256 (MLKEM_avx2_equivs.subarray256 pkpv{1} 0) = nttunpack (lift_array256 (MLKEM_avx2_equivs.subarray256 pkpv{2} 0)) /\
               signed_bound1024_cxq pkpv{1} 0 256 2 /\
               signed_bound1024_cxq pkpv{2} 0 256 2 /\ i{1} = 1).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
@@ -1079,7 +1077,7 @@ move => H23 r3 r4 H24 H25 H26;do split.
 
 (* Second ip *)
 
-seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 1) = nttunpack (lift_array256 (subarray256 pkpv{2} 1)) /\
+seq 5 4: (#{/~i{1}}pre /\ lift_array256 (MLKEM_avx2_equivs.subarray256 pkpv{1} 1) = nttunpack (lift_array256 (MLKEM_avx2_equivs.subarray256 pkpv{2} 1)) /\
               signed_bound1024_cxq pkpv{1} 256 512 2 /\
               signed_bound1024_cxq pkpv{2} 256 512 2 /\ i{1} = 2).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
@@ -1148,7 +1146,7 @@ move => H26 r3 r4 H27 H28 H29;do split.
 
 (* Third ip *)
 
-seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 2) = nttunpack (lift_array256 (subarray256 pkpv{2} 2)) /\
+seq 5 4: (#{/~i{1}}pre /\ lift_array256 (MLKEM_avx2_equivs.subarray256 pkpv{1} 2) = nttunpack (lift_array256 (MLKEM_avx2_equivs.subarray256 pkpv{2} 2)) /\
               signed_bound1024_cxq pkpv{1} 512 768 2 /\
               signed_bound1024_cxq pkpv{2} 512 768 2 /\ i{1} = 3).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
@@ -1240,7 +1238,7 @@ move => H21 H22 H23 H24 H25 r1 r2 H26 H27 H28;do split.
 
 (* Fourth ip *)
 
-seq 5 4: (#{/~i{1}}pre /\ lift_array256 (subarray256 pkpv{1} 3) = nttunpack (lift_array256 (subarray256 pkpv{2} 3)) /\
+seq 5 4: (#{/~i{1}}pre /\ lift_array256 (MLKEM_avx2_equivs.subarray256 pkpv{1} 3) = nttunpack (lift_array256 (MLKEM_avx2_equivs.subarray256 pkpv{2} 3)) /\
               signed_bound1024_cxq pkpv{1} 768 1024 2 /\
               signed_bound1024_cxq pkpv{2} 768 1024 2).
 wp; call frommontequiv; wp; call pointwiseequiv; auto => />.
@@ -1664,7 +1662,7 @@ seq 1 1 : (#{/~sp_0{1}}{~sp_0{2}}pre /\
 
 unroll for {2} ^while.
 seq 4 2 : (#{/~bp{1}}pre /\ 
-              lift_array256 (subarray256 bp{1} 0) = nttunpack (lift_array256 (subarray256 bp{2} 0)) /\
+              lift_array256 (MLKEM_avx2_equivs.subarray256 bp{1} 0) = nttunpack (lift_array256 (MLKEM_avx2_equivs.subarray256 bp{2} 0)) /\
               signed_bound1024_cxq bp{1} 0 256 4 /\
               signed_bound1024_cxq bp{2} 0 256 2 /\ w{1} = 1).
 wp; call pointwiseequiv; auto => />.
@@ -1697,7 +1695,7 @@ move => H15 H16 H17 H18 H19 r1 r2 H20 H21 H22;do split.
 
 (* Second ip *)
 
-seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 1) = nttunpack (lift_array256 (subarray256 bp{2} 1)) /\
+seq 3 2: (#{/~w{1}}pre /\ lift_array256 (MLKEM_avx2_equivs.subarray256 bp{1} 1) = nttunpack (lift_array256 (MLKEM_avx2_equivs.subarray256 bp{2} 1)) /\
               signed_bound1024_cxq bp{1} 256 512 4 /\
               signed_bound1024_cxq bp{2} 256 512 2 /\ w{1} = 2).
 wp; call pointwiseequiv; auto => />.
@@ -1745,7 +1743,7 @@ move => H18 H19 H20 H21 H22 r1 r2 H23 H24 H25;do split.
 
 (* Third ip *)
 
-seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 2) = nttunpack (lift_array256 (subarray256 bp{2} 2)) /\
+seq 3 2: (#{/~w{1}}pre /\ lift_array256 (MLKEM_avx2_equivs.subarray256 bp{1} 2) = nttunpack (lift_array256 (MLKEM_avx2_equivs.subarray256 bp{2} 2)) /\
               signed_bound1024_cxq bp{1} 512 768 4 /\
               signed_bound1024_cxq bp{2} 512 768 2 /\ w{1} = 3).
 wp; call pointwiseequiv; auto => />.
@@ -1809,7 +1807,7 @@ move => H18 H19 H20 H21 H22 r1 r2 H23 H24 H25;do split.
 
 (* Fourth ip *)
 
-seq 3 2: (#{/~w{1}}pre /\ lift_array256 (subarray256 bp{1} 3) = nttunpack (lift_array256 (subarray256 bp{2} 3)) /\
+seq 3 2: (#{/~w{1}}pre /\ lift_array256 (MLKEM_avx2_equivs.subarray256 bp{1} 3) = nttunpack (lift_array256 (MLKEM_avx2_equivs.subarray256 bp{2} 3)) /\
               signed_bound1024_cxq bp{1} 768 1024 4 /\
               signed_bound1024_cxq bp{2} 768 1024 2 ).
 wp; call pointwiseequiv; auto => />.
