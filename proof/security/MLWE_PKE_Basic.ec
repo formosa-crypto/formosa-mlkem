@@ -357,8 +357,8 @@ qed.
 lemma correctness_theorem &m fail_prob :
  islossless A.find =>
    Pr[ CorrectnessBound.main() @ &m : res] <= fail_prob =>
-     Pr[ Correctness_Adv(MLWE_PKE_BASIC,A).main() @ &m : res] <= fail_prob
- by smt(correctness_noise). 
+     Pr[ Correctness_Adv(MLWE_PKE_BASIC,A).main() @ &m : res] <= fail_prob by
+  move => All;  have := correctness_noise &m All => /#.
 
 end section.
 

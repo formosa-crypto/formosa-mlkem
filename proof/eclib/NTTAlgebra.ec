@@ -3406,7 +3406,7 @@ theory NTTequiv.
     + by rewrite expr_ge0.
     + rewrite -(exprSr_range _ _ _ mem_kl_range) //= -intmulz mulr2z.
       by rewrite ler_addl expr_ge0.
-    rewrite ZqRing.addrAC /= ZqRing.subrr ZqRing.add0r (BAdd.eq_big_int _ _ _ (f \o g)).
+    rewrite ZqRing.addrAC /= (* ZqRing.subrr *) ZqRing.add0r (BAdd.eq_big_int _ _ _ (f \o g)).
     + rewrite /f /g => {f g} i /mem_range mem_i_range /=.
       rewrite (IntID.mulrC _ 2) ZqRing.mulrA -ZqRing.exprD.
       - by rewrite unit_zroot_ring.
@@ -3480,7 +3480,7 @@ theory NTTequiv.
     + by rewrite expr_ge0.
     + rewrite -(exprSr_range _ _ _ mem_kl_range) //= -intmulz mulr2z.
       by rewrite ler_addl expr_ge0.
-    rewrite ZqRing.addrAC /= ZqRing.subrr ZqRing.add0r BAdd.sumrN (BAdd.eq_big_int _ _ _ (f \o g)).
+    rewrite ZqRing.addrAC /= (*  ZqRing.subrr *) ZqRing.add0r BAdd.sumrN (BAdd.eq_big_int _ _ _ (f \o g)).
     + rewrite /f /g => {f g} i /mem_range mem_i_range /=.
       rewrite (IntID.mulrC _ 2) ZqRing.mulrA -ZqRing.exprD.
       - by rewrite unit_zroot_ring.

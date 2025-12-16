@@ -126,6 +126,15 @@ realize get_out  by smt(Array56.get_out).
 realize gt0_size by auto.
 
 (* -------------------------------------------------------------------- *)
+bind array Array40."_.[_]" Array40."_.[_<-_]" Array40.to_list Array40.of_list Array40.t 40.
+realize tolistP  by done.
+realize get_setP by smt(Array40.get_setE). 
+realize eqP      by smt(Array40.tP).
+realize get_out  by smt(Array40.get_out).
+realize gt0_size by auto.
+
+
+(* -------------------------------------------------------------------- *)
 bind array Array64."_.[_]" Array64."_.[_<-_]" Array64.to_list Array64.of_list Array64.t 64.
 realize tolistP  by done.
 realize get_setP by smt(Array64.get_setE). 
@@ -416,6 +425,20 @@ op init_array24_w8(f : int -> W8.t) = Array24.init f.
 bind op [W8.t & Array24.t] init_array24_w8 "ainit".
 realize bvainitP by admit.
 
+from JazzEC require import Array32.
+op init_array32_w16(f : int -> W16.t) = Array32.init f.
+bind op [W16.t & Array32.t] init_array32_w16 "ainit".
+realize bvainitP by admit.
+
+from JazzEC require import Array32.
+op init_array48_w8(f : int -> W8.t) = Array48.init f.
+bind op [W8.t & Array48.t] init_array48_w8 "ainit".
+realize bvainitP by admit.
+
 bind op [bool & W16.t] W16.init "init".
+realize size_1 by auto.
+realize bvinitP by admit.
+
+bind op [bool & W32.t] W32.init "init".
 realize size_1 by auto.
 realize bvinitP by admit.
