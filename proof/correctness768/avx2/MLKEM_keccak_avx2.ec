@@ -489,10 +489,7 @@ phoare sha3_512A_A33_ph _in:
  ==> to_list res = SHA3_512 (to_list _in)
  ] = 1%r.
 proof.
-(* ??? Anomaly *)
-admit(*
 by conseq sha3_512A_A33_eq (sha3_512A_A33_ph' _in) => // /#.
-*).
 qed.
 
 
@@ -546,7 +543,6 @@ phoare sha3_512A_A64_ph inp:
                                   else bytes.`2.[k-32])
  ] = 1%r.
 proof.
-admit (* ??? Anomaly 
 conseq sha3_512A_A64_eq (sha3_512A_A64_ph' inp) => /> &m.
  by exists arg{m} => />.
 rewrite -(Array64.of_listK W8.zero (SHA3_512 (to_list inp))).
@@ -564,7 +560,6 @@ case: (i<32) => C.
 rewrite get_of_list 1:/# nth_drop 1..2:/#; congr.
  by congr; congr; apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
 smt().
-*).
 qed.
 
 phoare sha3_512A_512A_A64 m hpk:
@@ -591,7 +586,6 @@ conseq (: arg.`2 = _in
  have ->: in_0{m}.[i] = hpk.[i-32].
   by rewrite E2 initiE 1:/#.
  by rewrite get_of_list 1:// nth_cat size_to_list C /=.
-admit (* ???
 conseq sha3_512A_A64_eq (sha3_512A_A64_ph' _in) => />.
  by move=> &m ?; exists arg{m} => /=.
 move=> &m; rewrite /_in of_listK.
@@ -603,7 +597,6 @@ move=> <-; split.
 rewrite tP => i Hi.
 rewrite get_of_list 1:// nth_drop 1..2:/#.
 by rewrite /to_list initiE 1:// nth_mkseq /#.
-*).
 qed.
 
 (*********************************************************************************)
@@ -665,9 +658,7 @@ phoare sha3_256A_M1184_ph (inp : W8.t Array1184.t):
              Array32.init (fun i => inp.[1152+i]))
  ] = 1%r.
 proof.
-admit (* ???
 by conseq sha3_256A_A1184_eq (sha3_256A_A1184_ph' inp) => /> /#.
-*).
 qed.
 
 (*********************************************************************************)
@@ -742,9 +733,7 @@ phoare shake256_A32_A1120_ph (_in : W8.t Array1120.t):
                 (init (fun (k : int) => _in.[960 + 32 + k]))%Array128)
  ] = 1%r.
 proof.
-admit (*
 by conseq shake256_A32__A1120_eq (shake256_A32__A1120_ph' _in) => /> /#.
-*).
 qed.
 
 (*********************************************************************************)
@@ -796,9 +785,7 @@ phoare shake128_absorb_A32_A2_ph _rho _rc:
      stmatch_avx2 (SHAKE128_ABSORB (to_list _rho ++ to_list _rc)) res
  ] = 1%r.
 proof.
-admit(*
 by conseq shake128_absorb_A32_A2_eq (shake128_absorb_A32_A2_ph' _rho _rc) => /> /#.
-*).
 qed.
 
 (*********************************************************************************)
@@ -882,9 +869,7 @@ phoare shake128_squeeze3blocks_ph _buf _st:
   /\ sub res (2*168) 200 = state2bytes (FIPS202_SHA3_Spec.st_i _st 3)
  ] = 1%r.
 proof.
-admit (*
 by conseq shake128_squeeze3blocks_eq (shake128_squeeze3blocks_ph' _buf _st) => /> /#.
-*).
 qed.
 
 (*********************************************************************************)
@@ -944,9 +929,7 @@ phoare shake128_next_state_ph _buf:
    sub res (2*168) 200 = state2bytes (keccak_f1600_op st)
  ] = 1%r.
 proof.
-admit (*
 by conseq shake128_next_state_eq (shake128_next_state_ph' _buf) => /> /#.
-*).
 qed.
 
 (*********************************************************************************)
@@ -1060,9 +1043,7 @@ phoare shake256x4_A128__A32_A1_ph _seed _nonces :
  /\ res.`4 = Array128.of_list W8.zero (SHAKE256 (to_list _seed ++ [_nonces.[3]]) 128)
  ] = 1%r.
 proof.
-admit (*
 by conseq shake256x4_A128__A32_A1_eq (shake256x4_A128__A32_A1_ph' _seed _nonces) => /> /#.
-*).
 qed.
 
 
@@ -1140,9 +1121,7 @@ phoare shake128x4_absorb_A32_A2_ph _rho _rc:
     )
  ] = 1%r.
 proof.
-admit (*
 by conseq shake128x4_absorb_A32_A2_eq (shake128x4_absorb_A32_A2_ph' _rho _rc) => /> /#.
-*).
 qed.
 
 (*********************************************************************************)
@@ -1314,8 +1293,6 @@ phoare shake128x4_squeeze3blocks_ph _st0 _st1 _st2 _st3:
    /\ sub res.`2 (3*536+2*168) 200 = state2bytes (st_i _st3 3)
  ] = 1%r.
 proof.
-admit(*
 by conseq shake128x4_squeeze3blocks_eq (shake128x4_squeeze3blocks_ph' _st0 _st1 _st2 _st3) => /> /#.
-*).
 qed.
 

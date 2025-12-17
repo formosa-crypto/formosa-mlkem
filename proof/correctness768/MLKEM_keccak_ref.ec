@@ -323,10 +323,7 @@ phoare sha3_512_33_64 seed :
  /\ Array32.init(fun i => res.[32 + i]) = (SHA3_512_33_64 seed).`2
  ] = 1%r.
 proof.
-admit.
-(* ??? this anomaly persists!!! anomaly: File "src/ecCoreFol.ml", line 339, characters 2-8: Assertion failed
 by conseq sha3512_33_eq (sha3512_33_ph' seed) => /> /#.
-*)
 qed.
 
 (****************************************************************************)
@@ -383,8 +380,7 @@ phoare shake_absorb (seed : W8.t Array34.t):
             (seed.[33])
  ] = 1%r.
 proof. 
-(* ??? This anomaly persists: anomaly: File "src/ecCoreFol.ml", line 339, characters 2-8: Assertion failed *)
-by admit. (* conseq shake128_absorb34_eq (shake128_absorb34_ph' seed) => /> /#. *)
+by conseq shake128_absorb34_eq (shake128_absorb34_ph' seed) => /> /#. 
 qed. 
 
 (****************************************************************************)
@@ -430,8 +426,7 @@ phoare shake_squeeze state :
  ==> res = SHAKE128_SQUEEZE_168 state
  ] = 1%r.
 proof.
-(* ??? anomaly persists! *)
- by admit. (*  conseq shake128_squeezeblock_eq (shake128_squeezeblock_ph' state) => /> /#.*)
+by conseq shake128_squeezeblock_eq (shake128_squeezeblock_ph' state) => /> /#.
 qed. 
 
 (****************************************************************************)
@@ -486,14 +481,12 @@ phoare shake256_33_128 seed :
             seed.[32]
  ] = 1%r.
 proof. 
-(* ??? This anomaly persists!!! *)
-by admit. (*  by conseq shake256_128_33_eq (shake256_128_33_ph' seed) => /> /#. *)
+by conseq shake256_128_33_eq (shake256_128_33_ph' seed) => /> /#. 
 qed.
 
 lemma shake256_33_128_ll: islossless M._shake256_128_33.
 proof.
-(* ??? This anomaly persists!!! *)
-by admit. (*  conseq shake256_128_33_eq shake256_128_33_ll => /> /#.*)
+by conseq shake256_128_33_eq shake256_128_33_ll => /> /#.
 qed.
 
 (****************************************************************************)
@@ -555,8 +548,7 @@ phoare pkH_sha in_:
              Array32.init (fun k => in_.[1152+k]))
  ] = 1%r.
 proof.
-(* ??? Anomaly persists *)
-by admit. (* conseq isha3_256_A1184_eq (isha3_256_A1184_ph' in_) => /> /#.*)
+by conseq isha3_256_A1184_eq (isha3_256_A1184_ph' in_) => /> /#.
 qed.
 
 (****************************************************************************)
@@ -622,8 +614,7 @@ phoare j_shake in0_ in1_:
         , Array128.init (fun k => in1_.[960+k]))
  ] = 1%r.
 proof.
-(* ??? Anomaly persists! *)
-by admit. (*by conseq shake256_1120_32_eq (shake256_1120_32_ph' in0_ in1_) => /> /#. *)
+by conseq shake256_1120_32_eq (shake256_1120_32_ph' in0_ in1_) => /> /#. 
 qed.
 
 (****************************************************************************)
@@ -707,6 +698,5 @@ phoare sha_g buf:
                        else bytes.`2.[k-32])
  ] = 1%r.
 proof.
-(* ??? Anomaly persists!!! *)
-by admit. (* by conseq sha3_512_64_eq (sha3_512_64_ph' buf) => /> /#. *)
+by conseq sha3_512_64_eq (sha3_512_64_ph' buf) => /> /#. 
 qed.

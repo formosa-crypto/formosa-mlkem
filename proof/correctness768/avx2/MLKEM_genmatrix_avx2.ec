@@ -739,7 +739,6 @@ phoare sample_last _rho :
    rho = _rho /\ rc = W16.of_int (2*256+2) ==> 
    res.`1 = subarray256 (subarray768 (unlift_matrix (sampleA _rho)) 2) 2 ] = 1%r.
 proof.
-admit (* ??? Anomaly
 conseq parse_one_polynomial_eq (sampleFilter_sem _rho (W8.of_int 2) (W8.of_int 2)).
  move => /> &1 ->.
  by exists (rho{1}, W8.of_int 2, W8.of_int 2).
@@ -747,7 +746,6 @@ move=> /> &1 ->.
 rewrite -unlift_polyu_getm 1..2:/#.
 rewrite /sampleA /=; congr.
 by rewrite getmE getm_setE.
-*).
 qed.
 
 op pack4poly ['a] (ps: 'a Array256.t * 'a Array256.t * 'a Array256.t * 'a Array256.t) =
@@ -997,7 +995,6 @@ lemma sample_four _sd _rc b :
    res.`1 = subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) (_rc %/ 3) ] = 1%r.
 proof.
 move=> Hrc.
-admit (* ??? Anomaly
 conseq sample_four_polynomials_eq  (sample3buf_4x_ph _sd _rc b _).
 + move => &1 /> -> ->.
   exists (rho{1},_rc,b) => /=.
@@ -1005,7 +1002,6 @@ conseq sample_four_polynomials_eq  (sample3buf_4x_ph _sd _rc b _).
 + move=> /> &1 ->.
   by rewrite -pack4poly_subarray1024 /#.
 smt().
-*).
 qed.
 
 phoare _gen_matrix_avx2_sem _sd b :

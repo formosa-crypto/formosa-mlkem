@@ -950,7 +950,6 @@ lemma sample_four _sd _rc b :
    res.`1 = subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) (_rc %/ 4) ] = 1%r.
 proof.
 move=> Hrc.
-admit (* ??? Anomaly:
 conseq sample_four_polynomials_eq  (sample3buf_4x_ph _sd _rc b _).
 + move => &1 /> -> ->.
   exists (rho{1},_rc,b) => /=.
@@ -958,7 +957,6 @@ conseq sample_four_polynomials_eq  (sample3buf_4x_ph _sd _rc b _).
 + move=> /> &1 ->. 
   by rewrite -pack4poly_subarray1024 /#.
 smt().
-*).
 qed.
 
 phoare _gen_matrix_avx2_sem _sd b :

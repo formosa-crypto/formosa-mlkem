@@ -744,10 +744,8 @@ have HH0 : hoare [Jkem768.M._poly_getnoise : true ==> forall k, 0<=k<256 => -5 <
   + by byphoare;2..:smt(); apply polygetnoise_ll.
   smt().
 have HHH : equiv [ Jkem768.M._poly_getnoise ~Jkem768.M._poly_getnoise : ={arg} ==> ={res} ] by sim.
-admit (* ??? Anomaly
 conseq HHH HH0.
 move => *; rewrite /signed_bound_cxq /b16 qE /#.
-*).
 qed.
 
 
