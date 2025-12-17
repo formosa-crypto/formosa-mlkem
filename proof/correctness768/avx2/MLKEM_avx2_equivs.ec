@@ -584,7 +584,7 @@ conseq (: a = _aw /\
    Array768.all (fun bv => W16.zero \sle bv /\ bv \slt (of_int (2 * 3329))) a
    ==> rp = init_960_8 (fun i =>
      W8.init (fun j =>
-       (compress10_circuit _aw.[(i*8+j) %/ 10]).[(i*8+j) %% 10]))); last by admit.   (* FIXME TAKES TOO LONG! by circuit *)
+       (compress10_circuit _aw.[(i*8+j) %/ 10]).[(i*8+j) %% 10]))); last by circuit.
 
       
 (* BDEP pre conseq *)
@@ -898,7 +898,7 @@ conseq (: _ ==> r = nttunpackv_16 (init_768_16 (fun i =>
          let bidx = idx %% 8 in
          _aw.[aidx].[bidx]
        )
-     )))); last by  admit. (* FIXME: TAKES TOO LONG circuit. *)
+     )))); last by  circuit.
      
 move => &hr <- rr ->.
 rewrite nttunpackv_16E;split.
@@ -1680,7 +1680,7 @@ conseq (:
       let idx = i*8 + j in
       let aidx = idx %/ 12 in
       let bidx = idx %% 12 in
-      W12."_.[_]" (ret.[aidx]) bidx))); last by admit. (* FIXME: takes too long *)
+      W12."_.[_]" (ret.[aidx]) bidx))); last by circuit.
       
 + move => &hr />; rewrite allP /= /pos_bound768_cxq /(\sle) /(\slt) /= /qE /smod /=.
   by rewrite qE /= => H k ?; move : (H k _) => //=.

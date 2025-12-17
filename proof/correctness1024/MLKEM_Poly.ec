@@ -736,13 +736,12 @@ conseq (: a = _aw /\ Array256.all (fun c => c \ult W16.of_int (2*3329)) a ==> _)
 conseq (: _
  ==>
  rp =
- let ret = init_256_12 (fun j => tobytes_circuit _aw.[j]) in
   init_384_8 (fun i =>
     W8.init (fun j =>
       let idx = i*8 + j in
       let aidx = idx %/ 12 in
       let bidx = idx %% 12 in
-      W12."_.[_]" (ret.[aidx]) bidx))); 2: by circuit.
+      W12."_.[_]" ((init_256_12 (fun j => tobytes_circuit _aw.[j])).[aidx]) bidx))); 2: by circuit.
        
 (* BDEP post conseq *)
 

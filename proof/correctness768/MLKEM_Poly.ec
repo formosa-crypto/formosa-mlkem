@@ -733,17 +733,16 @@ conseq (: a = _aw /\ Array256.all (fun c => c \ult W16.of_int (2*3329)) a ==> _)
 + move => &hr />; rewrite allP /= /pos_bound256_cxq /(\ult) /= /qE.
   rewrite qE /= => H k ?; move : (H k _) => //=.
   by smt(W16.to_sint_unsigned).
-  (* FIXME : WHY DO I NEED TO DO THIS? *)
+  (* FIXME: WHY DO I NEED TO DO THIS? *)
 conseq (: _
  ==>
  rp =
- let ret = init_256_12 (fun j => tobytes_circuit _aw.[j]) in
   init_384_8 (fun i =>
     W8.init (fun j =>
       let idx = i*8 + j in
       let aidx = idx %/ 12 in
       let bidx = idx %% 12 in
-      W12."_.[_]" (ret.[aidx]) bidx))); 2: by circuit.
+      W12."_.[_]" ((init_256_12 (fun j => tobytes_circuit _aw.[j])).[aidx]) bidx))); last  by circuit.
        
 (* BDEP post conseq *)
 

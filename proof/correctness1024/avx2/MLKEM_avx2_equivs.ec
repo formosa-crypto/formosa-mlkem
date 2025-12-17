@@ -210,7 +210,7 @@ wp -3.
 conseq (: rp = init_1568_8 (fun i => if i < 1408 then _aw.[i] else rp.[i])
         ==>
    r = init_1024_16 (fun i =>
-     decompress11_circuit (W11.init (fun (j : int) => _aw.[(i*11 + j) %/ 8].[(i*11 + j) %% 8]))));last by admit. (* FIXME: TAKES TOO LONG circuit. *)
+     decompress11_circuit (W11.init (fun (j : int) => _aw.[(i*11 + j) %/ 8].[(i*11 + j) %% 8]))));last by circuit.
      
 (* We start with some boilerplate *)
 move => &hr /=;rewrite !tP  => H i ib.
@@ -612,8 +612,7 @@ conseq (: a = _aw /\
    let out = init_1024_11 (fun i => compress11_circuit _aw.[i]) in
    init_1408_8 (fun i =>
      W8.init (fun j =>
-       (out.[(i*8+j) %/ 11]).[(i*8+j) %% 11]))); last by admit. (* circuit. *)
-       (* FIXME TAKES TOO LONG! by circuit *)
+       (out.[(i*8+j) %/ 11]).[(i*8+j) %% 11]))); last by circuit.
 
       
 (* BDEP pre conseq *)
@@ -1716,7 +1715,7 @@ conseq (:
       let idx = i*8 + j in
       let aidx = idx %/ 12 in
       let bidx = idx %% 12 in
-      W12."_.[_]" (ret.[aidx]) bidx))); last by admit. (* FIXME: takes too long *)
+      W12."_.[_]" (ret.[aidx]) bidx))); last by circuit.
       
 + move => &hr />; rewrite allP /= /pos_bound1024_cxq /(\sle) /(\slt) /= /qE /smod /=.
   by rewrite qE /= => H k ?; move : (H k _) => //=.
