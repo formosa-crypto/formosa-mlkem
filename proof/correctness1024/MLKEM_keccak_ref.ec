@@ -546,7 +546,7 @@ phoare pkH_sha in_:
              Array32.init (fun k => in_.[1536+k]))
  ] = 1%r.
 proof.
-by conseq isha3_256_A1184_eq (isha3_256_A1184_ph' in_) => /> /#.
+by conseq isha3_256_A1568_eq (isha3_256_A1568_ph' in_) => /> /#.
 qed.
 
 (****************************************************************************)
@@ -613,7 +613,7 @@ phoare j_shake in0_ in1_:
         , Array160.init (fun k => in1_.[1408+k]))
  ] = 1%r.
 proof.
-by conseq shake256_1120_32_eq (shake256_1120_32_ph' in0_ in1_) => /> /#. 
+by conseq shake256_1600_32_eq (shake256_1600_32_ph' in0_ in1_) => /> /#. 
 qed.
 
 (****************************************************************************)
