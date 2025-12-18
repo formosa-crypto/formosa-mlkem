@@ -566,13 +566,6 @@ proc. cfold 11. unroll for ^while; wp => /=.
 inline *;unroll for ^while; do 4!(unroll for ^while);auto.
 qed.
 
-op init_1024_11 (f: int -> W11.t) : W11.t Array1024.t = Array1024.init f.
-
-bind op [W11.t & Array1024.t] init_1024_11 "ainit".
-realize bvainitP.
-proof.
-admit.
-qed.
 
 
 

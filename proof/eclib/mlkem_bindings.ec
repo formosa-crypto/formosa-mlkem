@@ -93,7 +93,7 @@ qed.
 print (`>>`).
 
 bind op [W8.t & W8.t] W8.(`>>`) "shrs".
-realize bvshrsP by admit.
+realize bvshrsP by move => bv1 bv2; rewrite /(`>>`) to_uint_shr; 1:smt(W8.to_uint_cmp).
 
 op srl_8 (w1 w2 : W8.t) : W8.t =
   w1 `>>>` W8.to_uint w2.
@@ -147,13 +147,24 @@ realize gt0_size by done.
 bind op [W10.t & bool] W10."_.[_]" "get".
 realize le_size by auto.
 realize eq1_size by auto.
-realize bvgetP by admit.
+realize bvgetP by auto.
 
 bind op [bool & W10.t] W10.init "init".
 realize size_1 by auto.
-realize bvinitP by admit.
+realize bvinitP.
+move => f.  apply (eq_from_nth false).
++ rewrite size_w2bits (size_flatten' 1). 
+  move => x; rewrite mkseqP /= => Hx;elim Hx.
+  rewrite /bool2bits => /#.
+  rewrite size_mkseq /#.
 
-
+move => i; rewrite size_w2bits => ?.
+rewrite get_w2bits (nth_flatten false 1).
++ rewrite allP.
+  move => x; rewrite mkseqP /= => Hx;elim Hx.
+  rewrite /bool2bits => /#.
+by rewrite nth_mkseq 1:/# /= /bool2bits initiE 1:/# /=. 
+qed.
 
 (* ----------- BEGIN W10 BINDINGS -----------*)
 
@@ -188,11 +199,24 @@ realize gt0_size by done.
 bind op [W11.t & bool] W11."_.[_]" "get".
 realize le_size by auto.
 realize eq1_size by auto.
-realize bvgetP by admit.
+realize bvgetP by auto.
 
 bind op [bool & W11.t] W11.init "init".
 realize size_1 by auto.
-realize bvinitP by admit.
+realize bvinitP.
+move => f.  apply (eq_from_nth false).
++ rewrite size_w2bits (size_flatten' 1). 
+  move => x; rewrite mkseqP /= => Hx;elim Hx.
+  rewrite /bool2bits => /#.
+  rewrite size_mkseq /#.
+
+move => i; rewrite size_w2bits => ?.
+rewrite get_w2bits (nth_flatten false 1).
++ rewrite allP.
+  move => x; rewrite mkseqP /= => Hx;elim Hx.
+  rewrite /bool2bits => /#.
+by rewrite nth_mkseq 1:/# /= /bool2bits initiE 1:/# /=. 
+qed.
 
 (* ----------- BEGIN W12 BINDINGS -----------*)
 
@@ -229,12 +253,25 @@ realize gt0_size by done.
 bind op [W12.t & bool] W12."_.[_]" "get".
 realize le_size by auto.
 realize eq1_size by auto.
-realize bvgetP by admit.
+realize bvgetP by auto.
 
 
 bind op [bool & W12.t] W12.init "init".
 realize size_1 by auto.
-realize bvinitP by admit.
+realize bvinitP.
+move => f.  apply (eq_from_nth false).
++ rewrite size_w2bits (size_flatten' 1). 
+  move => x; rewrite mkseqP /= => Hx;elim Hx.
+  rewrite /bool2bits => /#.
+  rewrite size_mkseq /#.
+
+move => i; rewrite size_w2bits => ?.
+rewrite get_w2bits (nth_flatten false 1).
++ rewrite allP.
+  move => x; rewrite mkseqP /= => Hx;elim Hx.
+  rewrite /bool2bits => /#.
+by rewrite nth_mkseq 1:/# /= /bool2bits initiE 1:/# /=.
+qed.
 
 (* ----------- BEGIN W16 BINDINGS ---------- *)
 
@@ -270,7 +307,7 @@ bind op [bool & W16.t] W16.\slt "slt".
 realize bvsltP by move=> w1 w2; rewrite W16.sltE /#.
 
 bind op [bool & W16.t] W16.\sle "sle".
-realize bvsleP by admit.
+realize bvsleP by  move=> w1 w2; rewrite W16.sleE /#. 
 
 bind op W16.t W16.andw "and".
 realize bvandP. 
@@ -383,6 +420,25 @@ have /= := W12.to_uint_cmp.
 by smt().
 qed.
 realize le_size by done.
+
+bind op [bool & W16.t] W16.init "init".
+realize size_1 by auto.
+realize bvinitP.
+move => f.  apply (eq_from_nth false).
++ rewrite size_w2bits (size_flatten' 1). 
+  move => x; rewrite mkseqP /= => Hx;elim Hx.
+  rewrite /bool2bits => /#.
+  rewrite size_mkseq /#.
+
+move => i; rewrite size_w2bits => ?.
+rewrite get_w2bits (nth_flatten false 1).
++ rewrite allP.
+  move => x; rewrite mkseqP /= => Hx;elim Hx.
+  rewrite /bool2bits => /#.
+by rewrite nth_mkseq 1:/# /= /bool2bits initiE 1:/# /=. 
+qed.
+
+
 
 
 (* ----------- BEGIN W32 BINDINGS ---------- *)
@@ -605,6 +661,25 @@ bind op [W32.t & bool] W32."_.[_]" "get".
 realize bvgetP by rewrite /bool2bits.
 realize le_size by done.
 realize eq1_size by done.
+
+bind op [bool & W32.t] W32.init "init".
+realize size_1 by auto.
+realize bvinitP.
+move => f.  apply (eq_from_nth false).
++ rewrite size_w2bits (size_flatten' 1). 
+  move => x; rewrite mkseqP /= => Hx;elim Hx.
+  rewrite /bool2bits => /#.
+  rewrite size_mkseq /#.
+
+move => i; rewrite size_w2bits => ?.
+rewrite get_w2bits (nth_flatten false 1).
++ rewrite allP.
+  move => x; rewrite mkseqP /= => Hx;elim Hx.
+  rewrite /bool2bits => /#.
+by rewrite nth_mkseq 1:/# /= /bool2bits initiE 1:/# /=. 
+qed.
+
+
 
 (* ----------- BEGIN W64 BINDINGS ---------- *)
 
@@ -973,6 +1048,7 @@ by have -> : (2 ^ (128 - i) * 2 ^ i) = 340282366920938463463374607431768211456;
 qed.
 realize le_size by done.
 
+
 (* ----------- BEGIN ARRAY BINDINGS ---------- *)
 
 bind array Array256."_.[_]" Array256."_.[_<-_]" Array256.to_list Array256.of_list Array256.t 256.
@@ -1150,6 +1226,43 @@ realize eqP by smt(Array25.tP).
 realize get_out by smt(Array25.get_out).
 realize gt0_size by done.
 
+op init_array16_w16(f : int -> W16.t) = Array16.init f.
+bind op [W16.t & Array16.t] init_array16_w16 "ainit".
+realize bvainitP.
+proof.
+rewrite /init_array16_w16 => f.
+rewrite BVA_Top_Array16_Array16_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array16.initE).
+qed.
+
+op init_array24_w8(f : int -> W8.t) = Array24.init f.
+bind op [W8.t & Array24.t] init_array24_w8 "ainit".
+realize bvainitP.
+rewrite /init_array26_w8 => f.
+rewrite BVA_Top_Array24_Array24_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array24.initE).
+qed.
+
+op init_array32_w16(f : int -> W16.t) = Array32.init f.
+bind op [W16.t & Array32.t] init_array32_w16 "ainit".
+realize bvainitP.
+rewrite /init_array32_w16 => f.
+rewrite BVA_Top_Array32_Array32_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array32.initE).
+qed.
+
+op init_array48_w8(f : int -> W8.t) = Array48.init f.
+bind op [W8.t & Array48.t] init_array48_w8 "ainit".
+realize bvainitP.
+rewrite /init_array48_w8 => f.
+rewrite BVA_Top_Array48_Array48_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array48.initE).
+qed.
+
 op init_32_8 (f: int -> W8.t) : W8.t Array32.t = Array32.init f.
 
 bind op [W8.t & Array32.t] init_32_8 "ainit".
@@ -1163,15 +1276,21 @@ qed.
 
 op init_1088_8(f : int -> W8.t) = Array1088.init f.
 bind op [W8.t & Array1088.t] init_1088_8 "ainit".
-realize bvainitP by admit.
+realize bvainitP.
+rewrite /init_1088_8 => f.
+rewrite BVA_Top_Array1088_Array1088_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array1088.initE).
+qed.
 
 op init_768_10(f : int -> W10.t) = Array768.init f.
 bind op [W10.t & Array768.t] init_768_10 "ainit".
-realize bvainitP by admit.
-
-op init_1024_11(f : int -> W11.t) = Array1024.init f.
-bind op [W11.t & Array1024.t] init_1024_11 "ainit".
-realize bvainitP by admit.
+realize bvainitP.
+rewrite /init_768_10 => f.
+rewrite BVA_Top_Array768_Array768_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array768.initE).
+qed.
 
 op init_1568_8 (f: int -> W8.t) : W8.t Array1568.t = Array1568.init f.
 
@@ -1388,20 +1507,45 @@ op init_256_12 (f: int -> W12.t) : W12.t Array256.t =
   Array256.init f.
 
 bind op [W12.t & Array256.t] init_256_12 "ainit".
-realize bvainitP by admit.
+realize bvainitP.
+rewrite /init_256_12 => f.
+rewrite BVA_Top_Array256_Array256_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array256.initE).
+qed.
 
 op init_1024_12 (f: int -> W12.t) : W12.t Array1024.t = 
   Array1024.init f.
 
 bind op [W12.t & Array1024.t] init_1024_12 "ainit".
-realize bvainitP by admit.
+realize bvainitP.
+rewrite /init_1024_12 => f.
+rewrite BVA_Top_Array1024_Array1024_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array1024.initE).
+qed.
+
 
 op init_768_12 (f: int -> W12.t) : W12.t Array768.t = 
   Array768.init f.
 
 bind op [W12.t & Array768.t] init_768_12 "ainit".
-realize bvainitP by admit.
+realize bvainitP.
+rewrite /init_768_12 => f.
+rewrite BVA_Top_Array768_Array768_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array768.initE).
+qed.
 
+op init_1024_11 (f: int -> W11.t) : W11.t Array1024.t = Array1024.init f.
+
+bind op [W11.t & Array1024.t] init_1024_11 "ainit".
+realize bvainitP.
+rewrite /init_1024_11 => f.
+rewrite BVA_Top_Array1024_Array1024_t.tolistP.
+apply eq_in_mkseq => i i_bnd;
+smt(Array1024.initE).
+qed.
 
 op sliceget8_32_256 (arr: W32.t Array8.t) (offset: int) : W256.t = 
    if 8 %| offset then 
@@ -1583,6 +1727,8 @@ rewrite (nth_map W8.zero []); 1: smt(Array128.size_to_list).
 rewrite nth_mkseq /#.
 qed.
 realize le_size by done.
+
+
 
 op sliceget1568_8_256 (arr: W8.t Array1568.t) (offset: int) : W256.t = 
    if 8 %| offset then 
@@ -2155,15 +2301,17 @@ bind circuit
     VPSLLV_8u32 <- "VPSLLV_8u32",
     VPSHUFB_256 <- "VPSHUFB_256",
     VEXTRACTI128 <- "VEXTRACTI128",
+    VINSERTI128    <-   "VPINSERTI128",
     VPBLENDW_128 <- "VPBLENDW_128",
     BLENDV_16u8 <- "VPBLENDVB_128",
     VPEXTR_32 <- "VEXTRACTI32_256",
-    W4u32.VPEXTR_32 <- "VEXTRACTI32_128",
+    W4u32.VPEXTR_32 <- "VEXTRACTI32_128", (* FIXME: WHY ARE WE USING THIS BINDING? *)
     VPMULH_16u16 <- "VPMULH_16u16",
     VPMULHRS_16u16 <- "VPMULHRS_16u16",
     VPMULL_16u16 <- "VPMULL_16u16",
     VPSUB_16u16 <- "VPSUB_16u16",
     VPADD_16u16 <- "VPADD_16u16",
+    VPADD_32u8     <-   "VPADD_32u8",
 
     VPSHUFD_256 <- "VPSHUFD_256",
     VPERMQ <- "VPERMQ",
@@ -2192,6 +2340,13 @@ bind circuit
     VMOVSLDUP_256 <- "VMOVSLDUP_256",
     VPBLENDW_256 <- "VPBLENDW_256",
     VPACKSS_16u16 <- "VPACKSS_16u16",
-    MOVEMASK_32u8 <- "VPMOVMSKB_u256u32" from "/usr/local/lib/easycrypt/config/avx2.spec".
+    MOVEMASK_32u8 <- "VPMOVMSKB_u256u32",
+
+    VPUNPCKL_32u8  <-   "VPUNPCKL_32u8",
+    VPSHUFB_128    <-   "VPSHUFB_128",
+    VPCMPGT_16u16  <-   "VPCMPGT_16u16",
+    VPACKSS_16u16  <-   "VPACKSS_16u16"
+
+    from "/usr/local/lib/easycrypt/config/avx2.spec".
 
 

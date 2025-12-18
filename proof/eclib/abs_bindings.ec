@@ -107,7 +107,18 @@ realize bvgetP by done.
 (* -------------------------------------------------------------------- *)
 bind op [bool & W8.t] W8.init "init".
 realize size_1 by auto.
-realize bvinitP by admit.
+realize bvinitP.
+move=> f; apply (eq_from_nth false).
+ rewrite (size_flatten' 1).
+  move=> x /mkseqP [y [Hy ->]] /=.
+  exact BVA_Top_Pervasive_bool.size_tolist.
+  rewrite size_w2bits size_mkseq; smt(W8.gt0_size).
+rewrite size_w2bits => i Hi.
+rewrite get_w2bits (BitEncoding.BitChunking.nth_flatten false 1 _).
+ apply/List.allP => x /mkseqP [y [Hy ->]] /=.
+ exact BVA_Top_Pervasive_bool.size_tolist.
+by rewrite (:i %% 1 = 0) 1:/# nth_mkseq 1:/# /bool2bits initiE /=.
+qed.
 
 (* -------------------------------------------------------------------- *)
 bind op W8.t W8.andw "and".
@@ -363,57 +374,49 @@ lemma W_min_sintE:
  W.of_int W.min_sint
  = W.zero.[JCircuits.size-1 <- true].
 proof.
-rewrite to_uint_eq of_uintK /= to_uint_bits.
-rewrite /bits /mkseq -iotaredE /=.
+rewrite to_uint_eq of_uintK /= to_uint_bits /bits /mkseq -iotaredE /=.
 have:= bs2int_pow2 (JCircuits.size-1) 0.
-rewrite nseq0 /max -mkseq_nseq /mkseq -iotaredE /=. 
-rewrite bs2int_cat size_map /iotared size_iota.
-have -> : bs2int [true] = 1.
-have -> : [true] = (true :: nseq 0 false) by smt(nseq0_le).
-rewrite bs2int1 => //=.
-have -> :(map (fun (_ : int) => false) (iota_ 0 (JCircuits.size - 1))) = nseq (JCircuits.size - 1) false.
-rewrite map_nseq size_iota. smt(W.gt0_size).
++ rewrite nseq0 /max -mkseq_nseq /mkseq -iotaredE /=. 
+  rewrite bs2int_cat size_map /iotared size_iota.
+  have -> : bs2int [true] = 1.
+  have -> : [true] = (true :: nseq 0 false) by smt(nseq0_le).
+  by rewrite bs2int1 => //=.
+
+have -> :(map (fun (_ : int) => false) (iota_ 0 (JCircuits.size - 1))) = nseq (JCircuits.size - 1) false by rewrite map_nseq size_iota; smt(W.gt0_size).
+
 rewrite bs2int_nseq_false => //= />.
 have -> : max 0 (JCircuits.size - 1) = (JCircuits.size - 1) by smt(W.gt0_size).
 move => st.
-have -> : W.min_sint %% W.modulus = 2 ^ (JCircuits.size - 1).
-rewrite -(emodz_eq W.modulus 1 _).
-smt(mem_range_mod W.gt0_size gt0_pow2 to_uint_cmp).
-have -> : (1 * W.modulus + W.min_sint %% W.modulus) %% W.modulus = 
-(1 * W.modulus + W.min_sint) %% W.modulus by smt(@IntDiv).
-have -> : (1 * W.modulus + W.min_sint) = 2 ^ (JCircuits.size - 1).
-have -> : W.modulus = 2 * 2 ^ (JCircuits.size - 1).
-rewrite -exprS; smt(W.gt0_size).
-smt(@IntDiv W.gt0_size to_uint_cmp gt0_pow2 exprS).
-rewrite modz_small.
-apply bound_abs.
 
-split.
-smt(gt0_pow2).
-move => a.
-admit. 
-trivial.
+have -> : W.min_sint %% W.modulus = 2 ^ (JCircuits.size - 1).
++ rewrite -(emodz_eq W.modulus 1 _).
+  + by smt(mem_range_mod W.gt0_size gt0_pow2 to_uint_cmp).
+  have -> : (1 * W.modulus + W.min_sint %% W.modulus) %% W.modulus = 
+     (1 * W.modulus + W.min_sint) %% W.modulus by smt(@IntDiv).
+  + have -> : (1 * W.modulus + W.min_sint) = 2 ^ (JCircuits.size - 1).
+    + have -> : W.modulus = 2 * 2 ^ (JCircuits.size - 1) by rewrite -exprS; smt(W.gt0_size).
+      by smt(@IntDiv W.gt0_size to_uint_cmp gt0_pow2 exprS).
+  rewrite modz_small.
+  + apply bound_abs;split; 1: by smt(gt0_pow2).
+    move => a.
+    rewrite st; case (0 < JCircuits.size - 1) => ?; smt(@StdOrder.IntOrder @Ring.IntID).
+  by smt().
+
 have -> : (map ("_.[_]" W.zero.[JCircuits.size - 1 <- true]) (iota_ 0 JCircuits.size)) = nseq (JCircuits.size - 1) false ++ [true].
-rewrite iotaE. smt(W.gt0_size).
-rewrite map_cat map1.
-rewrite get_setE. smt(W.gt0_size).
-simplify.
-apply eqseq_cat.
-rewrite size_map size_nseq size_iota //=.
-simplify.
-have -> : (JCircuits.size - 1) = size (iota_ 0 (JCircuits.size - 1)) by smt(size_iota W.gt0_size).
-rewrite -(map_nseq false (iota_ 0 (JCircuits.size - 1))).
-rewrite size_iota.
-have -> : (max 0 (JCircuits.size - 1)) = JCircuits.size - 1 by smt(W.gt0_size).
-apply eq_in_map.
-move => x bnd.
-rewrite set_neqiE.
-smt(mem_iota).
-smt().
++ rewrite iotaE; 1: smt(W.gt0_size).
+  rewrite map_cat map1 get_setE /=;1: smt(W.gt0_size).
+  apply eqseq_cat => /=; 1: by rewrite size_map size_nseq size_iota //=.
+  have -> : (JCircuits.size - 1) = size (iota_ 0 (JCircuits.size - 1)) by smt(size_iota W.gt0_size).
+  rewrite -(map_nseq false (iota_ 0 (JCircuits.size - 1))) size_iota.
+  have -> : (max 0 (JCircuits.size - 1)) = JCircuits.size - 1 by smt(W.gt0_size).
+  apply eq_in_map => x bnd.
+  by rewrite set_neqiE; smt(mem_iota).
+
 have -> : nseq (JCircuits.size - 1) false ++ [true] = (nseq (JCircuits.size - 1) false ++ (true :: nseq 0 false)).
-apply eqseq_cat; trivial. rewrite nseq0 //=.
-rewrite bs2int_pow2.
-smt(W.gt0_size).
++ apply eqseq_cat=> //.
+  by rewrite nseq0 //=.
+  
+by rewrite bs2int_pow2;smt(W.gt0_size).
 qed.
 
 lemma W_msb_sar (w: W.t) k:

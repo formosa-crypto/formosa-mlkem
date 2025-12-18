@@ -743,9 +743,6 @@ lemma map_pmap_comp ['a 'b 'c] (f : 'a -> 'b option) (g : 'b -> 'c) s :
 proof. by elim: s => [//|x s ih] @/(\o) /=; case: (f _). qed.
 
 
-bind op [W16.t & W128.t & Array16.t] sliceset_16_128_16 "asliceset".
-realize le_size by auto.
-realize bvaslicesetP by admit.
 
 (* -------------------------------------------------------------------- *)
 lemma filter24P _buf : hoare[Filters.filter24 : buf = _buf ==>
@@ -795,6 +792,7 @@ proc rewrite ^t0_1<-{2} popcount_64E.
 cfold ^t0_1<-; swap ^shuffle_0_1<- @^shuffle_0<- & +1.
 
   (* FIXME! ADD TACTIC THAT USES NEW CIRCUIT TACTIC TO SOLVE THIS  *)
+ 
 proc change  (* [
   (shf0_0_16 shf0_1_16 : W128.t)
   (f0_0 f0_1 : W128.t)

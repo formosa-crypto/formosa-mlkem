@@ -391,6 +391,7 @@ proof.
 by rewrite /shift64R /shiftr64 zextend_8_64P /(`>>`).
 qed.
 
+
 (* -------------------------------------------------------------------- *)
 op VPINC_8u8 : W64.t -> W64.t.
 
@@ -400,45 +401,8 @@ op VPUNPCKL_16u8 : W64.t -> W64.t -> W128.t.
 
 (* -------------------------------------------------------------------- *)
 bind circuit
- VPSRL_16u16    <-   "VPSRL_16u16",
- VPBLENDW_256   <-   "VPBLEND_16u16",
- VPSHUFB_256    <-   "VPSHUFB_256",
- VINSERTI128    <-   "VPINSERTI128",
- VEXTRACTI128   <-   "VPEXTRACTI128",
- VPERMQ         <-   "VPERMQ",
- VPADD_32u8     <-   "VPADD_32u8",
- VPUNPCKL_32u8  <-   "VPUNPCKL_32u8",
- VPSHUFB_128    <-   "VPSHUFB_128",
- VPCMPGT_16u16  <-   "VPCMPGT_16u16",
- VPACKSS_16u16  <-   "VPACKSS_16u16",
  VPUNPCKL_16u8  <- "VPUNPCKL_16u8",
  VPINC_8u8      <- "VPINC_8u8" 
   from "/usr/local/lib/easycrypt/config/avx2.spec".
 
-from JazzEC require import Array16.
-op init_array16_w16(f : int -> W16.t) = Array16.init f.
-bind op [W16.t & Array16.t] init_array16_w16 "ainit".
-realize bvainitP by admit.
 
-from JazzEC require import Array24.
-op init_array24_w8(f : int -> W8.t) = Array24.init f.
-bind op [W8.t & Array24.t] init_array24_w8 "ainit".
-realize bvainitP by admit.
-
-from JazzEC require import Array32.
-op init_array32_w16(f : int -> W16.t) = Array32.init f.
-bind op [W16.t & Array32.t] init_array32_w16 "ainit".
-realize bvainitP by admit.
-
-from JazzEC require import Array32.
-op init_array48_w8(f : int -> W8.t) = Array48.init f.
-bind op [W8.t & Array48.t] init_array48_w8 "ainit".
-realize bvainitP by admit.
-
-bind op [bool & W16.t] W16.init "init".
-realize size_1 by auto.
-realize bvinitP by admit.
-
-bind op [bool & W32.t] W32.init "init".
-realize size_1 by auto.
-realize bvinitP by admit.
