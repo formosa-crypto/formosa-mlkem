@@ -31,7 +31,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            type: [ 'safety' ]
+            type: [ 'safety' , 'correctness' ]
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
         steps:
@@ -64,7 +64,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            type: ['safety']
+            type: ['safety', 'correctness']
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
         steps:
@@ -88,10 +88,6 @@ jobs:
            mkdir -p ${HTML_REPORT_DIR}
            TSTATS_DIR=".tstats"
            mkdir -p ${TSTATS_DIR}
-           ARTIFACT_NAME="easycrypt-heatmap-reports"
-           echo "## Report Execution Time EasyCrypt" >> "$GITHUB_STEP_SUMMARY"
-           echo '| **File** | **Report** |' >> "$GITHUB_STEP_SUMMARY"
-           echo '| :--- | :---: |' >> "$GITHUB_STEP_SUMMARY"
            for EC_FILE in ${TARGET_DIR}/*.ec; do
               if [ -e "$EC_FILE" ]; then
                 TSTATS_FILE="${TSTATS_DIR}/$(basename "${EC_FILE%.ec}.tstats")"
@@ -99,7 +95,6 @@ jobs:
                 HTML_REPORT_PATH="${HTML_REPORT_DIR}/${FILENAME_BASE}.html"
                 nix-shell --run "easycrypt -tstats ${TSTATS_FILE} ${EC_FILE}"
                 python scripts/generate_heatmap.py ${EC_FILE} ${TSTATS_FILE} > ${HTML_REPORT_PATH}                
-                echo "| ${EC_FILE} | [${HTML_REPORT_PATH}](#user-content-artifact-${ARTIFACT_NAME}) |" >> "$GITHUB_STEP_SUMMARY"
               fi
            done
         - name: Upload Heatmap Artifacts

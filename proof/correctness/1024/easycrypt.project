@@ -8,6 +8,7 @@ provers = Z3@4.8
 rdirs = .
 rdirs = ../eclib
 rdirs = Jasmin:../../jasmin/eclib
+idirs = Keccak:../../formosa-keccak/proof/amd64/common
 idirs = Keccak:../../formosa-keccak/proof/amd64/ref
 idirs = Keccak:../../formosa-keccak/proof/amd64/avx2
 idirs = JazzEC:../../formosa-keccak/proof/amd64/extracted

@@ -844,11 +844,11 @@ transitivity ParseFilter.sample3buf_x4
   by exists (rho{2},pos{2},t{2}) => /#.
 + by move => />.
 proc; simplify.
-seq 12 27: ( buf_ok (buf4x_buf buf{1} 0) buf0{2} st0{2}
+seq 11 27: ( buf_ok (buf4x_buf buf{1} 0) buf0{2} st0{2}
           /\ buf_ok (buf4x_buf buf{1} 1) buf1{2} st1{2}
           /\ buf_ok (buf4x_buf buf{1} 2) buf2{2} st2{2}
           /\ buf_ok (buf4x_buf buf{1} 3) buf3{2} st3{2} ).
- seq 9 7: ( match_state4x st0{2} st1{2} st2{2} st3{2} stx4{1} ).
+ seq 9 7: ( st4x_match stx4{1} (st0{2},st1{2},st2{2},st3{2})).
   wp; ecall {1} (shake128x4_absorb_A32_A2_ph rho{1} indexes{1}) => /=.
   wp; ecall {1} (gen_matrix_get_indexes_ph pos{2} t{2}) => /=.
   auto => &1 &2 [# -> Epos Ht Hpos]; split; first smt().

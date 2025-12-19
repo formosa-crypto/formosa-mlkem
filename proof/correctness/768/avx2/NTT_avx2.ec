@@ -675,7 +675,7 @@ phoare poly_basemul_avx2_ph _a _b:
     (lift_array256 res)
     = nttunpack (scale (basemul (_a) (_b)) (incoeff 169))
     /\ signed_bound_cxq res 0 256 1 ] = 1%r.
-proof. 
+proof.
 conseq poly_basemul_avx2_eq (__basemul_ph (nttunpack _a) (nttunpack _b)) => //.
  move => /> &1 *.
  by exists ((lift_array256 rp{1}), (lift_array256 ap{1}), (lift_array256 bp{1})) => //=.
