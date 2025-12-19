@@ -58,7 +58,7 @@ let
         --replace-warn '(name easycrypt)' '(name easycrypt)(version ${ecVersion})'
     '';
     buildInputs = o.buildInputs ++ (with oc; [
-      bitwuzla hex iter progress ppx_deriving_yojson pcre2 
+      bitwuzla hex iter progress ppx_deriving_yojson pcre2 tyxml
     ]);
   })).override {
     ocamlPackages = oc;
