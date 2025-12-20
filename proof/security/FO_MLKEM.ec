@@ -457,15 +457,12 @@ call(: ={glob CCA} /\ B1x2._pk{1} = CCA.sk{2}.`1.`1 /\
   + rcondf{1} 8; 1: by auto.
     rcondt{1} 8; 1: by auto.
     auto => /> &1 &2 *. 
-    split; first smt(get_setE). 
-    move=> *; split; first smt(get_setE). 
-    move=> *; split; first smt(get_setE). 
-    by move=> *; smt(get_setE).
+    split; smt(mem_set get_setE).
   rcondt{1} 8; 1: by auto.
   inline *.
   rcondf{1} 10; 1: by auto;smt(mem_set).
   swap {1} 9 -8; seq 1 0 : #pre; 1: by auto.
-  sp 0 1;seq 7 1: (#pre /\ (oget m'{2},pkh sk{2}.`1.`1)  \in RO.RO.m{2}); 1: by auto;smt(get_setE).
+  sp 0 1;seq 7 1: (#pre /\ (oget m'{2},pkh sk{2}.`1.`1)  \in RO.RO.m{2}); 1: by auto;smt(mem_set get_setE).
   by sp;if{1};auto => /> /#.
 
 + proc; inline {1} 1;sp.
@@ -481,10 +478,10 @@ call(: ={glob CCA} /\ B1x2._pk{1} = CCA.sk{2}.`1.`1 /\
         dkey `*` randd; last by smt().
     rewrite dprod_dlet; congr;apply fun_ext => r.
     by rewrite dlet_dunit.
-    by auto => />;smt(get_setE).  
+    by auto => />;smt(mem_set get_setE).  
 
     rcondf{1} 2;1: by move => *;inline *;auto => />.
-    by inline *;auto => /> *; do split;move => *;do split;move => *;1:do split;smt(@FMap).
+    by inline *;auto => /> *; do split;move => *;do split;move => *;1:do split;smt(mem_set get_setE).
 
 inline *. 
 swap {1} 14 -13. swap {1} 20 -18. swap {2} 11 -10.

@@ -347,7 +347,11 @@ lemma aux_coef_neg b:
 proof.
 rewrite to_uint_mask33 to_uint_shr 1:/# /= -divz_mul 1:/# /= !(W8.andwC mask55u8).
 rewrite -{1}pow2_2  -pow2_6 -(mask85_sum b 1) 1:/# /= -(mask85_sum b 3) 1:/# /=. 
-by rewrite to_uint_shr 1:/# /= to_uint_shr 1:/# /= /#.
+rewrite to_uint_shr 1:/# /= to_uint_shr 1:/# /=.
+congr.
++ by do 5!congr; rewrite addrC.
+rewrite mulrC;congr.
+by do 5!congr; rewrite addrC.
 qed.
 
 lemma noise_coef_avx2_aux bytes j:
@@ -768,8 +772,8 @@ transitivity {1} {r <@Jkem768.M.__indcpa_keypair(pk, sk, randomnessp);}
        let (pk,sk) = r{2} in let (t,rho) = pk in
          sk = r{1}.`2 /\
          t = Array1152.init (fun i => r{1}.`1.[i])  /\
-         rho = Array32.init (fun i => r{1}.`1.[1152+i]));1,2:smt(); last by 
-  call(mlkem_correct_kg); auto => />  [r11 r12] [[r211 r212] r22] /= => [#] H H0 H1 r1 r2 [<-<-] r3 r4 [<-<-];
+         rho = Array32.init (fun i => r{1}.`1.[1152+i]));1,2:smt(); last first.
+ +  call(mlkem_correct_kg); auto => />  [r11 r12] [[r211 r212] r22] /= => [#] H H0 H1 r1 r2 [<-<-] r3 r4 [<-<-];do split;
   smt(Array1152.tP Array1152.initiE Array32.tP Array32.initiE).  
 
 
@@ -922,16 +926,23 @@ move => &1 &2 H2 H3 H4 H5 H6 H7 H8 H9; do split.
   case (0<=k<256).
   + move => kbb;rewrite /subarray256. 
     move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray768 aa{2} 0).[256 * 0 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
-    rewrite !allP; move => /= [h0 h1]; rewrite  h1. move => *. rewrite initiE //=. smt(Array768.initiE). smt().
+    rewrite !allP; move => /= [h0 h1]; rewrite  h1;2:smt().
+    move => *; rewrite initiE //=. 
+    rewrite initiE;smt(). 
   case (256<=k<512).
   + move => kbb;rewrite /subarray256. 
     move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray768 aa{2} 0).[256 * 1 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
-    rewrite !allP; move => /= [h0 h1]; rewrite  h1. move => *. rewrite initiE //=. smt(Array768.initiE). smt(). auto.
+    rewrite !allP; move => /= [h0 h1]; rewrite  h1;2,3:smt().
+    move => *; rewrite initiE //=. 
+    by rewrite initiE;smt(). 
   case (512<=k<768).
   + move => kbbb;rewrite /subarray256. 
     move : (nttunpack_pred (Array256.init (fun (k0 : int) => (subarray768 aa{2} 0).[256 * 2 + k0])) (fun x => -2*q <= W16.to_sint x < 2*q)).
-    rewrite !allP; move => /= [h0 h1]; rewrite  h1. move => *. rewrite initiE //=. smt(Array768.initiE). smt(). auto.
-    by smt().
+    rewrite !allP; move => /= [h0 h1]; rewrite  h1;2..:smt().
+        move => *; rewrite initiE //=. 
+    rewrite initiE;smt(). 
+  by smt().
+
 + move : H9; rewrite /pos_bound768_cxq /signed_bound_768_cxq /#.
 + move : H8; rewrite /pos_bound768_cxq /signed_bound_768_cxq; smt(Array768.initiE).
 + move : H9; rewrite /pos_bound768_cxq /signed_bound_768_cxq; smt(Array768.initiE).

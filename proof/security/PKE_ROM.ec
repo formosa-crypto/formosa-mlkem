@@ -132,7 +132,7 @@ lemma eps_msgE x : mu1 dplaintext x = eps_msg.
 proof.  
 have : support dplaintext = predT; last 
   by smt(dplaintext_fu MFinT.perm_eq_enum_to_seq perm_eq_size
-         mu1_uni_ll dplaintext_uni dplaintext_ll).
+         mu1_uni_ll dplaintext_uni dplaintext_ll @MFinT).
 by apply fun_ext => y; rewrite /predT /= dplaintext_fu.
 qed.
 

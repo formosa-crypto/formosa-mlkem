@@ -854,7 +854,11 @@ seq 2 2 : (={H1.bad,b} /\
     (* case c: RO2 inconsistency for entries not added by dec oracle *)
     (forall m, m \in RO2.RO.m{1} => m \notin RO2.RO.m{2} => 
                assoc UU2.lD{2} (m2c m CCA.sk{2}.`1 RO1E.FunRO.f{2}) = RO2.RO.m{1}.[m]))
-     ));1: by wp;conseq />;[smt() | inline *;auto => />;smt(mem_empty get_setE)].
+     )).
+     + wp;conseq />;[smt() |].
+        inline *;auto => /> &1 &2 ????ml*; do split; rewrite ?get_setE /=;1..3:smt(mem_set mem_empty get_setE).
+        move => m2 ?; have <- : m2 = ml by smt(mem_set mem_empty).
+        by rewrite get_set_eqE //=.
 wp;call(:H1.bad,
      ={glob RO1E.FunRO, glob CCA, H1.bad} /\ uniq (unzip1 UU2.lD{2}) /\
     (* case a: all occuring badc accounted for *)
@@ -1110,9 +1114,10 @@ wp;call(:H1.bad,
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 auto => /> &2 *; do split; 1:smt(fdom0  filter0 fcard_eq0 fcard1).
 move => 16?H *;do split;1,2: smt(). 
-by move => notb ;do split => *; move : H;rewrite notb /= => [#] 7?->>3?;
-           [ rewrite subset_cardP; [ smt(fcard1)| smt( sub1set mem_filter)] |
-               smt(subset_cardP sub1set mem_filter fcard1 elems_fset1)].
+move => notb ;do split => *; move : H;rewrite notb /= => [#] 7?->>3?;
+           [ rewrite subset_cardP; [ smt(fcard1)| smt( sub1set mem_filter)] | ].
+move => ?; do split;1..3:smt(subset_cardP sub1set mem_filter fcard1 elems_fset1).
+smt(mem_head head_behead size_ge0 size_filter subset_cardP sub1set mem_filter fcard1 elems_fset1).
 qed.
 
 lemma bound_bad2 &m :
@@ -1274,7 +1279,7 @@ proc;inline *;
   case (m{1} \notin RO2.RO.m{1}).
 + rcondt{1} 8;1 : by auto.
   rcondt{2} 9;1 : by auto.
-  auto => /> &2;rewrite /b2i => *; 
+  auto => /> &2;rewrite /b2i => *; do split => *;split => *;
       smt(disjointP fcardUI_indep in_filter in_fset0 fcard_ge0 fcard_eq0 setUE 
           elems_fset0 elems_fset1 set1E elems_fset1 fcardU  fcardI in_filter 
           in_fset0 mem_fdom filter1 fcardU fset0U fdom_set   filterU fdom0  

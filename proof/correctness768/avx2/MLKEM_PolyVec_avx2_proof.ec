@@ -64,8 +64,10 @@ proof.
   + rewrite !tP;do split; move => *; rewrite !initiE; smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE). 
   move => [#] ???sgnd_bnd_bp_2 result_2 [#] sgnd_bnd_res_2 res_2_def.
   split.
-  + rewrite !tP;do split; move => *; rewrite !initiE /= // ?mapiE //=;
+  + rewrite !tP;do split; move =>  i ib; rewrite !initiE /= // ?mapiE //=;
+        have := res_2_def i ib;
      by  smt(Array256.initiE Array768.initiE Array768.set_eqiE Array768.set_neqiE).
+     
   move => [#] ??? sgnd_bnd_bp_3 result_3 [#] sgnd_bnd_res_3 res_3_def.
   split.
   rewrite /signed_bound768_cxq.

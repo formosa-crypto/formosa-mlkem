@@ -1068,7 +1068,8 @@ while (0<=i<=3 /\ rho = _sd /\
    move : (H4 _j _); 1:smt().
    rewrite tP => H4u. 
    move : (H4u i0 _);1:smt().
-   by smt(Array768.initiE Array256.initiE).
+   do 6!(rewrite initiE 1:/# /=).
+   by smt().
 
  + move => ii iibl iibh.
    rewrite -H4 1:/#.

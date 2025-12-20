@@ -267,13 +267,15 @@ lemma decode_range dfl (l : W8.t list) n :
     size l = 256*n %/ 8 =>
   size (decode n l) = 256 /\
   (forall k, 0<=k<256 => 0<= nth dfl (decode n l) k <2^n).
-move => *.
+move => ? Hsl *.
 rewrite -andaE;split;1: by rewrite /decode size_map size_chunk 1:/# size_BytesToBits /#. 
 move => ? k kb.
 rewrite /decode. 
 have := size_nth_chunk witness (BytesToBits l) k n; rewrite size_BytesToBits /= => H.
 rewrite (nth_map witness);1: by rewrite size_chunk 1:/# size_BytesToBits /#.
-smt(BS2Int.bs2int_ge0 BS2Int.bs2int_le2Xs).
+split => *; 1: smt(BS2Int.bs2int_ge0).
+have ? : 8 * size l %/ n = 256; last by  smt(BS2Int.bs2int_le2Xs).
+by rewrite Hsl;smt().
 qed.
 
 
@@ -895,7 +897,7 @@ have -> : (incoeff (to_sint p.[(8 * i + k) %/ 4])) = (incoeff (to_sint (W16_sub 
   rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota).
   rewrite of_sintK /= /smod /= qE; have := H00 ((8 * i + k) %/ 4) _; by smt(W16.to_uint_cmp pow2_16).
   rewrite /truncateu32_4 of_uintK /=. 
-  by rewrite /srl_32 /sll_32 /(`<<`) /(`>>`) /= /#.
+  rewrite /srl_32 /sll_32 /(`<<`) /(`>>`) /=;congr;congr;congr;congr;congr;smt().
 
 rewrite -eq_incoeff.
 rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  W16.of_uintK /= /smod /=;smt(size_map size_iota). 
@@ -1170,7 +1172,10 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
   split; last by smt().
   auto => />;do split;1: by smt().
   + have : (2^l0) \in map (fun i => 2^i) (iota_ 0 8); 
-      last by rewrite -JUtils.iotaredE => /> /#.
+      last first.  rewrite -JUtils.iotaredE => /> Hcases.
+      elim Hcases; 1:smt().
+      do 6!(move => Hcases;elim Hcases; 1:smt()).
+      by smt().
      have -> : 2^l0 = ((fun x => 2^x) l0) by auto. 
      by rewrite (map_f (fun x => 2^x)) mem_iota /#.
 
@@ -1301,6 +1306,20 @@ move => *;wp; call fqmul_ll; auto => />  /#.
 qed.
 
 (*******INVERSE *******)
+
+lemma interval_prod (la ha lb hb a b : int):
+   0 <= la =>
+   0 <= lb =>
+   0 <= ha =>
+   0 <= hb =>
+   -la <= a < ha =>
+   -lb <= b < hb =>
+   -(max (la*hb) (lb*ha)) <= a*b <= max (la*lb) (ha*hb).
+   move => Hla Hlb Hha Hhb Ha Hb;split.
+   smt(). smt().
+qed.
+
+
 
 lemma zetainv_bound :  minimum_residues jzetas_inv.
 proof.
@@ -1454,7 +1473,7 @@ wp;ecall {2}(fqmul_corr (to_sint t{2}) (to_sint zeta_0{2})).
 wp;ecall {2} (barrett_reduce_corr (to_sint m{2})).
 
 auto => />  &1 &2; rewrite /signed_bound_cxq /b16. 
-move => ?????????? rep 3? lb result rval result0 rval0.
+move => ???H?????? rep H0 2? lb result rval result0 rval0.
 rewrite /lift_array256 /=.
 
 have [#]bredbl bredbh bredv := (BREDCp_corr (to_sint (rp{1}.[j{1} + 
@@ -1467,8 +1486,12 @@ have  /= [#] redbl redbh redv :=
    (SREDCp_corr (to_sint (rp{1}.[j{1}] - rp{1}.[j{1} + 
                                 2^l]) * to_sint zeta_0{1})_ _).
   + by rewrite /R qE /=.
-  by rewrite /R qE /= !to_sintB_small /=; smt(qE). 
-
+  rewrite /R qE /= !to_sintB_small /=; 1: by  smt(qE).
+  pose a := to_sint zeta_0{1}.
+  pose b := to_sint rp{1}.[j{1} + 2 ^ l].
+  pose c := to_sint rp{1}.[j{1}].
+  have := interval_prod (2 * 13316) (2 * 13316) (0) (3329) (c-b) a; smt().  
+          
 move : redbl redbh; rewrite -rval0 => redbl redbh.
 move : bredbl bredbh; rewrite -rval => bredbl bredbh.
 
@@ -1713,44 +1736,67 @@ have hip3: 0 <= i{hr} + 3 && i{hr} + 3 < 256 by smt().
 
 have  /= [#] redbl1 redbh1 redv1 :=
     (SREDCp_corr (to_sint ap{hr}.[i{hr} + 1] * to_sint bp{hr}.[i{hr} + 1]) hq _).
-     by move: (ba _ hip1) (bb _ hip1); rewrite /R /#.
-
+     move: (ba _ hip1) (bb _ hip1); rewrite /R qE /=.
+     move => *.
+     have @/max /= := interval_prod (6658) (6658)  (6658) (6658);smt().
+     
 have  /= [#] redbl2 redbh2 redv2 :=
     (SREDCp_corr (to_sint r1 * to_sint jzetas.[64 + i{hr} %/ 4]) hq _).
-     by rewrite /R /=; move : (zeta_bound (64 +  i{hr} %/ 4)); rewrite /minimum_residues; smt().
+     rewrite /R /=; move : (zeta_bound (64 +  i{hr} %/ 4) _); 1:smt().
+     rewrite /minimum_residues qE /=.
+     have @/qE  @/max /= := interval_prod (3329) (3329)  (0) (3329) (to_sint r1) (to_sint jzetas.[64 + i{hr} %/ 4]).
+      smt(qE).
+
 
 have  /= [#] redbl3 redbh3 redv3 :=
     (SREDCp_corr (to_sint ap{hr}.[i{hr}] * to_sint bp{hr}.[i{hr}]) hq _).
-     by move: (ba _ hi) (bb _ hi); rewrite /R /#.
+     move: (ba _ hi) (bb _ hi); rewrite /R qE /=.
+     move => *.
+     have @/max /= := interval_prod (6658) (6658)  (6658) (6658);smt().
 
 have  /= [#] redbl4 redbh4 redv4 :=
     (SREDCp_corr (to_sint ap{hr}.[i{hr}] * to_sint bp{hr}.[i{hr} + 1]) hq _).
-     by move: (ba _ hi) (bb _ hip1); rewrite /R /#.
+     move: (ba _ hi) (bb _ hip1);rewrite /R qE /=.
+     move => *.
+     have @/max /= := interval_prod (6658) (6658)  (6658) (6658);smt().
 
 have  /= [#] redbl5 redbh5 redv5 :=
     (SREDCp_corr(to_sint ap{hr}.[i{hr} + 1] * to_sint bp{hr}.[i{hr}]) hq _).
-     by move: (ba _ hip1) (bb _ hi); rewrite /R /#.
+      move: (ba _ hip1) (bb _ hi); rewrite /R qE /=.
+     move => *.
+     have @/max /= := interval_prod (6658) (6658)  (6658) (6658);smt().
 
 have  /= [#] redbl6 redbh6 redv6 :=
     (SREDCp_corr (to_sint ap{hr}.[i{hr} + 3] * to_sint bp{hr}.[i{hr} + 3]) hq _).
-     by move: (ba _ hip3) (bb _ hip3); rewrite /R /#.
+      move: (ba _ hip3) (bb _ hip3); rewrite /R qE /=.
+     move => *.
+     have @/max /= := interval_prod (6658) (6658)  (6658) (6658);smt().
 
 have  /= [#] redbl7 redbh7 redv7 :=
     (SREDCp_corr (to_sint r6 * to_sint (- jzetas.[64 + i{hr} %/ 4])) hq _).
-+ rewrite /R /=; move : (zeta_bound (64 + i{hr} %/ 4)); rewrite /minimum_residues /bpos16 => zb.
-  rewrite to_sintN /= ?IntID.mulrN; do split;smt(W16.to_sint_cmp). 
++ rewrite /R /=; move : (zeta_bound (64 + i{hr} %/ 4) _); 1:smt().
+  rewrite /minimum_residues /bpos16 => zb.
+  rewrite to_sintN /= ?IntID.mulrN;1:smt().
+     have @/qE  @/max /= := interval_prod (3329) (3329)  (0) (3329) (to_sint r6) (to_sint jzetas.[64 + i{hr} %/ 4]).
+      smt(qE).  
 
 have  /= [#] redbl8 redbh8 redv8 :=
     (SREDCp_corr (to_sint ap{hr}.[i{hr}+2] * to_sint bp{hr}.[ i{hr}+2]) hq _).
-     by move: (ba _ hip2) (bb _ hip2); rewrite /R /#.
+      move: (ba _ hip2) (bb _ hip2);  rewrite /R qE /=.
+     move => *.
+     have @/max /= := interval_prod (6658) (6658)  (6658) (6658);smt().
 
 have  /= [#] redbl9 redbh9 redv9 :=
     (SREDCp_corr (to_sint ap{hr}.[i{hr}+2] * to_sint bp{hr}.[i{hr} + 3]) hq _).
-     by move: (ba _ hip2) (bb _ hip3); rewrite /R /#.
+      move: (ba _ hip2) (bb _ hip3);  rewrite /R qE /=.
+     move => *.
+     have @/max /= := interval_prod (6658) (6658)  (6658) (6658);smt().
 
 have  /= [#] redbl10 redbh10 redv10 :=
     (SREDCp_corr(to_sint ap{hr}.[i{hr} + 3] * to_sint bp{hr}.[i{hr}+2]) hq _).
-     by move: (ba _ hip3) (bb _ hip2); rewrite /R /#.
+      move: (ba _ hip3) (bb _ hip2);  rewrite /R qE /=.
+     move => *.
+     have @/max /= := interval_prod (6658) (6658)  (6658) (6658);smt().
 
 rewrite -r1val in redbl1;rewrite -r1val in redbh1;rewrite -r1val eq_incoeff in redv1.
 rewrite -r2val in redbl2;rewrite -r2val in redbh2;rewrite -r2val eq_incoeff in redv2.

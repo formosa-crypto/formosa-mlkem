@@ -579,8 +579,10 @@ move => *; have -> : to_uint b * 4 %/ 2 ^ k %% 2  = 0; last by smt().
 rewrite (_: 4 = 2^2) // Montgomery.div_mulr //; 1: by apply dvdz_exp2l;  smt(). 
 rewrite expz_div; 1,2: smt().
 move : (StdOrder.IntOrder.ler_weexpn2l 2 _ 1 (2-k) _) => //=; 1: smt(). 
-rewrite -modzMml; have : 2 ^ (2- k) %% 2 = 0; last by smt().
-by rewrite (_ : 2 = 2^1) //;apply dvdz_exp2l; smt().
+rewrite -modzMml; have : 2 ^ (2- k) %% 2 = 0; 1:
+  by rewrite (_ : 2 = 2^1) //;apply dvdz_exp2l; smt().
+move => H H0;rewrite -modzMmr.
+by rewrite H /=. 
 qed.
 
 
