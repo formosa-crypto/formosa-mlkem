@@ -4,6 +4,8 @@ timeout = 30
 provers = CVC5@1.2
 provers = Z3@4.8
 
+spec = proof/eclib/specs/avx2.spec
+
 rdirs = proof
 rdirs = Jasmin:jasmin/eclib
 idirs = Keccak:formosa-keccak/proof/amd64/common

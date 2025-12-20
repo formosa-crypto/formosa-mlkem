@@ -2345,8 +2345,6 @@ bind circuit
     VPUNPCKL_32u8  <-   "VPUNPCKL_32u8",
     VPSHUFB_128    <-   "VPSHUFB_128",
     VPCMPGT_16u16  <-   "VPCMPGT_16u16",
-    VPACKSS_16u16  <-   "VPACKSS_16u16"
-
-    from "/usr/local/lib/easycrypt/config/avx2.spec".
+    VPACKSS_16u16  <-   "VPACKSS_16u16".
 
 
