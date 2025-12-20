@@ -482,7 +482,7 @@ swap {2} 1 1.
 
 
 seq 1 1 : (#pre /\ 
-           ctc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])). print MLKEM_InnerPKE.
+           ctc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])). 
 + wp;ecall (mlkem_correct_enc 
    (Array1184.init  (fun (i_0 : int) => s_sk{1}.[3 * 384 + i_0]))).
   auto => /> &1 &2 /=;rewrite  !tP => ??????; do split. 

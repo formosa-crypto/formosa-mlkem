@@ -694,7 +694,6 @@ equiv compressequivvec  :
     ==> 
     res{2} = Array1408.init (fun i => res{1}.[i]).
 proc*.
-print MLKEM_PolyVec.
 ecall {2} (i_polyvec_compress_corr a{2}) => /=.
 ecall {1} (polyvec_compress_avx2_corr a{1}).
 + auto => /> &1 &2 ??? rr;rewrite !tP => H k kb. 

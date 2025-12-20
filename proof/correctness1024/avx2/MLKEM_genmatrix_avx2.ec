@@ -809,7 +809,7 @@ seq 11 27: ( buf_ok (buf4x_buf buf{1} 0) buf0{2} st0{2}
   wp; ecall {1} (shake128x4_absorb_A32_A2_ph rho{1} indexes{1}) => /=.
   wp; ecall {1} (gen_matrix_get_indexes_ph pos{2} t{2}) => /=.
   auto => &1 &2 [# -> Epos Ht Hpos]; split; first smt().
-  move=> _ idxs -> st; pose a:= WArray8.init8 _.  print sub_gen_matrix_indexes.
+  move=> _ idxs -> st; pose a:= WArray8.init8 _.  
   rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 0 a _ _) 1..3://.
   rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 1 a _ _) 1..3://.
   rewrite (sub_gen_matrix_indexes _ pos{2} t{2} 2 a _ _) 1..3://.

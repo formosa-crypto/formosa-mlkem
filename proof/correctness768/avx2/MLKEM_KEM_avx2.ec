@@ -342,7 +342,6 @@ swap {2} 1 1.
 
 seq 1 1 : (#pre /\ 
            ctc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])).
-print mlkem_correct_enc_1_avx2.
 + wp;ecall (mlkem_correct_enc_1_avx2 (Array1184.init (fun (i : int) => sk{1}.[3 * 384 + i]))).
 
   auto => /> &1 &2; rewrite !tP => ??????; do split.

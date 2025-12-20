@@ -67,7 +67,7 @@ qed.
 op G_coins768(s : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t =
     G_coins (Array33.init (fun (i2 : int) => if i2 < 32 then s.[i2] else W8.of_int kvec)).
 
-require FLPRG PRF. print MLKEM768.
+require FLPRG PRF. 
 clone FLPRG as HS_DEFS with
   type seed <- W8.t Array32.t, 
   type output <- W8.t Array32.t * W8.t Array32.t,

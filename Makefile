@@ -18,7 +18,7 @@ jasmin:
 	make -C code/jasmin/1024/avx2/extraction
 
 checkec:
-	easycrypt runtest $(ECCONF) $(CHECKS)
+	easycrypt runtest -jobs 3 $(ECCONF) $(CHECKS)
 
 assembly:
 	$(MAKE) -C code/jasmin/768/avx2/ jkem.s

@@ -57,7 +57,6 @@ require import MLKEM_keccak_ref.
 
 (** AS AN INTERMEDIATE STEP WE RESHUFFLE THE EXTRACTED CODE TO BETTER
     MATCH THE STRUCTURE OF THE SPEC AND PROVE EQUIVALENCE *)
-print Jkem1024.M.
 module AuxMLKEM= {
 
 proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array4096.t = {
