@@ -1094,17 +1094,17 @@ pose a:= to_sint x.
 pose b:= to_sint y.
 move=> [?[??]][?[??]].
 case: (0 <= a); case: (0 <= b) => C1 C2.
-+ smt(ler_pmul).
++ smt(interval_prod).
 + pose bb := -b.
-  have ?: - (k*k) <= a*bb && a*bb <= k*k;
-  smt(ler_opp2 ler_pmul).
+  have ?: - (k*k) <= a*bb && a*bb <= k*k; last by smt().
+  have := interval_prod k k k k;smt().
 + pose aa := -a.
-  have ?: - (k*k) <= aa*b && aa*b <= k*k;
-  smt(ler_opp2 ler_pmul).
+  have ?: - (k*k) <= aa*b && aa*b <= k*k; last by smt().
+  have := interval_prod k k k k;smt().
 + pose aa := -a.
   pose bb := -b.
-  have ?: - (k*k) <= aa*bb && aa*bb <= k*k;
-  smt(ler_opp2 ler_pmul).
+  have ?: - (k*k) <= aa*bb && aa*bb <= k*k; last by smt().
+  have := interval_prod k k k k;smt().
 qed.
 
 phoare wmul_16u16_ph n _x _y:

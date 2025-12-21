@@ -515,7 +515,11 @@ case (2147483648 <= (abxs - abxuexp) %% 4294967296).
   have -> : 4294967296 = 65536 * 65536 by auto.
   rewrite -(Ring.IntID.mulNr 65536 65536) divzMDr //= -(modzDml (-65536)) /=. 
 
-  have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536. move : W16.to_sint_cmp => /=. rewrite /abxs. smt().
+  have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536.
+  + have : - 32768 * 32768 <= abxs <= 32768 * 32768; last by smt().
+    have /= := W16.to_sint_cmp a{2}.[x].
+    have /= := W16.to_sint_cmp b{2}.[x].
+    have := interval_prod 32768 32768 32768 32768;smt().
   have /= ? : -32768 * 3329 %/ 65536 -1 <= abxuexp %/ 65536 <= 32768 * 3329 %/ 65536. move : W16.to_uint_cmp => /=. rewrite /abxuexp /abxu /smod /=.  smt().
   case (0 <= (abxs - abxuexp)). smt().
   move => *.
@@ -537,10 +541,15 @@ case (2147483648 <= (abxs - abxuexp) %% 4294967296).
   have -> : 3329 = -(to_sint (of_int (-3329)))%W16 by rewrite /to_sint /smod /=.
   rewrite -Ring.IntID.mulNr Ring.IntID.mulrNN modzM_sint /= to_uintM /= to_uintM /=.
   smt().
-move => H.
+
+  move => H.
 case (0 <= abxs - abxuexp). 
 + move => *. rewrite (modz_small _ 4294967296) /=. 
-  have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536. move : W16.to_sint_cmp => /=. rewrite /abxs. smt().
+  have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536.
+      have /= := W16.to_sint_cmp a{2}.[x].
+    have /= := W16.to_sint_cmp b{2}.[x].
+    have := interval_prod 32768 32768 32768 32768;smt().
+
   have /= ? : -32768 * 3329 %/ 65536 -1 <= abxuexp %/ 65536 <= 32768 * 3329 %/ 65536. move : W16.to_uint_cmp => /=. rewrite /abxuexp /abxu /smod /=.  smt().
   + rewrite StdOrder.IntOrder.ger0_norm //=. smt().
   congr; congr. 
@@ -559,7 +568,11 @@ move => HH.
 have -> : abxs - abxuexp = -(abxuexp - abxs) by ring.
 rewrite modNz /= 1,2:/#. 
   rewrite -(modzDml _ (-1)) /= -(modzDmr _ (-1)) /= modzDml.
-  have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536. move : W16.to_sint_cmp => /=. rewrite /abxs. smt().
+  have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536.
+      have /= := W16.to_sint_cmp a{2}.[x].
+    have /= := W16.to_sint_cmp b{2}.[x].
+    have := interval_prod 32768 32768 32768 32768;smt().
+
   have /= ? : -32768 * 3329 %/ 65536 -1 <= abxuexp %/ 65536 <= 32768 * 3329 %/ 65536. move : W16.to_uint_cmp => /=. rewrite /abxuexp /abxu /smod /=.  smt().
   have -> := (modz_add_carry (abxuexp - abxs) 4294967295 4294967296 _ _ _). 
     smt().  smt(). smt(). 

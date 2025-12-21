@@ -399,7 +399,7 @@ qed.
 lemma vpmaddwd_alt_corr (f0 shift2 : W256.t) :
    (forall i, 0 <= i < 16 => 0<= to_sint (f0 \bits16 i) < 2^10) =>
    VPMADDWD_256 f0 shift2 = VPMADDWD_alt f0 shift2.
-+ move => /= H;rewrite /VPMADDWD_256 /VPMADDWD_alt /=.  print pvc_shift2_s.
++ move => /= H;rewrite /VPMADDWD_256 /VPMADDWD_alt /=.  
   case (shift2 = VPBROADCAST_4u64 pvc_shift2_s);2: by auto. 
   move => -> /=; rewrite /VPBROADCAST_4u64 /= -!(iotaredE) /=. 
   pose f00 := (f0 \bits16 0).
@@ -678,7 +678,7 @@ ecall {1} (polyvec_compress_avx2_corr a{1}).
    rewrite  /encode10_vec get_of_list 1:/# initiE 1:/# /= get_of_list 1:/# /=; do 4!(congr). 
    rewrite /lift_polyvec eq_vectorP => i ib.
    rewrite tP => j jb.
-   smt(liftarrayvector).
+   rewrite !liftarrayvector /#.
 qed.
 
 (***************)

@@ -90,8 +90,6 @@ rewrite (nth_map (false,false) false) /=; 1: by smt(size_map size_zip W8.size_w2
 rewrite !(nth_zip false false) //=;congr; rewrite -W8.get_w2bits.
 qed.
 
-print (`>>`).
-
 bind op [W8.t & W8.t] W8.(`>>`) "shrs".
 realize bvshrsP by move => bv1 bv2; rewrite /(`>>`) to_uint_shr; 1:smt(W8.to_uint_cmp).
 
