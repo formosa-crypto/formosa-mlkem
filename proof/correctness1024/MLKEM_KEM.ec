@@ -1,6 +1,6 @@
 require import AllCore IntDiv List.
 
-from JazzEC require import Jkem768.
+from JazzEC require import Jkem1024.
 
 require import MLKEM_InnerPKE MLKEM_Poly MLKEM_PolyVec.
 
