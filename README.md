@@ -2,7 +2,7 @@
 
 This repository contains all the code and proof scripts for the Formosa-Crypto work on ML-KEM.
 In particular, it contains all the artifacts related to the formal verification of the x86-64 avx2 
-code available from the (`mlkem-libjade`)[https://github.com/pq-code-package/mlkem-libjade] repository 
+code available from the [`mlkem-libjade`](https://github.com/pq-code-package/mlkem-libjade) repository 
 in the Post-Quantum Code Package.
 
 The code was produced using the [Formosa Cypto](https://formosa-crypto.org) tool-chain: the formally 
@@ -15,11 +15,11 @@ This repository currently depends on:
 * The Jasmin compiler, as specified in submodule `jasmin` (note that this is currently a branch in the Jasmin development and not a release of the Jasmin compiler due to the use of upcoming features)
 * The formosa-keccak SHA-3 implementations, as specificed in submodule `formosa-keccak` (note that this code was subject to a recent refactoring, and the functional correctness proofs are still work in progress)
 * The specification of ML-KEM in EasyCrypt, as specified in submodule `crypto-specs`
-* EasyCrypt as an externally available tool for checking all the proofs (we currently rely on branch (bdep_ecCirtuitsRefactor)[https://github.com/EasyCrypt/easycrypt/tree/bdep_ecCircuitsRefactor], which will soon be merged in to the EasyCrypt main branch)
+* EasyCrypt as an externally available tool for checking all the proofs (we currently rely on branch [`bdep_ecCirtuitsRefactor`](https://github.com/EasyCrypt/easycrypt/tree/bdep_ecCircuitsRefactor), which will soon be merged in to the EasyCrypt main branch)
 
-The Jasmin compiler, in folder `jasmin/compiler` must be built according to the instructions available from the Jasmin repository.
+The Jasmin compiler, in folder `jasmin/compiler` must be built according to the instructions available from the [Jasmin](https://github.com/jasmin-lang/jasmin) repository.
 
-EasyCrypt must be installed according to the instructions available from the EasyCrypt repository, and configured to use at least provers Z3 and CVC5.
+EasyCrypt must be installed according to the instructions available from the [EasyCrypt](https://www.easycrypt.info/) repository, and configured to use at least provers Z3 and CVC5.
 
 Then the following actions are possible:
 
