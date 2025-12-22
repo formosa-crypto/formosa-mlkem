@@ -23,7 +23,7 @@ EasyCrypt must be installed according to the instructions available from the [Ea
 
 Then the following actions are possible:
 
-* from the top-level folder, `make check` will re-run all the proofs
+* from the top-level folder, `make check` will re-check all the proof scripts
 * from the `code/jasmin/mlkem-XXX` folder, `make ct` will check the code for constant-time
 * from the `code/jasmin/mlkem-XXX` folder, `make sct` will check the code for speculative constant-time
 * from the `code/jasmin/mlkem-XXX` folder, `make` will build the assembly file and rudimentary test executables
@@ -65,4 +65,9 @@ Machine-Checked Proofs for Cryptographic Standards: Indifferentiability of Spong
 
 * José Bacelar Almeida, Manuel Barbosa, Gilles Barthe, Arthur Blot, Benjamin Grégoire, Vincent Laporte, Tiago Oliveira, Hugo Pacheco, Benedikt Schmidt, Pierre-Yves Strub:
 Jasmin: High-Assurance and High-Speed Cryptography. CCS 2017: 1807-1823
+
+The EasyCrypt proofs are structured as follows:
+* `proof/security`: contains the security proof of an ML-KEM abstract specification
+* `proof/spec`: contains the proof that the `crypto-specs` FIPS-203 transcription correctly instantiates the above ML-KEM abstract specification
+* `proof/correctnessX`: contains the functional correctness proofs for the `X` ML-KEM variant
 
