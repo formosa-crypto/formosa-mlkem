@@ -16,7 +16,7 @@ proof.
 elim: s n => //=.
  smt().
 move=> x xs IH n /=.
-by case: (n <= 0) => C; smt().
+case: (n <= 0) => C; smt(size_ge0).
 qed.
 
 lemma size_take' ['a] (s: 'a list) n:
@@ -25,7 +25,7 @@ proof.
 elim: s n => //=.
  smt().
 move=> x xs IH n /=.
-by case: (n <= 0) => C; smt().
+by case: (n <= 0) => C; smt(size_ge0).
 qed.
 
 (* add to JWord.ec *)

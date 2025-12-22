@@ -36,11 +36,12 @@ seq 3 1 : (#{/~skcpa{1}}{~sk{1}}pre /\
    (forall k, 0 <= k < 1152 => sk{1}.[k] = sk{2}.[k]) /\
    pk{2}.`1 = Array1152.init (fun i => pk{1}.[i])  /\
    pk{2}.`2 = Array32.init (fun i => pk{1}.[i+1152])).
-+ wp;call (mlkem_correct_kg_avx2);auto => /> &1 &2;rewrite !tP => ??;split.
-  + move => *; rewrite initiE 1:/#;smt(Array32.initiE).
-  move => ? rl [[rr11 rr12] rr2] /= [#];rewrite !tP => *; do split. 
++ wp;call (mlkem_correct_kg_avx2);auto => /> &1 &2;rewrite !tP =>  H H0;split.
+  + move =>  *; rewrite initiE 1:/# /=.
+    rewrite H;smt(Array32.initiE).
+  move => ? rl [[rr11 rr12] rr2] /= [#];rewrite !tP => ?  H1 H2; do split. 
   + move => *; rewrite initiE 1:/# /= /#. 
-  + by move => *; rewrite initiE 1:/# /=; smt(Array1152.initiE).
+  + by move => *; rewrite initiE 1:/# /=; rewrite H1;smt(Array1152.initiE).
   + by move => *; rewrite initiE 1:/# /=; smt(Array32.initiE).
 
 seq 3 0 : (#pre /\
@@ -103,9 +104,11 @@ seq  5 0 : (#pre /\
     rewrite /get64 /init8 /(\bits8) wordP => kk kkb.
     rewrite initiE 1:/# /=  /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
 
-auto => /> &1 &2; rewrite !tP => *;do split.
-  + move => *; rewrite initiE 1:/# /= /#. 
-  + by move => *; rewrite tP => *; rewrite initiE 1:/# /=  ; smt(Array1152.initiE).
+auto => /> &1 &2; rewrite !tP => ???Hpk1????pp H H0;do split.
+  + move => *; rewrite initiE 1:/# /=; smt().
+  + rewrite tP => *; rewrite initiE 1:/# /=.
+    have -> : pp = pk{2}.`1 by smt().
+    rewrite Hpk1;  smt(Array1152.initiE).
   + by move => *; rewrite tP => *; rewrite initiE 1:/# /=  ; smt(Array32.initiE).
   + move => *; rewrite initiE 1:/# /=;smt(Array32.initiE).
   + by move => *; rewrite initiE 1:/# /=; smt(Array32.initiE).
@@ -339,7 +342,6 @@ swap {2} 1 1.
 
 seq 1 1 : (#pre /\ 
            ctc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])).
-print mlkem_correct_enc_1_avx2.
 + wp;ecall (mlkem_correct_enc_1_avx2 (Array1184.init (fun (i : int) => sk{1}.[3 * 384 + i]))).
 
   auto => /> &1 &2; rewrite !tP => ??????; do split.
@@ -347,8 +349,11 @@ print mlkem_correct_enc_1_avx2.
   + by move => i ib; rewrite initiE /= /#.
   + move => i ib; rewrite initiE /= 1:/# initiE /= 1:/#;smt(Array1152.initiE).
   + move => i ib; rewrite initiE /= 1:/# initiE /= 1:/#;smt(Array32.initiE).
-  move => /= ?  bufv ? krv rl [rr1 rr2] /=;rewrite !tP => H. 
-  by move => *;rewrite !initiE 1:/# /=; by  smt(Array128.initiE Array960.initiE).
+  move => /= ?  bufv ? krv rl [rr1 rr2] /=;rewrite !tP => [#Hl Hr] i ib. 
+  rewrite !initiE 1:/# /=.
+  case (i < 960) =>*.
+  + rewrite Hl;by  smt(Array128.initiE Array960.initiE).
+  rewrite Hr;by  smt(Array128.initiE Array960.initiE).
 
 seq 1 0 : (#pre /\ 
                   (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\

@@ -161,7 +161,7 @@ proof.
     + rewrite of_intwE /= /int_bit /= (modz_small _ 256);1: smt(W16.to_uint_cmp pow2_16).
       rewrite -divz_mulp 1:/#; 1:smt(StdOrder.IntOrder.expr_gt0).
       rewrite -pow2_8 -exprD_nneg 1,2:/# -b2i_get 1,2:/#. 
-    rewrite of_intwE /= /int_bit dvdz_mod_div 1:/#; 1,2:smt(StdOrder.IntOrder.expr_gt0 @IntDiv pow2_8).
+    rewrite of_intwE /= /int_bit dvdz_mod_div 1:/#; 1,2:smt(StdOrder.IntOrder.expr_gt0 dvdz_exp2l pow2_8).
     have -> : 256 %/ 2 ^ (k %% 8) = 2^(8 - k%%8) by rewrite -pow2_8 expz_div 1,2:/#.    have /= ->:= modz_mod_pow2 (to_uint _p.[i] %/ 2 ^ (k %% 8)) (8 - k%%8) 1.
     have -> /= : min (`|8 - k %% 8|) (`|1|) = 1;1: by smt().
     by smt(W16.b2i_get).
@@ -193,7 +193,7 @@ proof.
     + rewrite of_intwE /= /int_bit /= (modz_small _ 256);1: smt(W16.to_uint_cmp pow2_16).
       rewrite -divz_mulp 1:/#; 1:smt(StdOrder.IntOrder.expr_gt0).
       rewrite -pow2_8 -exprD_nneg 1,2:/# -b2i_get 1,2:/#. 
-    rewrite of_intwE /= /int_bit dvdz_mod_div 1:/#; 1,2:smt(StdOrder.IntOrder.expr_gt0 @IntDiv pow2_8).
+    rewrite of_intwE /= /int_bit dvdz_mod_div 1:/#; 1,2:smt(StdOrder.IntOrder.expr_gt0 dvdz_exp2l pow2_8).
     have -> : 256 %/ 2 ^ (k %% 8) = 2^(8 - k%%8) by rewrite -pow2_8 expz_div 1,2:/#.    have /= ->:= modz_mod_pow2 (to_uint _p.[i] %/ 2 ^ (k %% 8)) (8 - k%%8) 1.
     have -> /= : min (`|8 - k %% 8|) (`|1|) = 1;1: by smt().
     by smt(W16.b2i_get).
@@ -221,14 +221,14 @@ move => *.
     have -> : (8 * (2 * i + k %/ 8 - 2 * _ctr)) = if 8 <= k 
         then (i - _ctr) * 16 + 8 else (i - _ctr) * 16 by smt().
     case (8 <= k) => /= *.
-    + rewrite dvdz_mod_div 1:/#; 1,2:smt(StdOrder.IntOrder.expr_gt0 @IntDiv pow2_8).
+    + rewrite dvdz_mod_div 1:/#; 1,2:smt(StdOrder.IntOrder.expr_gt0 dvdz_exp2l pow2_8).
       rewrite -divz_mulp; 1,2:smt(StdOrder.IntOrder.expr_gt0).
       rewrite -exprD_nneg 1,2:/#.
        have -> : 256 %/ 2 ^ (k %% 8) = 2^(8 - k%%8) by rewrite -pow2_8 expz_div 1,2:/#.
       have /= ->:= modz_mod_pow2 (to_uint v %/ 2 ^ ((i - _ctr) * 16 + 8 + k %% 8)) (8 - k%%8) 1. 
       have -> /=: min (`|8 - k %% 8|) (`|1|) = 1 by smt().
       by smt(W128.b2i_get).
-    rewrite dvdz_mod_div 1:/#; 1,2:smt(StdOrder.IntOrder.expr_gt0 @IntDiv pow2_8).
+    rewrite dvdz_mod_div 1:/#; 1,2:smt(StdOrder.IntOrder.expr_gt0 dvdz_exp2l pow2_8).
     rewrite -divz_mulp; 1,2:smt(StdOrder.IntOrder.expr_gt0).
     have -> : 256 %/ 2 ^ (k %% 8) = 2^(8 - k%%8) by rewrite -pow2_8 expz_div 1,2:/#.
     have <- := (Ring.IntID.exprD_nneg 2 ((i - _ctr) * 16) (k %% 8));1,2:smt().
@@ -525,8 +525,12 @@ seq 1 1 : (#{/~plist pol{1} (_ctr + to_uint t0_1{2}) = plist _p _ctr ++ mkseq ("
     rewrite catA. 
     have -> : to_uint counter{1} + to_uint t0_1{2} = 
          (to_uint counter{1} + to_uint t0_0{2}) + (to_uint t0_1{2} - to_uint t0_0{2}) by ring.
+    pose a := to_uint counter{1}.
+    pose b := to_uint t0_0{2}.
+    pose c := to_uint t0_1{2}.
     rewrite mkseq_add;1,2:smt(W64.to_uint_cmp size_mkseq).
-    smt(@List).
+    rewrite !(mkseq_add _ a b);1,2:smt(W64.to_uint_cmp size_mkseq).
+    smt(size_mkseq W64.to_uint_cmp eqseq_cat catsI catIs catA).
 
   + rewrite ifF 1:/#.
     case (i < to_uint counter{1} + to_uint t0_1{2}) => *.
@@ -572,8 +576,12 @@ seq 1 1 : (#{/~plist pol{1} (_ctr + to_uint t0_1{2}) = plist _p _ctr ++ mkseq ("
     rewrite catA. 
     have -> : to_uint counter{1} + to_uint t1_0{2} = 
          (to_uint counter{1} + to_uint t0_1{2}) + (to_uint t1_0{2} - to_uint t0_1{2}) by ring.
+    pose a := to_uint counter{1}.
+    pose b := to_uint t0_1{2}.
+    pose c := to_uint t1_0{2}.
     rewrite mkseq_add;1,2:smt(W64.to_uint_cmp size_mkseq).
-    smt(@List).
+    rewrite !(mkseq_add _ a b);1,2:smt(W64.to_uint_cmp size_mkseq).
+    smt(size_mkseq W64.to_uint_cmp eqseq_cat catsI catIs catA).
 
   + rewrite ifF 1:/#.
     case (i < to_uint counter{1} + to_uint t1_0{2}) => *.
@@ -628,8 +636,7 @@ conseq  (bridge48 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter48P (Array56.
     auto => />; do split;1..6: smt(W64.to_uint_cmp). 
     + rewrite /Mlkem_filters.load_shuffle /Mlkem_filters.load_shuffle /u8_256_32.
       rewrite wordP => i ib;rewrite pack32wE 1:/# of_listK /= 1:/# initiE 1:/# /=;do      congr;rewrite /Mlkem_filters.sample_load_shuffle.
-      rewrite !get_of_list 1,2:/#. 
-      by smt(@List).
+      rewrite !get_of_list /#. 
   + by move => *; rewrite initiE /#. 
 + move => &1 &2 /=.
   rewrite /rejection16 /buf_subl /rejection /= -map_comp /(\o) /=.
@@ -637,13 +644,16 @@ conseq  (bridge48 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter48P (Array56.
   move => [#] ???.
   pose xx := pmap _ _.
   pose yy := List.map _ _.
-  have ? : map W12.to_uint xx = map W16.to_uint yy; last first.
+  have H : map W12.to_uint xx = map W16.to_uint yy; last first.
+  have Hs : size xx = size yy by move : H; smt(size_map).
   move => /= ? [# Hs1 Hs2] [# Hl1 Hl2] .
   split; last first. 
   + rewrite to_uint_eq Hs2 Hl2.
     rewrite of_uintK /= modz_small.
-  + rewrite /yy !size_map !size_filter /=; split; smt(@List size_map take_size take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
-    by smt(size_map).
+  + rewrite /yy !size_map !size_filter /=; split; 1: smt(size_map take_size take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
+    pose l := bytes2coeffs _. 
+    have ? : size l <= 2*48 %/3;  smt(size_bytes2coeffs size_take count_size).
+     smt(size_bytes2coeffs size_take count_size).
   + move :Hs1; rewrite Hl2.
     have ->: size xx = size yy by smt(size_map).
     move => ->.
@@ -1207,10 +1217,11 @@ conseq  (bridge24 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter24P (Array32.
   move => [#] ???.
   pose xx := pmap _ _.
   pose yy := List.map _ _.
-  have ? : map W12.to_uint xx = map W16.to_uint yy; last first.
+  have H : map W12.to_uint xx = map W16.to_uint yy; last first.
+  have Hs : size xx = size yy by move : H; smt(size_map).
   move => /= ? [# Hs1 Hs2] [# Hl1 Hl2] .
   split; last first. 
-  + rewrite Hs2 Hl2 /yy; smt(@List size_map take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
+  + rewrite Hs2 Hl2 Hs. rewrite size_take;  smt(size_map take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
   + move :Hs1.
     have ->: (min 256 (to_uint res{1}.`2)) = to_uint _ctr + size (take (256 - to_uint _ctr) yy) by smt(size_take size_map take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
     move => ->.
@@ -1223,7 +1234,8 @@ conseq  (bridge24 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter24P (Array32.
     rewrite to_uint_eq.
     rewrite -BVA_zextend_Top_Mlkem_bindings_W12_t_Top_JWord_W16_t.bvzextendP.
     have : nth witness (map W12.to_uint xx) i  = nth witness (map W16.to_uint yy) i by smt().
-    do 2!(rewrite (nth_map witness); smt(size_ge0 @List)). 
+    rewrite nth_take;1,2: by smt(size_take size_map take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
+    rewrite !(nth_map witness); by smt(size_take size_map take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list). 
     
 
 (* THE MAIN LEMMA *)

@@ -930,8 +930,9 @@ have le :
 have ? : forall &m0 &m1 ,
      (glob DLeft(A,Sim)){m0} = (glob DLeft(A,Sim)){m1} =>
        Pr[MainD(DLeftT(A,Sim),RO).distinguish(b) @ &m0 : res] =
-       Pr[MainD(DLeftT(A,Sim),LRO).distinguish(b) @ &m1 : res] 
- by move => &m0 &m1 eqB; byequiv (le); smt().
+       Pr[MainD(DLeftT(A,Sim),LRO).distinguish(b) @ &m1 : res].
+  move => &m0 &m1 eqB; byequiv (le) => //=.  
+  
 by smt().
 qed.
 
@@ -999,8 +1000,8 @@ have left : forall &m0,
   have ? : forall &m0 &m1 ,
      (glob DLeftT(A,Sim)){m0} = (glob DLeftT(A,Sim)){m1} =>
        Pr[MainD(DRightT(A,Sim),RO).distinguish(b) @ &m0 : res] =
-       Pr[MainD(DRightT(A,Sim),LRO).distinguish(b) @ &m1 : res] 
-     by move => &m0 &m1 eqB; byequiv (le); smt().
+       Pr[MainD(DRightT(A,Sim),LRO).distinguish(b) @ &m1 : res] .
+     by move => &m0 &m1 eqB; byequiv (le) => //=. 
   by smt().
 qed.
 

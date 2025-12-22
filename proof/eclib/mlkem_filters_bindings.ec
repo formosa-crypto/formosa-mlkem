@@ -1,7 +1,7 @@
 (* -------------------------------------------------------------------- *)
 (* ----- *) require import AllCore IntDiv List.
 from Jasmin require import JModel.
-require export Bindings.
+require export Mlkem_bindings.
 (* ----- *) require import Genbindings.
 (* ----- *) (* - *) import W8.
 
@@ -40,6 +40,8 @@ have ?: W512.modulus = 134078079299425970995740249982058461274793658205923933777
 by smt(bs2int_range mem_range W512.size_w2bits).
 qed.
 
+realize gt0_size by auto.
+
 (* -------------------------------------------------------------------- *)
 clone export WordChunk as WordChunk_16_256
   with op isize <- 16, op osize <- 256,
@@ -66,6 +68,7 @@ clone export Extract as Extract_512_16
 
 bind op [W512.t & W16.t] extract_512_16 "extract".
 realize bvextractP by exact/extract_512_16P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 op concat_2u256 (l h : W256.t) = W512.init (fun i => (nth W256.zero [l; h] (i %/ 256)).[i %% 256]).
@@ -86,6 +89,8 @@ move=> l h; have := w2bits_concat_2u256 l h.
 by rewrite flatten_cons flatten1.
 qed.
 
+realize eq_size by auto.
+
 (* ----- *)
 
 from JazzEC require import Array2048 Array256 Array64 Array56 Array48 Array40 Array32 Array24 Array16.
@@ -102,6 +107,7 @@ clone export A2B as A2B_8_256_32
 
 bind op [W256.t & W8.t & Array32.t] u8_256_32 "a2b".
 realize a2bP by apply/u8_256_32P.
+realize size_ok by auto.
 
 (* -------------------------------------------------------------------- *)
 bind array Array2048."_.[_]" Array2048."_.[_<-_]" Array2048.to_list Array2048.of_list Array2048.t 2048.
@@ -109,6 +115,7 @@ realize tolistP  by done.
 realize get_setP by smt(Array2048.get_setE). 
 realize eqP      by smt(Array2048.tP).
 realize get_out  by smt(Array2048.get_out).
+realize gt0_size by auto.
 
 (* -------------------------------------------------------------------- *)
 bind array Array56."_.[_]" Array56."_.[_<-_]" Array56.to_list Array56.of_list Array56.t 56.
@@ -116,6 +123,16 @@ realize tolistP  by done.
 realize get_setP by smt(Array56.get_setE). 
 realize eqP      by smt(Array56.tP).
 realize get_out  by smt(Array56.get_out).
+realize gt0_size by auto.
+
+(* -------------------------------------------------------------------- *)
+bind array Array40."_.[_]" Array40."_.[_<-_]" Array40.to_list Array40.of_list Array40.t 40.
+realize tolistP  by done.
+realize get_setP by smt(Array40.get_setE). 
+realize eqP      by smt(Array40.tP).
+realize get_out  by smt(Array40.get_out).
+realize gt0_size by auto.
+
 
 (* -------------------------------------------------------------------- *)
 bind array Array64."_.[_]" Array64."_.[_<-_]" Array64.to_list Array64.of_list Array64.t 64.
@@ -123,6 +140,7 @@ realize tolistP  by done.
 realize get_setP by smt(Array64.get_setE). 
 realize eqP      by smt(Array64.tP).
 realize get_out  by smt(Array64.get_out).
+realize gt0_size by auto.
 
 
 (* -------------------------------------------------------------------- *)
@@ -134,6 +152,7 @@ clone export SliceGet as SliceGet_8_256_32
 
 bind op [W8.t & W256.t & Array32.t] sliceget_8_256_32 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_256_32P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_256_56
@@ -144,6 +163,7 @@ clone export SliceGet as SliceGet_8_256_56
 
 bind op [W8.t & W256.t & Array56.t] sliceget_8_256_56 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_256_56P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_12_48
@@ -154,6 +174,8 @@ clone export SliceGet as SliceGet_8_12_48
 
 bind op [W8.t & W12.t & Array48.t] sliceget_8_12_48 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_12_48P.
+realize le_size by auto.
+
 
 (* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_12_32
@@ -164,6 +186,7 @@ clone export SliceGet as SliceGet_8_12_32
 
 bind op [W8.t & W12.t & Array32.t] sliceget_8_12_32 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_12_32P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_12_24
@@ -174,6 +197,7 @@ clone export SliceGet as SliceGet_8_12_24
 
 bind op [W8.t & W12.t & Array24.t] sliceget_8_12_24 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_12_24P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_12_56
@@ -184,6 +208,7 @@ clone export SliceGet as SliceGet_8_12_56
 
 bind op [W8.t & W12.t & Array56.t] sliceget_8_12_56 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_12_56P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export SliceGet as SliceGet_8_64_2048
@@ -194,6 +219,7 @@ clone export SliceGet as SliceGet_8_64_2048
 
 bind op [W8.t & W64.t & Array2048.t] sliceget_8_64_2048 "asliceget".
 realize bvaslicegetP by apply/sliceget_8_64_2048P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export SliceSet as SliceSet_16_128_16
@@ -222,6 +248,7 @@ clone export Extract as Extract_256_128
 
 bind op [W256.t & W128.t] extract_256_128 "extract".
 realize bvextractP by exact/extract_256_128P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export Extract as Extract_256_16
@@ -235,6 +262,7 @@ clone export Extract as Extract_256_16
 
 bind op [W256.t & W16.t] extract_256_16 "extract".
 realize bvextractP by exact/extract_256_16P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export Extract as Extract_128_16
@@ -248,6 +276,7 @@ clone export Extract as Extract_128_16
 
 bind op [W128.t & W16.t] extract_128_16 "extract".
 realize bvextractP by exact/extract_128_16P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export Extract as Extract_64_8
@@ -261,6 +290,7 @@ clone export Extract as Extract_64_8
 
 bind op [W64.t & W8.t] extract_64_8 "extract".
 realize bvextractP by exact/extract_64_8P.
+realize le_size by auto.
 
 
 (* -------------------------------------------------------------------- *)
@@ -274,6 +304,7 @@ move=> w1 w2; apply/(eq_from_nth false); first by rewrite size_cat !size_w2bits.
 rewrite size_w2bits => i rgi; rewrite nth_cat !get_w2bits !size_w2bits.
 by rewrite /concat_2u128 pack2wE 1:// get_of_list /#.
 qed.
+realize eq_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export ZExtend as ZExtend_8_64
@@ -288,6 +319,7 @@ clone export ZExtend as ZExtend_8_64
 
 bind op [W8.t & W64.t] zextend_8_64 "zextend".
 realize bvzextendP by move=> ?; apply/eq_sym/zextend_8_64P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export ZExtend as ZExtend_12_16
@@ -302,6 +334,7 @@ clone export ZExtend as ZExtend_12_16
 
 bind op [W12.t & W16.t] zextend_12_16 "zextend".
 realize bvzextendP by move=> ?; apply/eq_sym/zextend_12_16P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export ZExtend as ZExtend_64_256
@@ -316,6 +349,7 @@ clone export ZExtend as ZExtend_64_256
 
 bind op [W64.t & W256.t] zextend_64_256 "zextend".
 realize bvzextendP by move=> ?; apply/eq_sym/zextend_64_256P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 clone export ZExtend as ZExtend_64_128
@@ -330,6 +364,7 @@ clone export ZExtend as ZExtend_64_128
 
 bind op [W64.t & W128.t] zextend_64_128 "zextend".
 realize bvzextendP by move=> ?; apply/eq_sym/zextend_64_128P.
+realize le_size by auto.
 
 (* -------------------------------------------------------------------- *)
 op popcount_64 (w : W64.t) : W64.t =
@@ -356,25 +391,17 @@ proof.
 by rewrite /shift64R /shiftr64 zextend_8_64P /(`>>`).
 qed.
 
-(* -------------------------------------------------------------------- *)
-bind circuit VPSRL_16u16       "VPSRL_16u16".
-bind circuit VPBLENDW_256      "VPBLEND_16u16".
-bind circuit VPSHUFB_256       "VPSHUFB_256".
-bind circuit VINSERTI128       "VPINSERTI128".
-bind circuit VEXTRACTI128      "VPEXTRACTI128".
-bind circuit VPERMQ            "VPERMQ".
-bind circuit VPADD_32u8        "VPADD_32u8".
-bind circuit VPUNPCKL_32u8     "VPUNPCKL_32u8".
-bind circuit VPSHUFB_128       "VPSHUFB_128".
-bind circuit VPCMPGT_16u16     "VPCMPGT_16u16".
-bind circuit VPACKSS_16u16     "VPACKSS_16u16".
 
 (* -------------------------------------------------------------------- *)
 op VPINC_8u8 : W64.t -> W64.t.
 
-bind circuit VPINC_8u8 "VPINC_8u8".
-
 (* -------------------------------------------------------------------- *)
 op VPUNPCKL_16u8 : W64.t -> W64.t -> W128.t.
 
-bind circuit VPUNPCKL_16u8 "VPUNPCKL_16u8".
+
+(* -------------------------------------------------------------------- *)
+bind circuit
+ VPUNPCKL_16u8  <- "VPUNPCKL_16u8",
+ VPINC_8u8      <- "VPINC_8u8".
+
+

@@ -11,8 +11,8 @@ lemma perm_eq_set ['a,'b,'c]  (m : ('a,'b) fmap) (l : 'a list) x y :
 proof. 
 move => H H0.
 rewrite fdom_set setUE /= elems_fset1 /=. 
-have := oflistK (elems (fdom m) ++ [x]); rewrite undup_id;
-  1:  by smt(uniq_elems perm_eq_mem cat_uniq). 
+have := oflistK (elems (fdom m) ++ [x]); rewrite undup_id.
+  by  apply cat_uniq; by smt(hasP uniq_elems perm_eq_mem cat_uniq catA catsI catIs). 
 by smt(oflistK perm_eq_trans perm_eq_sym perm_cat2r).
 qed.
 
@@ -44,13 +44,27 @@ lemma find_map ['a, 'b]:
 
 lemma findP_Some ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap) a b: 
   find f m = Some (a, b) =>
-  m.[a] = Some b /\ f a b by 
-   smt(mem_nth has_find find_ge0 List.mem_map fdomP mapP nth_find).
+  m.[a] = Some b /\ f a b.
+proof.
+  rewrite /find /=.
+  pose bindings := map (fun (a : 'a) => (a, oget m.[a])) (elems (fdom m)).
+  pose P := (fun (p : 'a * 'b) => f p.`1 p.`2).
+  have := has_find P bindings.
+  have /= := mapP (fun (a : 'a) => (a, oget m.[a]))  (elems (fdom m)).
+  by smt(mem_nth find_ge0 List.mem_map fdomP nth_find rngE).
+qed.
 
 lemma findP_None ['a, 'b] (f: 'a -> 'b -> bool) (m:('a, 'b) fmap): 
   find f m = None =>
-  forall a b, m.[a] = Some b => !f a b
- by smt(all_predC   has_find  List.mem_map fdomP mapP  allP).
+  forall a b, m.[a] = Some b => !f a b.
+proof.
+  rewrite /find /=.
+  pose bindings := map (fun (a : 'a) => (a, oget m.[a])) (elems (fdom m)).
+  pose P := (fun (p : 'a * 'b) => f p.`1 p.`2).
+  have := has_find P bindings.
+  have /= := mapP (fun (a : 'a) => (a, oget m.[a]))  (elems (fdom m)).
+  by smt( List.hasPn fdomP).
+ qed.
 
 (******************************************************************)
 
@@ -294,7 +308,9 @@ inline *; wp; conseq />.
 sp; case(m'0{1} = None);
   1: by rcondf{1} 1; auto; smt(hasPn perm_eq_mem mem_fdom). 
 rcondt{1} 1; 1: by auto.
-by auto => /> *; do split; move => *; smt(hasPn perm_eq_mem mem_fdom).
+by auto => /> &2 H1 H2 *; do split; move => *;
+  rewrite hasP; exists m{2} => /=;
+  have := perm_eq_mem CO1.queried{2} (elems (fdom RO.RO.m{2})) H1 m{2}; smt(memE mem_fdom).
 qed.
 
 local clone import PlugAndPray as PAPC with
@@ -362,8 +378,11 @@ proof.
   proc;inline *; sp;wp. 
   if;1:by auto.
   + if; 1:by auto. 
-    + auto => />;smt(size_cat cat_uniq mem_cat nth_cat). 
-    auto => />;smt(size_cat cat_uniq mem_cat nth_cat get_setE).
+    + auto => /> &1 &2 => *;do split => *;1,3..:smt(size_cat  mem_cat nth_cat).
+      by apply cat_uniq => /= /#.
+    auto => /> &1 &2 => *;do split => *; do split => *;1,3..5,7..:smt(mem_nth size_cat size_ge0  mem_set mem_cat nth_cat).
+    + by apply cat_uniq => /= /#.
+    + by apply cat_uniq => /= /#.
   if; 1:by auto. 
   + auto => />;smt(size_cat cat_uniq mem_cat nth_cat index_uniq get_setE). 
   auto => />;smt(size_cat cat_uniq mem_cat nth_cat get_setE).
@@ -434,15 +453,17 @@ seq 5 5 : (={RO.RO.m,glob CO1} /\ pk{2} = CO1.pk{1} /\ sk{2} = CO1.sk{1} /\
   wp;rnd;wp; auto => /> &2 Hs Hu Ht Hf r ?. 
   case(0 <= CO1.i{2} && CO1.i{2} < size CO1.queried{2}); 1: by smt(get_setE).
   move => casef; move : (Hf casef) => [#] H; rewrite !get_setE /=.
-  have : 0 < size ((filter (fun (x0 : plaintext) => 
-      ! (x0 \in CO1.queried{2})) FinT.enum)); last by smt(filter_all).
-  have := count_predC (fun (x0 : plaintext) => ! (x0 \in CO1.queried{2})) FinT.enum.
-  rewrite size_filter /predC /=. 
-  have : count (mem CO1.queried{2}) FinT.enum <  size FinT.enum; last 
-    by smt(). 
-  rewrite (count_swap _ _ Hu FinT.enum_uniq). 
-  by smt(count_size).
-  
+  pose qq := (filter (fun (x : plaintext) => ! (x \in CO1.queried{2})) enum).
+  pose qq1 := head witness qq.
+  move => contr.
+  have : !qq1 \in CO1.queried{2}; last by smt().
+  have ? : 0 < size qq.
+  + have := count_predC (fun (x0 : plaintext) => ! (x0 \in CO1.queried{2})) FinT.enum.
+    rewrite size_filter /predC /=. 
+    have : count (mem CO1.queried{2}) FinT.enum <  size FinT.enum; last by smt(). 
+    rewrite (count_swap _ _ Hu FinT.enum_uniq). 
+    by smt(count_size).
+  by have := (head_behead qq witness); smt(filter_all allP).
 sp;seq 1 1 : (#pre /\ ={CO1.i}); 1: by auto.
 seq 1 1 : (={RO.RO.m,glob CO1} /\ pk{2} = CO1.pk{1} /\ sk{2} = CO1.sk{1} /\ m0{1} = m1{2} /\
           size CO1.queried{1} <= qHC /\ uniq CO1.queried{1} /\
@@ -455,8 +476,11 @@ seq 1 1 : (={RO.RO.m,glob CO1} /\ pk{2} = CO1.pk{1} /\ sk{2} = CO1.sk{1} /\ m0{1
 + inline *; sp;wp. 
   if;1:by auto.
   + if; 1:by auto. 
-    + auto => />;smt(size_cat cat_uniq mem_cat nth_cat). 
-    auto => />;smt(size_cat cat_uniq mem_cat nth_cat get_setE).
+    + auto => /> &1 &2 => *;do split => *;1,3..:smt(size_cat  mem_cat nth_cat).
+    by apply cat_uniq => /= /#.
+  auto => /> &1 &2 => *;do split => *; do split => *;1,3..5,7..:smt(mem_nth size_cat size_ge0  mem_set mem_cat nth_cat).
+  + by apply cat_uniq => /= /#.
+  + by apply cat_uniq => /= /#.
   if; 1:by auto. 
   + auto => />;smt(size_cat cat_uniq mem_cat nth_cat index_uniq get_setE). 
   auto => />;smt(size_cat cat_uniq mem_cat nth_cat get_setE).
@@ -552,11 +576,17 @@ proof.
          rcondf{1} 1; 1: by auto => />;smt(size_ge0). 
          if{2};last first.
          + inline *; auto => /> &2.
-           have := cat_take_drop  (size CO1.queried{2} + 1) CO1.queried{2}. 
-           by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
+           have := cat_take_drop  (size CO1.queried{2} + 1) CO1.queried{2}.
+           move => *;do split => *;2:smt().
+           move => *;do split => *;1,4..:smt(mem_nth size_cat size_ge0  mem_set mem_cat nth_cat).
+           + by apply cat_uniq => /= /#.
+           + by apply cat_uniq => /= /#.
          + inline *; auto => /> &2.
            have := cat_take_drop  (size CO1.queried{2} + 1) CO1.queried{2}.  
-           by smt(cat_uniq size_cat get_setE mem_cat take_oversize).
+           move => *;do split => *;2:smt().
+           move => *;do split => *;1,4..:smt(mem_nth size_cat size_ge0  mem_set mem_cat nth_cat).
+           + by apply cat_uniq => /= /#.
+           + by apply cat_uniq => /= /#.
       + (* we have a repeart query *) 
          rcondt{1} 1; 1: by auto => />; smt(find_size find_ge0). 
          if{2};last first.
@@ -569,14 +599,31 @@ proof.
     + move => &2 _.
       proc;wp;sp; if.
       + rcondf 1; 1: by move => *;auto => /#.
-         by inline *; auto => />; smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take). 
+        inline *; auto => /> &1 4? H *; split; 1: smt(randd_ll).
+        move => *; do split;2:smt(). 
+        +  move => *;do split;2:smt().
+           by rewrite size_cat; smt(take_oversize).
+        + by smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).      + by apply cat_uniq;   smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+        + by rewrite size_cat;smt(take_oversize).
+        + move => xx; rewrite mem_cat /=; smt(mem_set).
+        by  smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
       by if;inline *; auto => />;smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take). 
 
     (* propagate bad right *)
     + move => &1.
       proc;wp;sp; if.
       + rcondf 1; 1: by move => *;auto => /#.
-         by inline *; auto => />; smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take). 
+        inline *; auto => /> 4? H *; split; 1: smt(randd_ll).
+        move => *; do split;2:smt(). 
+        +  move => *;do split;2:smt().
+           by rewrite size_cat; smt(take_oversize).
+        + by smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+        + by smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).      
+        + by apply cat_uniq;   smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+        + by rewrite size_cat;smt(take_oversize).
+        + move => xx; rewrite mem_cat /=; smt(mem_set).
+        by  smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+        inline *; auto => /> *;1: by  smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take). 
       by if;inline *; auto => />;smt(randd_ll cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take). 
       
     by auto => /> /#.
@@ -633,10 +680,57 @@ seq 2 2 : (={CO1.pk,CO1.sk} /\ i{1} = CO1.i{2} /\
            (forall (x0 : plaintext), x0 \in take (CO1.i{2} + 1) CO1.queried{2} => 
                        RO.RO.m{1}.[x0] = RO.RO.m{2}.[x0])).
 + inline {1} 2; inline {2} 2.
-  by sp;if{1};if{1};if{2};if{2}; 
-      inline*;auto => />; smt(cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
-
-inline *.
+  sp;if{1};if{1};if{2};if{2}; 
+      inline*;auto => /> *;do split;1..2,4..8,10,12..13,16..18,20..26, 28 ..: smt(cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+  + move => *; do split => *; do split;1..3,6,7,10..:smt(cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    apply cat_uniq => *;smt().
+    apply cat_uniq => *;smt().
+    move => xx; rewrite mem_cat /=; smt(mem_set).    
+    move => xx; rewrite mem_cat /=; smt(mem_set).    
+  + move => *; do split => *; do split;1..3,6,7,10..:smt(cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    apply cat_uniq => *;smt().
+    apply cat_uniq => *;smt().
+    move => xx; rewrite mem_cat /=; smt(mem_set).    
+    move => xx; rewrite mem_cat /=; smt(mem_set).    
+  + move => *; do split => *; do split;1..3,6,7,10..:smt(cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    apply cat_uniq => *;smt().
+    apply cat_uniq => *;smt().
+    move => xx; rewrite mem_cat /=; smt(mem_set).    
+    move => xx; rewrite mem_cat /=; smt(mem_set).    
+  + move => *; do split => *; do split;1..3,5..6,8..:smt(cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    apply cat_uniq => *;smt().
+    move => xx; rewrite mem_cat /=; smt(mem_set).    
+  + move => *; do split.
+    + rewrite size_cat /=;smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    + rewrite size_cat /=;smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    apply cat_uniq => *;smt().
+    + rewrite size_cat /=;smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    move => xx; rewrite mem_cat /=; smt(mem_set).    
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+  + move => *; do split.
+    + rewrite size_cat /=;smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+  + move => *; do split.
+    + rewrite size_cat /=;smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    + rewrite size_cat /=;smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    apply cat_uniq => *;smt().
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    move => xx; rewrite mem_cat /=; smt(mem_set).    
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+  + move => *; do split.
+    + rewrite size_cat /=;smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    + rewrite size_cat /=;smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    apply cat_uniq => *;smt().
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    move => xx; rewrite mem_cat /=; smt(mem_set).    
+      smt(size_ge0 cat_uniq size_cat take_cat cats0 take_oversize get_setE mem_cat mem_take).
+    
+    inline *.
 case (0 <= CO1.i{2} && CO1.i{2} < size CO1.queried{2}); last 
   by auto => /> &1 &2; smt(find_ge0 has_find size_take).
 seq 0 1 : (#pre /\ m{2} = nth witness CO1.queried{2} CO1.i{2}); 1: by auto => />.
@@ -1545,7 +1639,13 @@ proof.
     sp 1 2; if => //; 2: by wp; skip => /> &2; case: (find _ _).
     if => //; 1: by auto => />; smt(findP_Some findP_None).
     elim * => rv_R; inline *.  
-    by if => //; wp; skip => />; smt(findP_Some).
+    if => //; wp; skip => />; 2:smt(findP_Some).
+    move => &2 ??? H *.
+    pose P := (fun (m : plaintext) (r : randomness) => c{2} = enc r OW_PCVA.sk{2}.`1 m).
+    case ((find P Gm.log{2} <> None)) => /= ?; last by  smt(findP_Some).
+    have := H; rewrite ifT;
+    smt(@List findP_Some findP_None).
+  
   + by move=> *; islossless.
   + by move=> _; proc; inline 1; wp; skip => /#.
   + proc; wp; inline{1} 1; inline{2} 1.
@@ -1601,7 +1701,8 @@ local equiv G2_corr_H m_ : H(RO.RO).get ~ H(RO.RO).get :
      inv_G2_corr Gm.log RO.RO.m OW_PCVA.sk Gm.bad_corr Gm.m Gm.r){2}.
 proof.
   proc; if => //; 2: by skip => /> /#.
-  inline *; auto => />; smt(get_setE).
+  inline *; auto => /> *; do split => *; do split => *;1..7,9..:smt(get_setE mem_set).
+  rewrite !get_setE /=;smt(mem_set).
 qed.
     
 local lemma G2_correctness &m : 
@@ -1626,9 +1727,15 @@ proof.
     inline{1} 1; inline{2} 1.
     sp 2 2; if => //; 2: by auto.
     sp 2 2; elim * => rv_R rv_L.
-    if => //; 2: by auto => />; smt(findP_Some).
-    if => //; 1: by auto => />; smt(findP_Some).
-    if => //; auto => />; smt(findP_Some).
+    if => //;last by
+     auto => /> &2 *;
+      by have /# := findP_Some (fun (m : plaintext) (r : randomness) => c{2} = enc r OW_PCVA.sk{2}.`1 m) Gm.log{2}.
+    if => //;1:
+     by auto => /> &2;
+      have /# := findP_Some (fun (m : plaintext) (r : randomness) => c{2} = enc r OW_PCVA.sk{2}.`1 m) Gm.log{2}.
+    if => //; auto => /> &2;
+    have /# := findP_Some (fun (m : plaintext) (r : randomness) => c{2} = enc r OW_PCVA.sk{2}.`1 m) Gm.log{2}.
+
   + proc; inline{1} 1; inline{2} 1; wp.
     by ecall (G2_corr_H m{2}); wp; skip => /> /#. 
   + by proc; wp; ecall (G2_corr_H x{2}).
@@ -1667,7 +1774,7 @@ local equiv G2_G3_H : H(RO.RO).get ~ RO.RO.get :
   ={res} /\ ={Gm.m, OW_PCVA.cc} /\
      eq_except (pred1 Gm.m{2}) RO.RO.m{2} RO.RO.m{1} /\ OW_PCVA.sk{1}.`1 = O_AdvOW.pk{2} /\ RO.RO.m{2} = Gm.log{1}.
 proof.
-  proc; inline *; wp; sp; if{1}; auto => />; smt(get_setE).
+  proc; inline *; wp; sp; if{1}; auto => /> *; do split => *; rewrite !get_setE; do split;smt(get_setE). 
 qed.
 
 local lemma RO_in : phoare[RO.RO.get : Gm.m \in RO.RO.m ==> Gm.m \in RO.RO.m] =1%r.
@@ -1698,7 +1805,7 @@ proof.
   + by proc; wp; call G2_G3_H; auto.
   + by move=> *; islossless.
   + by move=> *; proc; wp; call RO_in; auto.
-  inline *; auto => /> -[pk sk] hk m _ r _; smt(get_setE mem_empty).
+  inline *; auto => /> -[pk sk] hk m _ r _ => *; do split => *; do split => *; rewrite ?get_setE;smt(get_setE mem_empty).
 qed.
 
 local lemma G3_OW_CPA &m : 

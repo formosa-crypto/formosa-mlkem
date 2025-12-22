@@ -1,6 +1,6 @@
 require import AllCore IntDiv List.
 
-from JazzEC require import Jkem768.
+from JazzEC require import Jkem1024.
 
 require import MLKEM_InnerPKE MLKEM_Poly MLKEM_PolyVec.
 
@@ -203,9 +203,15 @@ while {1} (inc{1} = 196  /\
  
 auto => /> &1 &2 *;split;1: smt(). 
 move => ii skk *; do split. move => *. smt(). 
-move => *. split;rewrite tP => *;smt(@Array32 @Array1536).
-
+move => /> H1 H2 H3 H4 H5 H6 H7 x1 x2 ?;rewrite !tP => *.
+split => i ib;rewrite initiE 1:/# /=;1:smt(Array32.mapiE Array1536.mapiE Array1536.initiE Array32.initiE Array1536.tP Array32.tP).
+have := H7 _;1:smt().
+have -> : x2 = pk{2}.`2 by smt().
+move => [# HH HH1].
+have := HH1 (i+1536) _;
+smt(Array32.mapiE Array1536.mapiE Array1536.initiE Array32.initiE Array1536.tP Array32.tP).
 qed.
+
 
 lemma mlkem_kem_correct_enc : 
    equiv [Jkem1024.M.__crypto_kem_enc_jazz ~ MLKEM1024.enc_derand: 
@@ -233,8 +239,9 @@ seq 15 4 : (#[/1:-2]post /\
         rewrite initiE 1:/# /= /pack8_t /init8 initiE 1:/# /=  initiE 1:/# /=initiE 1:/# /= /#. 
       move => ?; rewrite /get8 initiE 1:/# /= /#.
 
-by auto => />; smt(Array32.tP). 
-
+auto => /> &1 &2 *;do split => *;1: smt(Array32.tP).
++ split => *;1:smt().
+  rewrite tP => *; smt(). 
 
 
 wp;ecall (mlkem_correct_enc pk{1}).
@@ -476,7 +483,7 @@ swap {2} 1 1.
 
 
 seq 1 1 : (#pre /\ 
-           ctc{1} = Array1568.init (fun i => if i < 1408 then c{2}.`1.[i] else c{2}.`2.[i-1408])). print MLKEM_InnerPKE.
+           ctc{1} = Array1568.init (fun i => if i < 1408 then c{2}.`1.[i] else c{2}.`2.[i-1408])). 
 + wp;ecall (mlkem_correct_enc 
    (Array1568.init  (fun (i_0 : int) => s_sk{1}.[4 * 384 + i_0]))).
   auto => /> &1 &2 /=;rewrite  !tP => ??????; do split. 
@@ -487,7 +494,10 @@ seq 1 1 : (#pre /\
  move => ? ? bufv ? krv c.
  have -> /= : (c = (c.`1,c.`2)) by smt().
   rewrite !tP /= => [#] H0 H1 i ib.
- rewrite !initiE 1:/# /=; smt(Array1408.initiE Array160.initiE).
+ rewrite !initiE 1:/# /=.
+ case (i < 1408) => *.
+ + rewrite H0;  smt(Array1408.initiE Array160.initiE).
+  have ? := H1 (i-1408); smt(Array1408.initiE Array160.initiE).
 
 sp 2 0; seq 1 0 : (#pre /\ 
                   (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\

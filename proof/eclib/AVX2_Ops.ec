@@ -953,7 +953,7 @@ module Ops = {
     return r;
   }
 
-  proc iVPMOVMSKB_u256u32(x: t32u8): W32.t = {
+  proc iMOVEMASK_32u8(x: t32u8): W32.t = {
     var rb: bool list;
 
     rb <- mkseq (fun i => W8.msb(x.[i])) 32;
@@ -1307,7 +1307,7 @@ module OpsV = {
     return VPSHUFB_256 x m;
   }
 
-  proc iVPMOVMSKB_u256u32(x: vt32u8): W32.t = {
+  proc iMOVEMASK_32u8(x: vt32u8): W32.t = {
     return MOVEMASK_32u8 x;
   }
 
@@ -1484,7 +1484,7 @@ proof.
   apply W2u128.wordP => i i_bnds.
   do rewrite -get_unpack128 //=.
   rewrite createiE // get_of_list //.
-  smt(@List).
+  smt().
 qed.
 
 equiv eq_iVPBROADCAST_2u128_8u32: Ops.iVPBROADCAST_2u128_8u32 ~ OpsV.iVPBROADCAST_2u128_8u32: is4u32 v{1} v{2} ==> is8u32 res{1} res{2}.
@@ -1510,7 +1510,7 @@ proof.
   apply W4u64.wordP => i i_bnds.
   do rewrite -get_unpack64 //=.
   rewrite createiE // get_of_list //.
-  smt(@List).
+  smt().
 qed.
 
 equiv eq_iVPBROADCAST_8u32_16u16 : Ops.iVPBROADCAST_8u32_16u16 ~ OpsV.iVPBROADCAST_8u32_16u16 : is2u16 v{1} v{2} ==> is16u16 res{1} res{2}.
@@ -1677,7 +1677,7 @@ proof.
   move => i_i.
   rewrite -get_unpack64 1:i_i pack4K //=.
   rewrite get_of_list 1:i_i //=.
-  smt(@Array4 @List).
+  smt().
 qed.
 
 equiv eq_iVPERMQ : Ops.iVPERMQ ~ OpsV.iVPERMQ : is4u64 x{1} x{2} /\ ={p} ==> is4u64 res{1} res{2}.
@@ -1780,8 +1780,8 @@ proof.
           x{1}.[8 * (to_uint p{2} %/ 64 %% 4) + 5];
           x{1}.[8 * (to_uint p{2} %/ 64 %% 4) + 6];
           x{1}.[8 * (to_uint p{2} %/ 64 %% 4) + 7]]).
-    smt(@List @W8u8 @W4u64 @W32u8).
-  (* rewrite (_: Ring.IntID.(^) 4 0 = 1). *) smt(@Int @Ring.IntID).
+    smt().
+   smt().
 qed.
 
 lemma pack8_bits32 (x:t8u32) (i:int): 0 <= i < 8 =>
@@ -1790,7 +1790,7 @@ proof.
   move => i_i.
   rewrite -get_unpack32 1:i_i pack8K //=.
   rewrite get_of_list 1:i_i //=.
-  smt(@Array8 @List).
+  smt().
 qed.
 
 equiv eq_iVPERMD : Ops.iVPERMD ~ OpsV.iVPERMD : is8u32 x{1} x{2} /\ is8u32 p{1} p{2} ==> is8u32 res{1} res{2}.
@@ -2173,32 +2173,30 @@ do 32?(rewrite -get_unpack8 1:modz_cmp 1:// pack16K).
 have x_lh_ls_get: forall k, 0 <= k < 16 => [x{1}.[0]; x{1}.[1]; x{1}.[2]; x{1}.[3]; x{1}.[4]; x{1}.[5]; x{1}.[6];
                                        x{1}.[7]; x{1}.[8]; x{1}.[9]; x{1}.[10]; x{1}.[11]; x{1}.[12];
                                        x{1}.[13]; x{1}.[14]; x{1}.[15]].[k] = x{1}.[k].
-  move => k k_bnds. smt(@Array16).
+  move => k k_bnds. smt().
 
 have x_uh_ls_get: forall k, 0 <= k < 16 => [x{1}.[16]; x{1}.[17]; x{1}.[18]; x{1}.[19]; x{1}.[20]; x{1}.[21];
                                              x{1}.[22]; x{1}.[23]; x{1}.[24]; x{1}.[25]; x{1}.[26];
                                              x{1}.[27]; x{1}.[28]; x{1}.[29]; x{1}.[30]; x{1}.[31]].[k] = x{1}.[16 + k].
-  move => k k_bnds. smt(@Array16 @Array32).
+  move => k k_bnds. smt().
 
 do 32?(rewrite get_of_list 1:modz_cmp 1://).
 do 32?(rewrite x_lh_ls_get 1:modz_cmp 1:// || rewrite x_uh_ls_get 1:modz_cmp 1://).
 trivial.
 qed.
 
-equiv eq_iVPMOVMSKB_u256u32 : Ops.iVPMOVMSKB_u256u32 ~ OpsV.iVPMOVMSKB_u256u32:
+equiv eq_iVPMOVMSKB_u256u32 : Ops.iMOVEMASK_32u8 ~ OpsV.iMOVEMASK_32u8:
   is32u8 x{1} x{2} ==> ={res}.
 proof.
 proc; wp; skip.
-rewrite /is32u8 /VPMOVMSKB_u256u32 /=.
+rewrite /is32u8 /MOVEMASK_32u8 /=.
 move => &1 &2 x_eq.
-rewrite x_eq.
-rewrite -get_unpack8 //=.
+rewrite x_eq /=.
 apply W32.wordP.
 move => i i_bnds.
 do rewrite get_bits2w //.
 rewrite nth_mkseq => />.
-rewrite /msb.
-smt(@List).
+rewrite /msb  /= /#. 
 qed.
 
 equiv eq_iVMOVSLDUP_256_16u16: Ops.iVMOVSLDUP_256_16u16 ~ OpsV.iVMOVSLDUP_256_16u16:
@@ -2236,7 +2234,7 @@ move => i i_i.
 do (rewrite -get_unpack32 //=).
 do rewrite haddE.
 do rewrite map_cons.
-smt(@List @W8u32).
+smt().
 qed.
 
 equiv eq_iVPMADDUBSW_256: Ops.iVPMADDUBSW_256 ~ OpsV.iVPMADDUBSW_256 :
@@ -2255,6 +2253,6 @@ rewrite -get_unpack16 //=.
 rewrite -get_unpack16 //=.
 do rewrite haddE.
 do rewrite map_cons.
-smt(@List @W16u16).
+smt().
 qed.
 

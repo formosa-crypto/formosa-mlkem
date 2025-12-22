@@ -1,6 +1,6 @@
 (* ----- *) require import AllCore IntDiv List StdBigop.
 from Jasmin require import JModel.
-require import Bindings.
+require import Mlkem_bindings.
 (* ----- *) require import Genbindings Mlkem_filters_bindings.
 (* ----- *) (* - *) import W8 W12 W512 BitEncoding BS2Int BitChunking.
 
@@ -743,6 +743,7 @@ lemma map_pmap_comp ['a 'b 'c] (f : 'a -> 'b option) (g : 'b -> 'c) s :
 proof. by elim: s => [//|x s ih] @/(\o) /=; case: (f _). qed.
 
 
+
 (* -------------------------------------------------------------------- *)
 lemma filter24P _buf : hoare[Filters.filter24 : buf = _buf ==>
   let ws =
@@ -760,50 +761,16 @@ proc; conseq (_ : _buf = buf ==> _); first done.
 
 (* ==================================================================== *)
 (* First part: extracting all the 12-bit words from the input buffer    *)
-seq ^g0<-{2} & -1 : (#pre /\ forall i, 0 <= i < 16 =>
-  extract_256_16 f0 (16 * i)
-    = zextend_12_16 (sliceget_8_12_24 (Array24.init (fun i => buf.[i])) (12 * i))
-).
-- bdep 12 16 [_buf[Array24.t:0]] [buf[Array24.t:0]]  [f0] zextend_12_16 predT_W12.
-  - by move=> |>; apply/all_predT.
-  move=> |> _f0 eq i ge0_i lt32_i.
-  apply/W16.ext_eq => j rg_j; rewrite extract_256_16E ~-1://.
-  move/(congr1 (fun xs => nth witness xs i)): eq => /=.
-  rewrite flatten1 -map_comp (nth_map witness) /(\o) /=.
-  - by rewrite size_chunk 1:// size_flatten_W8_w2bits size_to_list /#.
-  rewrite -sliceget_8_12_24_chunkE ~-1:/# => ->.
-  rewrite (nth_map witness) /=.
-  - rewrite size_chunk 1:// flatten1.
-    by rewrite size_w2bits /#.
-  by rewrite -(bits2w_chunk_w2bits_16_256E witness) ~-1:/# flatten1.
+seq ^g0<-{2} & -1 : (#pre /\ 
+          init_array16_w16 (fun i => extract_256_16 f0 (16 * i)) =
+          init_array16_w16 (fun i => zextend_12_16 (sliceget_8_12_24 (init_array24_w8 (fun (i : int) => buf.[i])) (12 * i)))); 1: by circuit.
   
 (* ==================================================================== *)
 (* Second part: parallel comparison                                     *)
-seq ^good<- : (#pre /\ forall i, 0 <= i < 16 =>
-  good.[perm i] <=> extract_256_16 f0 (16 * i) \slt W16.of_int 3329
+seq ^good<- : (#pre /\ 
+  W16.init (fun i =>  good.[perm i]) = W16.init (fun i => extract_256_16 f0 (16 * i) \slt W16.of_int 3329)
 ).
-- pose _sample_q := sample_q.
-  have RW: W256.zero = VPCMPGT_16u16 sample_q _sample_q.
-   by apply W256.all_eq_eq; rewrite /all_eq  /_sample_q /VPCMPGT_16u16 /W16u16.wcmp //=.
-  proc rewrite ^g1<- RW.
-  alias f1 := _sample_q @ ^g1<-.
-  swap 2 -1; sp 1.
-  exists* f0; elim* => _f0.
-  exlim f1 => _f1.
-  
-  bdep 16 1 [_f0; _f1] [f0; f1] [good] ltq predT_W16 perm.
-  - by move=> |> *; apply/all_predT.
-  move=> |> &hr _g eq i ge0_i lt32_i; apply/iffE/eq_iff.
-  move/(congr1 (fun xs => nth false xs i)): eq => /eq_sym /=.
-  rewrite flatten1 chunk1E -map_comp size_map size_w2bits.
-  rewrite nth_mkseq 1:/# /= (nth_map false) /(\o) /= 1:/#.
-  rewrite /bits2bool /= => ->; rewrite -map_comp /(\o) /=.
-  rewrite (nth_map witness) /= 1:size_chunk 1://.
-  - by rewrite flatten_cons flatten1 size_cat !size_w2bits /#.
-  rewrite -w2bits_concat_2u256 /ltq; congr.
-  apply/W16.ext_eq => j rgj; rewrite bits2w_chunk_w2bits_16_512E ~-1:/#.
-  rewrite extract_256_16E ~-1:/#.
-  by rewrite /concat_2u256 initiE 1:/# /= ifT /#.
+- by conseq />; circuit.
 
 (* ==================================================================== *)
 (* Third part: extracting values                                        *)
@@ -824,11 +791,16 @@ case <- ^t0_1<-{2} & -1; kill ^shuffle_0_1<- & +1 !5; first by auto.
 proc rewrite ^t0_1<-{2} popcount_64E.
 cfold ^t0_1<-; swap ^shuffle_0_1<- @^shuffle_0<- & +1.
 
-proc change circuit [
+  (* FIXME! ADD TACTIC THAT USES NEW CIRCUIT TACTIC TO SOLVE THIS  *)
+ 
+proc change  (* [
   (shf0_0_16 shf0_1_16 : W128.t)
   (f0_0 f0_1 : W128.t)
-] ^shuffle_0<- +6
-{
+] *) [^shuffle_0<- +5] 
+: [
+  (shf0_0_16 shf0_1_16 : W128.t)
+  (f0_0 f0_1 : W128.t)
+] {
   f0_0 <- extract_256_128 f0 0;
   f0_1 <- extract_256_128 f0 128;
   shf0_0_16 <- VPUNPCKL_16u8 shf0_0 (VPINC_8u8 shf0_0);
@@ -838,6 +810,7 @@ proc change circuit [
   f0_1      <- VPSHUFB_128 f0_1 shf0_1_16;
   f0 <- Mlkem_filters_bindings.concat_2u128 f0_0 f0_1;
 }.
+circuit.
 
 swap ^f0_0<- @^good0_0<-.
 swap [^shf0_0_16<- .. ^shf0_0_16<- & +1] @^good0_0<- & +2.
@@ -854,11 +827,20 @@ pose P (o : int) (g : W8.t) (f : W256.t) (f_0 : W128.t) :=
       (iotared 0 8) in
   all (fun i => w.[i] = extract_128_16 f_0 (16 * i)) (iotared 0 (size w)).
 
-sp 1; seq ^f0_0<- : (#pre /\ P 0 good0_0 f0 f0_0).
-- by bdep bitstring [f0] [P 0 good0_0 f0 f0_0] good0_0; move=> |>.
+sp 1; seq ^f0_0<- : (#pre /\ P 0 good0_0 f0 f0_0). 
+move => |>.
+conseq (: true ==> P 0 good0_0 f0 f0_0); 1:by smt().
+extens [good0_0] : by circuit simplify.
 
 sp 1; seq ^f0_1<- : (#pre /\ P 128 good0_1 f0 f0_1).
-- by bdep bitstring [f0] [P 128 good0_1 f0 f0_1] good0_1; move=> |>.
+move => |>.
+conseq (: true ==> P 128 good0_1 f0 f0_1); 1: by smt().
+extens [good0_1] : by circuit simplify.
+      
+(* move => //>.
+conseq (: _ ==> P 128 good0_1 f0 f0_1). move => //>.
+extens [good0_1] : by circuit simplify; trivial. *)
+
 
 (* ==================================================================== *)
 (* Part four: write filtered values in the output buffer                *)
@@ -941,8 +923,13 @@ seq 0 : ((forall i, 0 <= i < 2 =>
 - have hext': forall j, 0 <= j < 16 =>
     zextend_12_16 (sliceget_8_12_24 (Array24.init (fun i => _buf.[i])) (12 * j))
     = extract_256_16 [f0{hr}].[j %/ 16] (16 * (j - 16 * (j %/ 16))).
-  - move=> j rgj; rewrite -hext 1:/#; apply/ W16.ext_eq=> l rgl.
-    by rewrite extract_256_16E 1:// extract_256_16E 1:// /#.
+  - move=> j rgj;move : hgood; rewrite wordP => hgood.
+    move : hext; rewrite tP => hext.
+    have := hext ((j - 16 * (j %/ 16))) _; 1: by smt().
+    rewrite !Array16.initiE /=;1,2:smt().
+    rewrite ifT 1:/# => ->.
+    apply/ W16.ext_eq=> l rgl.
+    by smt().
   rewrite /w' /ws eq_sym map_pmap_comp (iota_addl (8 * i) 0).
   rewrite pmap_map_comp /(\o) /= &(eq_in_pmap).
   move=> j /mem_iota /= [ge_j lt_j].
@@ -950,7 +937,10 @@ seq 0 : ((forall i, 0 <= i < 2 =>
   - rewrite -get_to_uint extract_64_8E 1:/# /= -weak_ltq hext' 1:/#.
     have ->: perm (8 * i) + j = perm (8 * i + j).
     - by rewrite /perm /=; smt().
-    rewrite hgood 1:/#; congr; apply/W16.ext_eq => k rgk.
+    move : hgood; rewrite wordP => hgood.
+    have := hgood (8 * i + j) _;1 : by smt().
+    rewrite !initiE 1,2:/# /=.
+    move => ->; congr; apply/W16.ext_eq => k rgk.
     rewrite extract_256_16E 1:// extract_256_16E 1://.
     by rewrite /concat_2u256 /#.
   congr; apply/W16.ext_eq => k rgk; rewrite !extract_256_16E ~-1://.
@@ -1040,41 +1030,18 @@ proc; conseq (_ : _buf = buf ==> _); first done.
 
 (* ==================================================================== *)
 (* First part: extracting all the 12-bit words from the input buffer    *)
-seq ^g0<-{2} & -1 : (#pre /\ forall i, 0 <= i < 32 =>
-  extract_512_16 (concat_2u256 f0 f1) (16 * i)
-    = zextend_12_16 (sliceget_8_12_48 (Array48.init (fun i => buf.[i])) (12 * i))
-  ).
-- bdep 12 16 [_buf[Array48.t:0]] [buf[Array48.t:0]] [f0; f1] zextend_12_16 predT_W12. 
-  - by move=> |>; apply/all_predT.
-  move=> |> _f0 _f1 eq i ge0_i lt32_i.
-  apply/W16.ext_eq => j rg_j; rewrite extract_512_16E ~-1://.
-  move/(congr1 (fun xs => nth witness xs i)): eq => /=.
-  rewrite flatten1 -map_comp (nth_map witness) /(\o) /=.
-  - by rewrite size_chunk 1:// size_flatten_W8_w2bits size_to_list /#.
-  rewrite -sliceget_8_12_48_chunkE ~-1:/# => ->.
-  rewrite (nth_map witness) /=.
-  - rewrite size_chunk 1:// flatten_cons flatten1.
-    by rewrite size_cat !size_w2bits /#.
-  by rewrite -w2bits_concat_2u256 -(bits2w_chunk_w2bits_16_512E witness) ~-1:/#.
+seq ^g0<-{2} & -1 : (#pre /\
+  init_array32_w16 (fun i => extract_512_16 (concat_2u256 f0 f1) (16 * i))
+    = init_array32_w16 (fun i => (zextend_12_16 (sliceget_8_12_48 (init_array48_w8 (fun j => buf.[j])) (12 * i)))
+  )). move => |>. circuit.
 
 (* ==================================================================== *)
 (* Second part: parallel comparison                                     *)
-seq ^good<- : (#pre /\ forall i, 0 <= i < 32 =>
-  good.[perm i] <=> extract_512_16 (concat_2u256 f0 f1) (16 * i) \slt W16.of_int 3329
-).
-    - exists* f0, f1; elim* => _f0 _f1.
-  bdep 16 1 [_f0; _f1] [f0; f1] [good] ltq predT_W16 perm.
-  - by move=> |> *; apply/all_predT.
-  move=> |> &hr _g eq i ge0_i lt32_i; apply/iffE/eq_iff.
-  move/(congr1 (fun xs => nth false xs i)): eq => /eq_sym /=.
-  rewrite flatten1 chunk1E -map_comp size_map size_w2bits.
-  rewrite nth_mkseq 1:/# /= (nth_map false) /(\o) /= 1:/#.
-  rewrite /bits2bool /= => ->; rewrite -map_comp /(\o) /=.
-  rewrite (nth_map witness) /= 1:size_chunk 1://.
-  - by rewrite flatten_cons flatten1 size_cat !size_w2bits /#.
-  rewrite -w2bits_concat_2u256 /ltq; congr.
-  apply/W16.ext_eq => j rgj; rewrite bits2w_chunk_w2bits_16_512E ~-1:/#.
-  by rewrite extract_512_16E ~-1:/#.
+seq ^good<- : (#pre /\
+  W32.init (fun i => good.[perm i]) = 
+  W32.init (fun i => extract_512_16 (concat_2u256 f0 f1) (16 * i) \slt W16.of_int 3329)
+). 
+  - by conseq />; circuit.
 
 (* ==================================================================== *)
 (* Third part: extracting values                                        *)
@@ -1163,16 +1130,27 @@ pose P (o : int) (g : W8.t) (f : W256.t) (f_0 : W128.t) :=
   all (fun i => w.[i] = extract_128_16 f_0 (16 * i)) (iotared 0 (size w)).
 
 sp 1; seq ^f0_0<- : (#pre /\ P 0 good0_0 f0 f0_0).
-- by bdep bitstring [f0] [P 0 good0_0 f0 f0_0] good0_0; move=> |>.
+move => |>.
+(* conseq (: good0_0 = extract_64_8 good 0 ==> P 0 good0_0 f0 f0_0); 1,2: by smt(). *)
+conseq (: true ==> P 0 good0_0 f0 f0_0); 1: by smt().
+- by extens [good0_0] : by circuit simplify.
 
 sp 1; seq ^f0_1<- : (#pre /\ P 128 good0_1 f0 f0_1).
-- by bdep bitstring [f0] [P 128 good0_1 f0 f0_1] good0_1; move=> |>.
+move => |>.
+(* conseq (: good0_1 = extract_64_8 good 16 => P 128 good0_1 f0 f0_1). *)
+conseq (: true ==> P 128 good0_1 f0 f0_1); 1: by smt().
+- by extens [good0_1] : by circuit simplify.
 
 sp 1; seq ^f1_0<- : (#pre /\ P 0 good1_0 f1 f1_0).
-- by bdep bitstring [f1] [P 0 good1_0 f1 f1_0] good1_0; move=> |>.
+move => |>.
+conseq (: true ==> P 0 good1_0 f1 f1_0); 1: by smt().
+- by extens [good1_0] : by circuit simplify.
 
 sp 1; seq ^f1_1<- : (#pre /\ P 128 good1_1 f1 f1_1).
-- by bdep bitstring [f1] [P 128 good1_1 f1 f1_1] good1_1; move=> |>.
+move => |>.
+conseq (: true ==> P 128 good1_1 f1 f1_1); 1: by smt().
+- by extens [good1_1] : by circuit simplify.
+
 
 (* ==================================================================== *)
 (* Part four: write filtered values in the output buffer                *)
@@ -1255,9 +1233,18 @@ seq 0 : ((forall i, 0 <= i < 4 =>
 - have hext': forall j, 0 <= j < 32 =>
     zextend_12_16 (sliceget_8_12_48 (Array48.init (fun i => _buf.[i])) (12 * j))
     = extract_256_16 [f0{hr}; f1{hr}].[j %/ 16] (16 * (j - 16 * (j %/ 16))).
-  - move=> j rgj; rewrite -hext 1:/#; apply/ W16.ext_eq=> l rgl.
-    rewrite extract_256_16E 1:// extract_512_16E 1:// initE.
-    by rewrite iftrue 1:/#; smt().
+  - move=> j rgj; move : hgood; rewrite wordP => hgood.
+    move : hext.
+    rewrite tP /init_array32_w16 => hext.
+    have := hext j _; 1: by smt().
+    rewrite !Array32.initE /= ifT 1:/# ifT 1:/# /init_array48_w8.
+    rewrite W16.wordP => hext_conc.
+    apply W16.ext_eq => l rgl. 
+    have := hext_conc l _; 1: by smt(). move => <-.
+    rewrite extract_256_16E 1:/# extract_512_16E 1:/#.
+    case (j %/ 16 = 0) => jc.
+    by rewrite /concat_2u256 W512.initE; by smt().
+    rewrite /concat_2u256 W512.initE ifT 1:/# ifT 1:/#; smt().
   rewrite /w' /ws eq_sym map_pmap_comp (iota_addl (8 * i) 0).
   rewrite pmap_map_comp /(\o) /= &(eq_in_pmap).
   move=> j /mem_iota /= [ge_j lt_j].
@@ -1265,7 +1252,15 @@ seq 0 : ((forall i, 0 <= i < 4 =>
   - rewrite -get_to_uint extract_64_8E 1:/# /= -weak_ltq hext' 1:/#.
     have ->: perm (8 * i) + j = perm (8 * i + j).
     - by rewrite /perm /=; smt().
-    rewrite hgood 1:/#; congr; apply/W16.ext_eq => k rgk.
+  have hgood2 : forall i, 0 <= i < 32 => 
+    (good{hr}.[perm i]) = 
+    extract_512_16 (concat_2u256 f0{hr} f1{hr}) (16 * i) \slt
+            W16.of_int 3329. 
+  - move : hgood. rewrite W32.wordP => aux. 
+    move => i2 i2rg.
+    have := aux i2 _; 1: by smt(). rewrite W32.initE ifT 1:/#. simplify.
+    move => ->. rewrite W32.initE ifT 1:/# /#.
+    rewrite hgood2 1:/#; congr; apply/W16.ext_eq => k rgk.
     rewrite extract_256_16E 1:// extract_512_16E 1://.
     by rewrite /concat_2u256 initE iftrue 1:/# /=; smt().
   congr; apply/W16.ext_eq => k rgk; rewrite !extract_256_16E ~-1://.

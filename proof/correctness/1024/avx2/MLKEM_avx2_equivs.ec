@@ -694,14 +694,13 @@ equiv compressequivvec  :
     ==> 
     res{2} = Array1408.init (fun i => res{1}.[i]).
 proc*.
-print MLKEM_PolyVec.
 ecall {2} (i_polyvec_compress_corr a{2}) => /=.
 ecall {1} (polyvec_compress_avx2_corr a{1}).
 + auto => /> &1 &2 ??? rr;rewrite !tP => H k kb. 
    rewrite initiE 1:/# /= H 1:/# /encode11_vec get_of_list 1:/#;do 4!(congr). 
    rewrite eq_vectorP => i ib.
-   rewrite tP => j jb.
-   smt(liftarrayvector).
+   rewrite /= tP => j jb.
+   rewrite !liftarrayvector /#.
 qed.
 
 (***************)

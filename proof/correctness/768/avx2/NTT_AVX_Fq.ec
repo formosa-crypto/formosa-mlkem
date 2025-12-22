@@ -331,7 +331,8 @@ move => n *. rewrite /r_bsrev_ntt_outer_foldl rangered => />. rewrite (_:n=0) =>
 move => n Hn1 Hrec Hn2 Hn3 i.
 rewrite /r_bsrev_ntt_outer_foldl rangeSr => />. rewrite foldl_map /= foldl_rcons => />.
 rewrite /r_bsrev_ntt_outer_foldl foldl_map in Hrec => />.
-rewrite /r_bsrev_ntt_outer r_bsrev_ntt_inner_foldl_iE => />; 1..3: by smt(). 
+rewrite /r_bsrev_ntt_outer r_bsrev_ntt_inner_foldl_iE => />; 1,3: by smt().
++ have ? : (n+1) * len <= 128 + len; by smt(). 
 rewrite !Hrec => />; 1..3: by smt(). clear Hrec.
 case (0 <= i) => />Hi1; last smt().
 case (i < n * len * 2) => />Hi2; first smt().
@@ -343,7 +344,7 @@ case (i < n * (len*2)+len) => /> Hi3.
 case (i < n * (len * 2) + len + len) => />Hi4; last smt().
 rewrite (_:i%/len = n*2+1) => />.
 + have ? : (i %/ len * len + i %% len) %/ len * len = (n * 2 + 1)*len; last by smt().
-  smt(@IntDiv).
+  + have ? : (n+1) * len <= 128 + len; by smt(). 
 rewrite ifT 1:/# ifF 1:/# ifT 1:/# ifF 1:/#;do 6!congr.  
 by smt().
 qed.
@@ -429,7 +430,9 @@ move => n *. rewrite /r_bsrev_invntt_outer_foldl rangered => />. rewrite (_:n=0)
 move => n Hn1 Hrec Hn2 Hn3 i.
 rewrite /r_bsrev_invntt_outer_foldl rangeSr => />. rewrite foldl_map /= foldl_rcons => />.
 rewrite /r_bsrev_invntt_outer_foldl foldl_map in Hrec => />.
-rewrite /r_bsrev_invntt_outer r_bsrev_invntt_inner_foldl_iE => />; 1..3: by smt(). 
+rewrite /r_bsrev_invntt_outer r_bsrev_invntt_inner_foldl_iE => />; 1,3: by smt().
++ have ? : (n+1) * len <= 128 + len; by smt(). 
+
 rewrite !Hrec => />; 1..3: by smt(). clear Hrec.
 case (0 <= i) => />Hi1; last smt().
 case (i < n * len * 2) => />Hi2; first smt().

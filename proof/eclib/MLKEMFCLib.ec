@@ -95,7 +95,8 @@ case (2147483648 <= to_uint a); last first. (* positive numbers *)
     by smt(leq_div2r).
  move => /= lb.
  have -> : to_uint a %/ 2 ^ (x + 16) = to_uint a %/ 65536 %/ 2 ^ x; last by smt().
- rewrite -pow2_16 {1}(divz_eq (to_uint a) (2^16)) exprD_nneg //; 1: smt().  
+ rewrite -pow2_16 {1}(divz_eq (to_uint a) (2^16)) exprD_nneg //=; 1: smt().
+ rewrite divmod_mul;
  by smt(divmod_mul gt0_pow2). 
 
 move => neg.
@@ -174,7 +175,8 @@ case (32768 <= to_uint a); last first. (* positive numbers *)
     by smt(leq_div2r).
  move => /= lb.
  have -> : to_uint a %/ 2 ^ (x + 10) = to_uint a %/ 1024 %/ 2 ^ x; last by smt().
- rewrite (_: 1024 = 2^10) // {1}(divz_eq (to_uint a) (2^10)) exprD_nneg //; 1: smt().  
+ rewrite (_: 1024 = 2^10) // {1}(divz_eq (to_uint a) (2^10)) exprD_nneg //; 1: smt().
+ rewrite divmod_mul;
  by smt(divmod_mul gt0_pow2). 
 
 move => neg.

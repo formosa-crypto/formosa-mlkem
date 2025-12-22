@@ -40,8 +40,8 @@ lemma srand_uni : is_uniform srand.
 rewrite /darray32.
 apply dmap_uni_in_inj => x y xin yin;
 1: by smt(supp_dlist_size Array32.of_listK).
-have sizex : size x = 32 by smt(supp_dlist_size).
-have sizey : size y = 32 by smt(supp_dlist_size).
+have sizex : size x = 32 by have := supp_dlist_size W8.dword 32 =>/= /#.
+have sizey : size y = 32 by have := supp_dlist_size W8.dword 32 =>/= /#.
 rewrite !dlist1E // sizex /= sizey /=.
 have -> : (fun (x0 : W8.t) => mu1 W8.dword x0) = fun _ =>  inv W8.modulus%r.
 + apply fun_ext => w.
@@ -67,7 +67,7 @@ qed.
 op G_coins768(s : W8.t Array32.t) : W8.t Array32.t * W8.t Array32.t =
     G_coins (Array33.init (fun (i2 : int) => if i2 < 32 then s.[i2] else W8.of_int kvec)).
 
-require FLPRG PRF. print MLKEM768.
+require FLPRG PRF. 
 clone FLPRG as HS_DEFS with
   type seed <- W8.t Array32.t, 
   type output <- W8.t Array32.t * W8.t Array32.t,
@@ -455,14 +455,15 @@ while (={i, that, _N, m, aT} /\ noise1{1} = rv{2} /\ noiseseed{1} = coins{2} /\
 + inline *;wp;conseq(_: ={rr0}); 1: by smt(getv_setvE).  by inline*; sim; auto => />. 
 wp;conseq (: ={that,_N,m,aT} /\
   noise1{1} = rv{2} /\ NPRF.PRF.k{1} = coins{2} /\
-  noiseseed{1} = coins{2}); first by smt(eq_vectorP).
+  noiseseed{1} = coins{2}).
+  + move => &1 &2 /> n2;1: by auto => />;smt(eq_vectorP).
 while (={i, that, _N, m, aT} /\ noiseseed{1} = coins{2} /\
        0<=i{1}<=kvec /\ NPRF.PRF.k{1} = coins{2} /\
        forall k, 0 <=k < i{1} => (noise1{1}.[k])%Vector = (rv{2}.[k])%Vector).
 + inline *;wp; conseq(_: ={rr0}); 1: by smt(getv_setvE).  
   by inline*; sim; auto => />. 
 inline {1} 1.
-sp;wp;conseq (: ={that, m} /\ a0{1} = aT{2} /\ r{1} = coins{2}); 1: by smt(eq_vectorP).
+sp;wp;conseq (: ={that, m} /\ a0{1} = aT{2} /\ r{1} = coins{2}); 1: by auto => />; smt(eq_vectorP).
 while (#post /\ sd{1} = rho{2} /\  i1{1} = i{2} /\ r{1} = coins{2} /\ 0<=i1{1}<=kvec); last by auto => />. 
 
 wp;while (#post /\ i1{1} = i{2} /\ j0{1} = j{2} /\ 0<=j0{1}<=kvec); 

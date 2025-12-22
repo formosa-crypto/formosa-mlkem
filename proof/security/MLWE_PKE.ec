@@ -336,10 +336,10 @@ byphoare => //;proc.
 rnd  (pred1 b')=> //=; conseq (: _ ==> true).
 + by move=> />; apply DBool.dbool1E.
 islossless; 4,5,7:by smt(duni_ll dshort_ll).
-+ by apply _A_guess_ll; smt(). 
-+ by apply _SAT_ll; smt().
-+ by apply _A_choose_ll; smt().
-+ by apply _SA_ll; smt().
++ by apply _A_guess_ll.
++ by apply _SAT_ll. 
++ by apply _A_choose_ll.
++ by apply _SA_ll.
 qed.
 
 lemma main_theorem_s &m :

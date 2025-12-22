@@ -643,7 +643,6 @@ wp; ecall (A64ref.absorb_ref_h [<:W8.t>] in_0 6 72).
 wp; call (state_init_ref_h 72).
 auto => /> []st1? /= ->.
 move=> []st2 out /= ?H.
-print Array64.of_listK.
 rewrite -(Array64.to_listK W8.zero) H tP => i Hi.
 rewrite get_of_list // /SHA3_512_64_64 initiE //=.
 case: (i<32) => C.

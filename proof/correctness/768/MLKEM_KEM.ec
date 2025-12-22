@@ -200,12 +200,17 @@ while {1} (inc{1} = 148   /\
           rewrite /pack8_t /(\bits8) initiE /#.
        +  move => ?; rewrite ifT 1:/#.  
           rewrite /get64_direct /(\bits8) /= wordP => *. 
-          rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /= initiE 1:/# /=; smt(@Array32 @Array1152).
+          rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /= initiE 1:/# /=; smt(Array1152.initiE Array32.initiE Array1152.tP Array32.tP).
  
 auto => /> &1 &2 *;split. smt(). 
 move => ii skk *; do split.  smt(). 
-move => *. split;rewrite tP => *;smt(@Array32 @Array1152).
-
+move => /> H1 H2 H3 H4 H5 H6 H7 x1 x2 ?;rewrite !tP => *.
+split => i ib;rewrite initiE 1:/# /=;1:smt(Array32.mapiE Array1152.mapiE Array1152.initiE Array32.initiE Array1152.tP Array32.tP).
+have := H7 _;1:smt().
+have -> : x2 = pk{2}.`2 by smt().
+move => [# HH HH1].
+have := HH1 (i+1152) _;
+smt(Array32.mapiE Array1152.mapiE Array1152.initiE Array32.initiE Array1152.tP Array32.tP).
 qed.
 
 lemma mlkem_kem_correct_enc : 
@@ -234,7 +239,7 @@ seq 15 4 : (#[/1:-2]post /\
         rewrite initiE 1:/# /= /pack8_t /init8 initiE 1:/# /=  initiE 1:/# /=initiE 1:/# /= /#. 
       move => ?; rewrite /get8 initiE 1:/# /= /#.
 
-by auto => />; smt(Array32.tP). 
+by auto => /> &1 &2 *;split; smt(Array32.tP). 
 
 
 
@@ -477,7 +482,7 @@ swap {2} 1 1.
 
 
 seq 1 1 : (#pre /\ 
-           ctc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])). print MLKEM_InnerPKE.
+           ctc{1} = Array1088.init (fun i => if i < 960 then c{2}.`1.[i] else c{2}.`2.[i-960])). 
 + wp;ecall (mlkem_correct_enc 
    (Array1184.init  (fun (i_0 : int) => s_sk{1}.[3 * 384 + i_0]))).
   auto => /> &1 &2 /=;rewrite  !tP => ??????; do split. 
@@ -488,7 +493,10 @@ seq 1 1 : (#pre /\
  move => ? ? bufv ? krv c.
  have -> /= : (c = (c.`1,c.`2)) by smt().
   rewrite !tP /= => [#] H0 H1 i ib.
- rewrite !initiE 1:/# /=; smt(Array960.initiE Array128.initiE).
+ rewrite !initiE 1:/# /=.
+ case (i < 960) => *.
+ + rewrite H0;  smt(Array960.initiE Array128.initiE).
+  have ? := H1 (i-960); smt(Array960.initiE Array128.initiE).
 
 sp 2 0; seq 1 0 : (#pre /\ 
                   (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\

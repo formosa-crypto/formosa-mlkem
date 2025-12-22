@@ -181,7 +181,7 @@ case (2147483648 <= to_uint a); last first. (* positive numbers *)
  move => /= lb.
  have -> : to_uint a %/ 2 ^ (x + 26) = to_uint a %/ 67108864 %/ 2 ^ x; last by smt().
  rewrite (_: 67108864 = 2^26) 1:// {1}(divz_eq (to_uint a) (2^26)) exprD_nneg 2://; 1: smt().  
- by smt(divmod_mul gt0_pow2). 
+ by rewrite divmod_mul;smt(gt0_pow2).
 
 move => neg.
 rewrite divzDr 1:// /= (_: 67108864 = 2^26) 1:// -to_uint_shr 1:// /=.

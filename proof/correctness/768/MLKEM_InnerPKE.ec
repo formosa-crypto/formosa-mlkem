@@ -57,7 +57,6 @@ require import MLKEM_keccak_ref.
 
 (** AS AN INTERMEDIATE STEP WE RESHUFFLE THE EXTRACTED CODE TO BETTER
     MATCH THE STRUCTURE OF THE SPEC AND PROVE EQUIVALENCE *)
-print Jkem768.M.
 module AuxMLKEM= {
 
 proc __gen_matrix(seed : W8.t Array32.t, trans : bool) : W16.t Array2304.t = {
@@ -1046,7 +1045,11 @@ seq 2 2 : (#pre /\ a{2} = lift_matrix a{1} /\
             by auto => />  /#.
   wp; call(_: ={XOF.state}); 1: by sim.
   wp; call(_: ={arg} ==> ={XOF.state}); 1: by sim. 
-  by auto => /> &1 &2;smt(offunmK setmE). 
+  auto => /> &1 &2 *; do split;1,2:smt().
+  + move => ii jj ????;
+      by rewrite !setmE /=; smt(offunmK). 
+  + move => jj ??;
+      by rewrite !setmE /=; smt(offunmK). 
   
 swap {2} [5..9]  -2.
 swap {1} 1 1.
@@ -1375,7 +1378,7 @@ seq 3 3 : (#pre /\ aT{2} = lift_matrix at{1} /\
             by auto => />  /#.
   wp; call(_: ={XOF.state}); 1: by sim.
   wp; call(_: ={arg} ==> ={XOF.state}); 1: by sim. 
-  by auto => />; smt(getmE setmE offunmK). 
+  auto => /> &1 &2 *; do split => *;1,2:smt(); rewrite !setmE; smt( offunmK). 
 
 swap {2} 12 -11.
 seq 2 1 : (#pre /\ decompress_poly 1 mp{2} = lift_array256 k{1}  /\
