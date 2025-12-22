@@ -1,4 +1,4 @@
-# Formosa-Crypto's MLKEM implementation
+# Formosa-Crypto's Formally Verified MLKEM implementations
 
 This repository contains all the code and proof scripts for the Formosa-Crypto work on ML-KEM.
 In particular, it contains all the artifacts related to the formal verification of the x86-64 avx2 
