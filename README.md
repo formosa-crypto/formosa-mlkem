@@ -69,5 +69,5 @@ Jasmin: High-Assurance and High-Speed Cryptography. CCS 2017: 1807-1823
 The EasyCrypt proofs are structured as follows:
 * `proof/security`: contains the security proof of an ML-KEM abstract specification
 * `proof/spec`: contains the proof that the `crypto-specs` FIPS-203 transcription correctly instantiates the above ML-KEM abstract specification
-* `proof/correctnessX`: contains the functional correctness proofs for the `X` ML-KEM variant
+* `proof/correctness/X`: contains the functional correctness proofs for the `X` ML-KEM variant
 
