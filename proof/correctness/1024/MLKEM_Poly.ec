@@ -1192,7 +1192,10 @@ wp;while (#{/~start{1} = 2*len{1}*(zetasctr{1} - zetasctr1)}
   (* Termination *)
   move => jl jr rp r1  6? l1 *.
   split; last by smt().
-  auto => />;do split;1: by smt().
+  auto => />; split.
+  + have : 0 < 2 ^ l0 by smt().
+    have : 0 <= zetasctr{1} - zetasctr1 by smt().
+    move: rp. clear. smt().
   + have : (2^l0) \in map (fun i => 2^i) (iota_ 0 8); 
       last first.  rewrite -JUtils.iotaredE => /> Hcases.
       elim Hcases; 1:smt().

@@ -135,13 +135,13 @@ seq 6 2 : (#pre /\
     wp; ecall {1} (sha3_512A_A64_ph buf{1}). 
     wp; ecall {1} (sha3_256A_M1568_ph pk{1}). 
     
-auto => /> &1 &2;rewrite !tP => *;do split => *.
+auto => /> &1 &2;rewrite !tP => pk1 pk2; do split => *.
 + rewrite initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= /G_mhpk;congr;congr;congr.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
    rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1568_32 get_of_list 1:/#;congr;congr;congr.
-      + congr;rewrite tP => *; rewrite initiE 1:/# /=;smt(Array1536.initiE). 
-      + congr;rewrite tP => *; rewrite initiE 1:/# /=;smt(Array32.initiE). 
+      + by congr; rewrite tP => i hi; rewrite pk1.
+      + by congr; rewrite tP => i hi; rewrite pk2.
 
 
 + rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= /G_mhpk;congr;congr;
@@ -149,8 +149,8 @@ congr.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
    rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1568_32 get_of_list 1:/#;congr;congr;congr.
-      + congr;rewrite tP => *; rewrite initiE 1:/# /=;smt(Array1536.initiE). 
-      + congr;rewrite tP => *; rewrite initiE 1:/# /=;smt(Array32.initiE). 
+      + by congr;rewrite tP => i hi; rewrite pk1.
+      + by congr;rewrite tP => i hi; rewrite pk2.
 
 + rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
    rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.

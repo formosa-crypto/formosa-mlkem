@@ -104,15 +104,15 @@ seq  5 0 : (#pre /\
     rewrite /get64 /init8 /(\bits8) wordP => kk kkb.
     rewrite initiE 1:/# /=  /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
 
-auto => /> &1 &2; rewrite !tP => ???Hpk1????pp H H0;do split.
+auto => /> &1 &2; rewrite !tP => ? hcoins2 ?Hpk1 ??? hsk pp H H0;do split.
   + move => *; rewrite initiE 1:/# /=; smt().
   + rewrite tP => *; rewrite initiE 1:/# /=.
     have -> : pp = pk{2}.`1 by smt().
     rewrite Hpk1;  smt(Array1152.initiE).
   + by move => *; rewrite tP => *; rewrite initiE 1:/# /=  ; smt(Array32.initiE).
   + move => *; rewrite initiE 1:/# /=;smt(Array32.initiE).
-  + by move => *; rewrite initiE 1:/# /=; smt(Array32.initiE).
- 
+  + by move => j hj; rewrite hcoins2 1:// !initE hj /= hsk 1:// addzC.
+
 qed.
 
 from JazzEC require import WArray32 Array4.
@@ -136,13 +136,13 @@ seq 6 2 : (#pre /\
     wp; ecall {1} (sha3_512A_A64_ph buf{1}). 
     wp; ecall {1} (sha3_256A_M1184_ph pk{1}). 
     
-auto => /> &1 &2;rewrite !tP => *;do split => *.
+auto => /> &1 &2;rewrite !tP => pk1 pk2; do split => *.
 + rewrite initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= /G_mhpk;congr;congr;congr.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
    rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr.
-      + congr;rewrite tP => *; rewrite initiE 1:/# /=;smt(Array1152.initiE). 
-      + congr;rewrite tP => *; rewrite initiE 1:/# /=;smt(Array32.initiE). 
+      + by congr;rewrite tP => *; rewrite pk1.
+      + by congr;rewrite tP => *; rewrite pk2.
 
 
 + rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= /G_mhpk;congr;congr;
@@ -150,8 +150,8 @@ congr.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
    rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr.
-      + congr;rewrite tP => *; rewrite initiE 1:/# /=;smt(Array1152.initiE). 
-      + congr;rewrite tP => *; rewrite initiE 1:/# /=;smt(Array32.initiE). 
+      + by congr;rewrite tP => *; rewrite pk1.
+      + by congr;rewrite tP => *; rewrite pk2.
 
 + rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
    rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.

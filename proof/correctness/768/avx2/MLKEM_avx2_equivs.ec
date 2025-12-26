@@ -209,7 +209,7 @@ conseq (: rp = init_1088_8 (fun i => if i < 960 then _aw.[i] else rp.[i])
      
 (* We start with some boilerplate *)
 move => &hr /=;rewrite !tP  => H i ib.
-rewrite initiE /=;case (0 <= i < 960) => *; smt(Array960.initiE).
+by rewrite initE ib /=; case (i < 960) => // ?; rewrite -H 1:/# initiE 1:/#.
 
 move => &hr <- rr ->; split; last first.
 + rewrite eq_vectorP => k kb.
