@@ -954,8 +954,9 @@ conseq sample_four_polynomials_eq  (sample3buf_4x_ph _sd _rc b _).
 + move => &1 /> -> ->.
   exists (rho{1},_rc,b) => /=.
   by rewrite !of_uintK /#.
-+ move=> /> &1 ->. 
-  by rewrite -pack4poly_subarray1024 /#.
++ move=> /> &1 ->.
+  rewrite -pack4poly_subarray1024 1:/#.
+  by case: Hrc => [ | [ | [] ] ] ->.
 smt().
 qed.
 
@@ -969,7 +970,7 @@ proc => /=.
 while (0<=i<=4 /\ rho = _sd /\ 
     ((forall kk, 0 <= kk < i => subarray1024 matrix kk = nttunpackv (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))) /\
      (forall kk, i <= kk < 4 => subarray1024 matrix kk = (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))) (kvec-i).
-+ move => *;wp => />;1:smt(). 
++ move => *; wp => />. move => &m; smt().
   while (0<=i<4 /\ 0 <= j <= 4 /\ rho = _sd /\
     ((forall kk, 0 <= kk < i => subarray1024 matrix kk = nttunpackv (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))) /\
      (forall kk, i+1 <= kk < 4 => subarray1024 matrix kk = (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk)) /\
@@ -1109,45 +1110,53 @@ case b => Hb.
 + rewrite !initiE 1:/# /=. 
   case (0<= k < 1024).  
   + move => kbb.
-    have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 0))); last  by smt(Array1024.allP).
+    suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
+   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 0)))
+    by move/Array1024.allP => /(_ k kbb).
    rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.    by smt(matrix_unlift).
 
   case (1024<= k < 2048).  
-  + move => ? kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 1))); last by smt(Array1024.allP).
+  + move => ? kbb; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
+   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 1))).
+    move/Array1024.allP => /(_ (k - 1024)) /=; apply; smt().
    rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.  
    by smt(matrix_unlift).
  
   case (2048<= k < 3072).  
-  + move => ? kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 2))); last by smt(Array1024.allP).
+  + move => ? kbb; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
+   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 2))).
+    move/Array1024.allP => /(_ (k - 2048)) /=; smt().
    rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.     by smt(matrix_unlift).
 
-move => *; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 3))); last by smt(Array1024.allP).
+move => *; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
+   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 3))).
+    move/Array1024.allP => /(_ (k - 3072)) /=; apply; smt().
    rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.     by smt(matrix_unlift).
  
 + rewrite !initiE 1:/# /=. 
   case (0<= k < 1024).  
   + move => kbb.
-    have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 0))); last  by smt(Array1024.allP).
+    suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
+   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 0)))
+    by move/Array1024.allP => /(_ k kbb).
    rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.    by smt(matrix_unlift).
 
   case (1024<= k < 2048).  
-  + move => ? kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 1))); last by smt(Array1024.allP).
+  + move => ? kbb; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
+   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 1))).
+    move/Array1024.allP => /(_ (k - 1024)) /=; apply; smt().
    rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.  
    by smt(matrix_unlift).
  
   case (2048<= k < 3072).  
-  + move => ? kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 2))); last by smt(Array1024.allP).
+  + move => ? kbb; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
+   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 2))).
+    move/Array1024.allP => /(_ (k - 2048)) /#.
    rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.     by smt(matrix_unlift).
 
-move => *; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 3))); last by smt(Array1024.allP).
+move => *; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
+   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 3))).
+    move/Array1024.allP => /(_ (k - 3072)) /=; apply; smt().
    rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.     by smt(matrix_unlift).
 
 qed.

@@ -1000,7 +1000,8 @@ conseq sample_four_polynomials_eq  (sample3buf_4x_ph _sd _rc b _).
   exists (rho{1},_rc,b) => /=.
   by rewrite !of_uintK /#.
 + move=> /> &1 ->.
-  by rewrite -pack4poly_subarray1024 /#.
+  rewrite -pack4poly_subarray1024 1:/#.
+  by case: Hrc => ->.
 smt().
 qed.
 
@@ -1014,7 +1015,7 @@ proc => /=.
 while (0<=i<=3 /\ rho = _sd /\ 
     ((forall kk, 0 <= kk < i => subarray768 matrix kk = nttunpackv (subarray768 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))) /\
      (forall kk, i <= kk < 3 => subarray768 matrix kk = (subarray768 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))) (kvec-i).
-+ move => *;wp => />;1:smt(). 
++ move => *;wp => />. move => &hr; smt().
   while (0<=i<3 /\ 0 <= j <= 3 /\ rho = _sd /\
     ((forall kk, 0 <= kk < i => subarray768 matrix kk = nttunpackv (subarray768 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))) /\
      (forall kk, i+1 <= kk < 3 => subarray768 matrix kk = (subarray768 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk)) /\
