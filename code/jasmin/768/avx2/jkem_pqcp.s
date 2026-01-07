@@ -7584,7 +7584,7 @@ L_gen_matrix_sample_four_polynomials$1:
 	movq	(%r9,%r10), %r8
 	movq	%r8, 832(%rsp)
 	leaq	32(%rsp), %r8
-	leaq	832(%rsp), %r9
+	leaq	832(%rsp), %r11
 	call	L_shake128x4_absorb_A32_A2$1
 L_gen_matrix_sample_four_polynomials$7:
 	leaq	-24(%rsp), %rsp
@@ -8217,8 +8217,8 @@ L_i_poly_tobytes$2:
 	vmovdqu	64(%r8), %ymm4
 	vmovdqu	96(%r8), %ymm10
 	vmovdqu	128(%r8), %ymm1
-	vmovdqu	160(%r8), %ymm2
-	vmovdqu	192(%r8), %ymm5
+	vmovdqu	160(%r8), %ymm5
+	vmovdqu	192(%r8), %ymm2
 	vmovdqu	224(%r8), %ymm12
 	vpsllw	$12, %ymm7, %ymm0
 	vpor	%ymm6, %ymm0, %ymm3
@@ -8228,14 +8228,14 @@ L_i_poly_tobytes$2:
 	vpsrlw	$8, %ymm4, %ymm7
 	vpsllw	$4, %ymm10, %ymm4
 	vpor	%ymm4, %ymm7, %ymm4
-	vpsllw	$12, %ymm2, %ymm8
+	vpsllw	$12, %ymm5, %ymm8
 	vpor	%ymm1, %ymm8, %ymm1
-	vpsrlw	$4, %ymm2, %ymm10
-	vpsllw	$8, %ymm5, %ymm11
-	vpor	%ymm11, %ymm10, %ymm2
-	vpsrlw	$8, %ymm5, %ymm10
-	vpsllw	$4, %ymm12, %ymm5
-	vpor	%ymm5, %ymm10, %ymm5
+	vpsrlw	$4, %ymm5, %ymm10
+	vpsllw	$8, %ymm2, %ymm11
+	vpor	%ymm11, %ymm10, %ymm5
+	vpsrlw	$8, %ymm2, %ymm10
+	vpsllw	$4, %ymm12, %ymm7
+	vpor	%ymm7, %ymm10, %ymm2
 	vpslld	$16, %ymm6, %ymm11
 	vpblendw	$170, %ymm11, %ymm3, %ymm7
 	vpsrld	$16, %ymm3, %ymm3
@@ -8244,76 +8244,10 @@ L_i_poly_tobytes$2:
 	vpblendw	$170, %ymm6, %ymm4, %ymm6
 	vpsrld	$16, %ymm4, %ymm8
 	vpblendw	$170, %ymm1, %ymm8, %ymm4
-	vpslld	$16, %ymm5, %ymm11
-	vpblendw	$170, %ymm11, %ymm2, %ymm9
-	vpsrld	$16, %ymm2, %ymm8
-	vpblendw	$170, %ymm5, %ymm8, %ymm1
-	vmovsldup	%ymm6, %ymm2
-	vpblendd	$170, %ymm2, %ymm7, %ymm2
-	vpsrlq	$32, %ymm7, %ymm5
-	vpblendd	$170, %ymm6, %ymm5, %ymm5
-	vmovsldup	%ymm3, %ymm6
-	vpblendd	$170, %ymm6, %ymm9, %ymm6
-	vpsrlq	$32, %ymm9, %ymm7
-	vpblendd	$170, %ymm3, %ymm7, %ymm11
-	vmovsldup	%ymm1, %ymm15
-	vpblendd	$170, %ymm15, %ymm4, %ymm3
-	vpsrlq	$32, %ymm4, %ymm4
-	vpblendd	$170, %ymm1, %ymm4, %ymm1
-	vpunpcklqdq	%ymm6, %ymm2, %ymm4
-	vpunpckhqdq	%ymm6, %ymm2, %ymm0
-	vpunpcklqdq	%ymm5, %ymm3, %ymm2
-	vpunpckhqdq	%ymm5, %ymm3, %ymm3
-	vpunpcklqdq	%ymm1, %ymm11, %ymm5
-	vpunpckhqdq	%ymm1, %ymm11, %ymm1
-	vperm2i128	$32, %ymm2, %ymm4, %ymm6
-	vperm2i128	$49, %ymm2, %ymm4, %ymm10
-	vperm2i128	$32, %ymm0, %ymm5, %ymm2
-	vperm2i128	$49, %ymm0, %ymm5, %ymm0
-	vperm2i128	$32, %ymm1, %ymm3, %ymm7
-	vperm2i128	$49, %ymm1, %ymm3, %ymm1
-	vmovdqu	%ymm6, (%rcx)
-	vmovdqu	%ymm2, 32(%rcx)
-	vmovdqu	%ymm7, 64(%rcx)
-	vmovdqu	%ymm10, 96(%rcx)
-	vmovdqu	%ymm0, 128(%rcx)
-	vmovdqu	%ymm1, 160(%rcx)
-	vmovdqu	256(%r8), %ymm6
-	vmovdqu	288(%r8), %ymm7
-	vmovdqu	320(%r8), %ymm4
-	vmovdqu	352(%r8), %ymm10
-	vmovdqu	384(%r8), %ymm1
-	vmovdqu	416(%r8), %ymm2
-	vmovdqu	448(%r8), %ymm5
-	vmovdqu	480(%r8), %ymm12
-	vpsllw	$12, %ymm7, %ymm0
-	vpor	%ymm6, %ymm0, %ymm3
-	vpsrlw	$4, %ymm7, %ymm6
-	vpsllw	$8, %ymm4, %ymm7
-	vpor	%ymm7, %ymm6, %ymm6
-	vpsrlw	$8, %ymm4, %ymm7
-	vpsllw	$4, %ymm10, %ymm4
-	vpor	%ymm4, %ymm7, %ymm4
-	vpsllw	$12, %ymm2, %ymm8
-	vpor	%ymm1, %ymm8, %ymm1
-	vpsrlw	$4, %ymm2, %ymm10
-	vpsllw	$8, %ymm5, %ymm11
-	vpor	%ymm11, %ymm10, %ymm2
-	vpsrlw	$8, %ymm5, %ymm10
-	vpsllw	$4, %ymm12, %ymm5
-	vpor	%ymm5, %ymm10, %ymm5
-	vpslld	$16, %ymm6, %ymm11
-	vpblendw	$170, %ymm11, %ymm3, %ymm7
-	vpsrld	$16, %ymm3, %ymm3
-	vpblendw	$170, %ymm6, %ymm3, %ymm3
-	vpslld	$16, %ymm1, %ymm6
-	vpblendw	$170, %ymm6, %ymm4, %ymm6
-	vpsrld	$16, %ymm4, %ymm8
-	vpblendw	$170, %ymm1, %ymm8, %ymm4
-	vpslld	$16, %ymm5, %ymm11
-	vpblendw	$170, %ymm11, %ymm2, %ymm9
-	vpsrld	$16, %ymm2, %ymm8
-	vpblendw	$170, %ymm5, %ymm8, %ymm1
+	vpslld	$16, %ymm2, %ymm11
+	vpblendw	$170, %ymm11, %ymm5, %ymm9
+	vpsrld	$16, %ymm5, %ymm8
+	vpblendw	$170, %ymm2, %ymm8, %ymm1
 	vmovsldup	%ymm6, %ymm2
 	vpblendd	$170, %ymm2, %ymm7, %ymm2
 	vpsrlq	$32, %ymm7, %ymm5
@@ -8329,20 +8263,86 @@ L_i_poly_tobytes$2:
 	vpunpcklqdq	%ymm6, %ymm2, %ymm4
 	vpunpckhqdq	%ymm6, %ymm2, %ymm2
 	vpunpcklqdq	%ymm5, %ymm7, %ymm6
-	vpunpckhqdq	%ymm5, %ymm7, %ymm0
-	vpunpcklqdq	%ymm1, %ymm3, %ymm5
+	vpunpckhqdq	%ymm5, %ymm7, %ymm5
+	vpunpcklqdq	%ymm1, %ymm3, %ymm7
 	vpunpckhqdq	%ymm1, %ymm3, %ymm1
 	vperm2i128	$32, %ymm6, %ymm4, %ymm11
 	vperm2i128	$49, %ymm6, %ymm4, %ymm6
-	vperm2i128	$32, %ymm2, %ymm5, %ymm9
-	vperm2i128	$49, %ymm2, %ymm5, %ymm7
-	vperm2i128	$32, %ymm1, %ymm0, %ymm3
-	vperm2i128	$49, %ymm1, %ymm0, %ymm1
+	vperm2i128	$32, %ymm2, %ymm7, %ymm4
+	vperm2i128	$49, %ymm2, %ymm7, %ymm0
+	vperm2i128	$32, %ymm1, %ymm5, %ymm3
+	vperm2i128	$49, %ymm1, %ymm5, %ymm1
+	vmovdqu	%ymm11, (%rcx)
+	vmovdqu	%ymm4, 32(%rcx)
+	vmovdqu	%ymm3, 64(%rcx)
+	vmovdqu	%ymm6, 96(%rcx)
+	vmovdqu	%ymm0, 128(%rcx)
+	vmovdqu	%ymm1, 160(%rcx)
+	vmovdqu	256(%r8), %ymm6
+	vmovdqu	288(%r8), %ymm7
+	vmovdqu	320(%r8), %ymm4
+	vmovdqu	352(%r8), %ymm10
+	vmovdqu	384(%r8), %ymm1
+	vmovdqu	416(%r8), %ymm5
+	vmovdqu	448(%r8), %ymm2
+	vmovdqu	480(%r8), %ymm12
+	vpsllw	$12, %ymm7, %ymm0
+	vpor	%ymm6, %ymm0, %ymm3
+	vpsrlw	$4, %ymm7, %ymm6
+	vpsllw	$8, %ymm4, %ymm7
+	vpor	%ymm7, %ymm6, %ymm6
+	vpsrlw	$8, %ymm4, %ymm7
+	vpsllw	$4, %ymm10, %ymm4
+	vpor	%ymm4, %ymm7, %ymm4
+	vpsllw	$12, %ymm5, %ymm8
+	vpor	%ymm1, %ymm8, %ymm1
+	vpsrlw	$4, %ymm5, %ymm10
+	vpsllw	$8, %ymm2, %ymm11
+	vpor	%ymm11, %ymm10, %ymm5
+	vpsrlw	$8, %ymm2, %ymm10
+	vpsllw	$4, %ymm12, %ymm7
+	vpor	%ymm7, %ymm10, %ymm2
+	vpslld	$16, %ymm6, %ymm11
+	vpblendw	$170, %ymm11, %ymm3, %ymm7
+	vpsrld	$16, %ymm3, %ymm3
+	vpblendw	$170, %ymm6, %ymm3, %ymm3
+	vpslld	$16, %ymm1, %ymm6
+	vpblendw	$170, %ymm6, %ymm4, %ymm6
+	vpsrld	$16, %ymm4, %ymm8
+	vpblendw	$170, %ymm1, %ymm8, %ymm4
+	vpslld	$16, %ymm2, %ymm11
+	vpblendw	$170, %ymm11, %ymm5, %ymm9
+	vpsrld	$16, %ymm5, %ymm8
+	vpblendw	$170, %ymm2, %ymm8, %ymm1
+	vmovsldup	%ymm6, %ymm2
+	vpblendd	$170, %ymm2, %ymm7, %ymm2
+	vpsrlq	$32, %ymm7, %ymm5
+	vpblendd	$170, %ymm6, %ymm5, %ymm5
+	vmovsldup	%ymm3, %ymm6
+	vpblendd	$170, %ymm6, %ymm9, %ymm6
+	vpsrlq	$32, %ymm9, %ymm7
+	vpblendd	$170, %ymm3, %ymm7, %ymm3
+	vmovsldup	%ymm1, %ymm11
+	vpblendd	$170, %ymm11, %ymm4, %ymm7
+	vpsrlq	$32, %ymm4, %ymm4
+	vpblendd	$170, %ymm1, %ymm4, %ymm1
+	vpunpcklqdq	%ymm6, %ymm2, %ymm4
+	vpunpckhqdq	%ymm6, %ymm2, %ymm2
+	vpunpcklqdq	%ymm5, %ymm7, %ymm6
+	vpunpckhqdq	%ymm5, %ymm7, %ymm5
+	vpunpcklqdq	%ymm1, %ymm3, %ymm7
+	vpunpckhqdq	%ymm1, %ymm3, %ymm1
+	vperm2i128	$32, %ymm6, %ymm4, %ymm11
+	vperm2i128	$49, %ymm6, %ymm4, %ymm6
+	vperm2i128	$32, %ymm2, %ymm7, %ymm4
+	vperm2i128	$49, %ymm2, %ymm7, %ymm0
+	vperm2i128	$32, %ymm1, %ymm5, %ymm3
+	vperm2i128	$49, %ymm1, %ymm5, %ymm1
 	vmovdqu	%ymm11, 192(%rcx)
-	vmovdqu	%ymm9, 224(%rcx)
+	vmovdqu	%ymm4, 224(%rcx)
 	vmovdqu	%ymm3, 256(%rcx)
 	vmovdqu	%ymm6, 288(%rcx)
-	vmovdqu	%ymm7, 320(%rcx)
+	vmovdqu	%ymm0, 320(%rcx)
 	vmovdqu	%ymm1, 352(%rcx)
 	ret
 L_poly_sub$1:
@@ -8488,28 +8488,27 @@ L_poly_ntt$1:
 	vpsubw	%ymm5, %ymm1, %ymm12
 	vpaddw	%ymm1, %ymm5, %ymm1
 	vpaddw	%ymm9, %ymm2, %ymm5
-	vpsubw	%ymm2, %ymm8, %ymm9
-	vpaddw	%ymm13, %ymm4, %ymm8
+	vpsubw	%ymm2, %ymm8, %ymm8
+	vpaddw	%ymm13, %ymm4, %ymm9
 	vpsubw	%ymm4, %ymm6, %ymm6
 	vpaddw	%ymm12, %ymm10, %ymm12
 	vpsubw	%ymm10, %ymm1, %ymm1
-	vpaddw	%ymm7, %ymm11, %ymm4
+	vpaddw	%ymm7, %ymm11, %ymm7
 	vpsubw	%ymm11, %ymm3, %ymm13
 	vmovdqu	%ymm5, 384(%rcx)
-	vmovdqu	%ymm8, 416(%rcx)
+	vmovdqu	%ymm9, 416(%rcx)
 	vmovdqu	%ymm12, 448(%rcx)
-	vmovdqu	%ymm4, 480(%rcx)
+	vmovdqu	%ymm7, 480(%rcx)
 	vpbroadcastd	glob_data + 1832(%rip), %ymm2
 	vpbroadcastd	glob_data + 1836(%rip), %ymm4
-	vmovdqu	%ymm9, %ymm11
 	vmovdqu	%ymm6, %ymm10
 	vmovdqu	%ymm1, %ymm12
 	vmovdqu	(%rcx), %ymm9
 	vmovdqu	32(%rcx), %ymm6
 	vmovdqu	64(%rcx), %ymm7
 	vmovdqu	96(%rcx), %ymm5
-	vpmullw	%ymm11, %ymm2, %ymm15
-	vpmulhw	%ymm11, %ymm4, %ymm3
+	vpmullw	%ymm8, %ymm2, %ymm15
+	vpmulhw	%ymm8, %ymm4, %ymm3
 	vpmullw	%ymm10, %ymm2, %ymm11
 	vpmulhw	%ymm10, %ymm4, %ymm10
 	vpmullw	%ymm12, %ymm2, %ymm1
@@ -8583,15 +8582,15 @@ L_poly_ntt$1:
 	vpunpcklqdq	%ymm10, %ymm13, %ymm9
 	vpunpckhqdq	%ymm10, %ymm13, %ymm10
 	vpunpcklqdq	%ymm7, %ymm14, %ymm13
-	vpunpckhqdq	%ymm7, %ymm14, %ymm15
+	vpunpckhqdq	%ymm7, %ymm14, %ymm14
 	vpmullw	%ymm9, %ymm2, %ymm6
 	vpmulhw	%ymm9, %ymm11, %ymm9
 	vpmullw	%ymm10, %ymm2, %ymm4
 	vpmulhw	%ymm10, %ymm11, %ymm10
 	vpmullw	%ymm13, %ymm2, %ymm1
 	vpmulhw	%ymm13, %ymm11, %ymm7
-	vpmullw	%ymm15, %ymm2, %ymm2
-	vpmulhw	%ymm15, %ymm11, %ymm14
+	vpmullw	%ymm14, %ymm2, %ymm2
+	vpmulhw	%ymm14, %ymm11, %ymm14
 	vpmulhw	%ymm0, %ymm6, %ymm15
 	vpmulhw	%ymm0, %ymm4, %ymm4
 	vpmulhw	%ymm0, %ymm1, %ymm1
@@ -8704,68 +8703,68 @@ L_poly_ntt$1:
 	vpsubw	%ymm3, %ymm2, %ymm11
 	vpaddw	%ymm7, %ymm5, %ymm3
 	vpsubw	%ymm5, %ymm8, %ymm13
-	vmovdqu	glob_data + 2096(%rip), %ymm2
+	vmovdqu	glob_data + 2096(%rip), %ymm5
 	vmovdqu	glob_data + 2128(%rip), %ymm14
 	vmovdqu	glob_data + 2160(%rip), %ymm12
-	vmovdqu	glob_data + 2192(%rip), %ymm8
-	vpmullw	%ymm11, %ymm2, %ymm15
+	vmovdqu	glob_data + 2192(%rip), %ymm2
+	vpmullw	%ymm11, %ymm5, %ymm15
 	vpmulhw	%ymm11, %ymm14, %ymm7
-	vpmullw	%ymm13, %ymm2, %ymm5
+	vpmullw	%ymm13, %ymm5, %ymm8
 	vpmulhw	%ymm13, %ymm14, %ymm14
 	vpmullw	%ymm4, %ymm12, %ymm11
-	vpmulhw	%ymm4, %ymm8, %ymm2
+	vpmulhw	%ymm4, %ymm2, %ymm5
 	vpmullw	%ymm3, %ymm12, %ymm13
-	vpmulhw	%ymm3, %ymm8, %ymm12
-	vpmulhw	%ymm0, %ymm15, %ymm15
-	vpmulhw	%ymm0, %ymm5, %ymm4
+	vpmulhw	%ymm3, %ymm2, %ymm12
+	vpmulhw	%ymm0, %ymm15, %ymm2
+	vpmulhw	%ymm0, %ymm8, %ymm4
 	vpmulhw	%ymm0, %ymm11, %ymm3
-	vpmulhw	%ymm0, %ymm13, %ymm5
+	vpmulhw	%ymm0, %ymm13, %ymm11
 	vpsubw	%ymm14, %ymm10, %ymm13
 	vpaddw	%ymm10, %ymm14, %ymm10
-	vpsubw	%ymm7, %ymm9, %ymm11
+	vpsubw	%ymm7, %ymm9, %ymm15
 	vpaddw	%ymm9, %ymm7, %ymm8
 	vpsubw	%ymm12, %ymm6, %ymm7
 	vpaddw	%ymm6, %ymm12, %ymm6
-	vpsubw	%ymm2, %ymm1, %ymm9
-	vpaddw	%ymm1, %ymm2, %ymm1
-	vpaddw	%ymm11, %ymm15, %ymm11
-	vpsubw	%ymm15, %ymm8, %ymm2
+	vpsubw	%ymm5, %ymm1, %ymm9
+	vpaddw	%ymm1, %ymm5, %ymm1
+	vpaddw	%ymm15, %ymm2, %ymm5
+	vpsubw	%ymm2, %ymm8, %ymm2
 	vpaddw	%ymm13, %ymm4, %ymm8
 	vpsubw	%ymm4, %ymm10, %ymm4
 	vpaddw	%ymm9, %ymm3, %ymm9
 	vpsubw	%ymm3, %ymm1, %ymm1
-	vpaddw	%ymm7, %ymm5, %ymm3
-	vpsubw	%ymm5, %ymm6, %ymm6
-	vmovdqu	glob_data + 928(%rip), %ymm5
-	vpmulhw	%ymm5, %ymm2, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm2, %ymm2
-	vpmulhw	%ymm5, %ymm4, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm4, %ymm4
-	vpmulhw	%ymm5, %ymm1, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm1, %ymm1
-	vpmulhw	%ymm5, %ymm6, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm6, %ymm10
-	vpmulhw	%ymm5, %ymm11, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm11, %ymm6
-	vpmulhw	%ymm5, %ymm8, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm8, %ymm8
-	vpmulhw	%ymm5, %ymm9, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm9, %ymm13
-	vpmulhw	%ymm5, %ymm3, %ymm5
+	vpaddw	%ymm7, %ymm11, %ymm3
+	vpsubw	%ymm11, %ymm6, %ymm6
+	vmovdqu	glob_data + 928(%rip), %ymm7
+	vpmulhw	%ymm7, %ymm2, %ymm10
+	vpsraw	$10, %ymm10, %ymm10
+	vpmullw	%ymm0, %ymm10, %ymm10
+	vpsubw	%ymm10, %ymm2, %ymm2
+	vpmulhw	%ymm7, %ymm4, %ymm10
+	vpsraw	$10, %ymm10, %ymm10
+	vpmullw	%ymm0, %ymm10, %ymm10
+	vpsubw	%ymm10, %ymm4, %ymm4
+	vpmulhw	%ymm7, %ymm1, %ymm10
+	vpsraw	$10, %ymm10, %ymm10
+	vpmullw	%ymm0, %ymm10, %ymm10
+	vpsubw	%ymm10, %ymm1, %ymm10
+	vpmulhw	%ymm7, %ymm6, %ymm1
+	vpsraw	$10, %ymm1, %ymm1
+	vpmullw	%ymm0, %ymm1, %ymm1
+	vpsubw	%ymm1, %ymm6, %ymm1
+	vpmulhw	%ymm7, %ymm5, %ymm6
+	vpsraw	$10, %ymm6, %ymm6
+	vpmullw	%ymm0, %ymm6, %ymm6
+	vpsubw	%ymm6, %ymm5, %ymm6
+	vpmulhw	%ymm7, %ymm8, %ymm5
+	vpsraw	$10, %ymm5, %ymm5
+	vpmullw	%ymm0, %ymm5, %ymm5
+	vpsubw	%ymm5, %ymm8, %ymm8
+	vpmulhw	%ymm7, %ymm9, %ymm5
+	vpsraw	$10, %ymm5, %ymm5
+	vpmullw	%ymm0, %ymm5, %ymm5
+	vpsubw	%ymm5, %ymm9, %ymm13
+	vpmulhw	%ymm7, %ymm3, %ymm5
 	vpsraw	$10, %ymm5, %ymm5
 	vpmullw	%ymm0, %ymm5, %ymm5
 	vpsubw	%ymm5, %ymm3, %ymm7
@@ -8773,13 +8772,13 @@ L_poly_ntt$1:
 	vmovdqu	%ymm4, 32(%rcx)
 	vmovdqu	%ymm6, 64(%rcx)
 	vmovdqu	%ymm8, 96(%rcx)
-	vmovdqu	%ymm1, 128(%rcx)
-	vmovdqu	%ymm10, 160(%rcx)
+	vmovdqu	%ymm10, 128(%rcx)
+	vmovdqu	%ymm1, 160(%rcx)
 	vmovdqu	%ymm13, 192(%rcx)
 	vmovdqu	%ymm7, 224(%rcx)
 	vpbroadcastd	glob_data + 2224(%rip), %ymm2
 	vpbroadcastd	glob_data + 2228(%rip), %ymm6
-	vmovdqu	384(%rcx), %ymm15
+	vmovdqu	384(%rcx), %ymm8
 	vmovdqu	416(%rcx), %ymm13
 	vmovdqu	448(%rcx), %ymm5
 	vmovdqu	480(%rcx), %ymm7
@@ -8787,8 +8786,8 @@ L_poly_ntt$1:
 	vmovdqu	288(%rcx), %ymm3
 	vmovdqu	320(%rcx), %ymm12
 	vmovdqu	352(%rcx), %ymm4
-	vpmullw	%ymm15, %ymm2, %ymm11
-	vpmulhw	%ymm15, %ymm6, %ymm10
+	vpmullw	%ymm8, %ymm2, %ymm11
+	vpmulhw	%ymm8, %ymm6, %ymm10
 	vpmullw	%ymm13, %ymm2, %ymm8
 	vpmulhw	%ymm13, %ymm6, %ymm15
 	vpmullw	%ymm5, %ymm2, %ymm1
@@ -8889,46 +8888,46 @@ L_poly_ntt$1:
 	vpsubw	%ymm4, %ymm6, %ymm4
 	vpaddw	%ymm9, %ymm1, %ymm6
 	vpsubw	%ymm1, %ymm12, %ymm11
-	vpaddw	%ymm3, %ymm2, %ymm13
-	vpsubw	%ymm2, %ymm5, %ymm2
-	vmovdqu	glob_data + 2360(%rip), %ymm3
-	vmovdqu	glob_data + 2392(%rip), %ymm5
-	vmovsldup	%ymm7, %ymm15
-	vpblendd	$170, %ymm15, %ymm10, %ymm9
-	vpsrlq	$32, %ymm10, %ymm10
-	vpblendd	$170, %ymm7, %ymm10, %ymm7
-	vmovsldup	%ymm8, %ymm15
-	vpblendd	$170, %ymm15, %ymm4, %ymm1
+	vpaddw	%ymm3, %ymm2, %ymm1
+	vpsubw	%ymm2, %ymm5, %ymm12
+	vmovdqu	glob_data + 2360(%rip), %ymm5
+	vmovdqu	glob_data + 2392(%rip), %ymm3
+	vmovsldup	%ymm7, %ymm2
+	vpblendd	$170, %ymm2, %ymm10, %ymm9
+	vpsrlq	$32, %ymm10, %ymm2
+	vpblendd	$170, %ymm7, %ymm2, %ymm7
+	vmovsldup	%ymm8, %ymm2
+	vpblendd	$170, %ymm2, %ymm4, %ymm2
 	vpsrlq	$32, %ymm4, %ymm4
 	vpblendd	$170, %ymm8, %ymm4, %ymm8
 	vmovsldup	%ymm6, %ymm15
-	vpblendd	$170, %ymm15, %ymm11, %ymm4
-	vpsrlq	$32, %ymm11, %ymm10
-	vpblendd	$170, %ymm6, %ymm10, %ymm10
-	vmovsldup	%ymm13, %ymm6
-	vpblendd	$170, %ymm6, %ymm2, %ymm12
-	vpsrlq	$32, %ymm2, %ymm2
-	vpblendd	$170, %ymm13, %ymm2, %ymm15
-	vpmullw	%ymm4, %ymm3, %ymm6
-	vpmulhw	%ymm4, %ymm5, %ymm14
-	vpmullw	%ymm10, %ymm3, %ymm4
-	vpmulhw	%ymm10, %ymm5, %ymm10
-	vpmullw	%ymm12, %ymm3, %ymm11
-	vpmulhw	%ymm12, %ymm5, %ymm2
-	vpmullw	%ymm15, %ymm3, %ymm13
-	vpmulhw	%ymm15, %ymm5, %ymm12
+	vpblendd	$170, %ymm15, %ymm11, %ymm15
+	vpsrlq	$32, %ymm11, %ymm4
+	vpblendd	$170, %ymm6, %ymm4, %ymm10
+	vmovsldup	%ymm1, %ymm6
+	vpblendd	$170, %ymm6, %ymm12, %ymm13
+	vpsrlq	$32, %ymm12, %ymm4
+	vpblendd	$170, %ymm1, %ymm4, %ymm12
+	vpmullw	%ymm15, %ymm5, %ymm6
+	vpmulhw	%ymm15, %ymm3, %ymm14
+	vpmullw	%ymm10, %ymm5, %ymm4
+	vpmulhw	%ymm10, %ymm3, %ymm10
+	vpmullw	%ymm13, %ymm5, %ymm11
+	vpmulhw	%ymm13, %ymm3, %ymm1
+	vpmullw	%ymm12, %ymm5, %ymm5
+	vpmulhw	%ymm12, %ymm3, %ymm12
 	vpmulhw	%ymm0, %ymm6, %ymm6
 	vpmulhw	%ymm0, %ymm4, %ymm4
 	vpmulhw	%ymm0, %ymm11, %ymm3
-	vpmulhw	%ymm0, %ymm13, %ymm5
+	vpmulhw	%ymm0, %ymm5, %ymm5
 	vpsubw	%ymm10, %ymm7, %ymm13
 	vpaddw	%ymm7, %ymm10, %ymm10
 	vpsubw	%ymm14, %ymm9, %ymm11
 	vpaddw	%ymm9, %ymm14, %ymm9
 	vpsubw	%ymm12, %ymm8, %ymm7
 	vpaddw	%ymm8, %ymm12, %ymm8
-	vpsubw	%ymm2, %ymm1, %ymm12
-	vpaddw	%ymm1, %ymm2, %ymm2
+	vpsubw	%ymm1, %ymm2, %ymm12
+	vpaddw	%ymm2, %ymm1, %ymm2
 	vpaddw	%ymm11, %ymm6, %ymm1
 	vpsubw	%ymm6, %ymm9, %ymm9
 	vpaddw	%ymm13, %ymm4, %ymm6
@@ -8982,69 +8981,69 @@ L_poly_ntt$1:
 	vpaddw	%ymm12, %ymm3, %ymm4
 	vpsubw	%ymm3, %ymm2, %ymm11
 	vpaddw	%ymm7, %ymm5, %ymm3
-	vpsubw	%ymm5, %ymm8, %ymm2
+	vpsubw	%ymm5, %ymm8, %ymm13
 	vmovdqu	glob_data + 2488(%rip), %ymm5
 	vmovdqu	glob_data + 2520(%rip), %ymm14
 	vmovdqu	glob_data + 2552(%rip), %ymm12
-	vmovdqu	glob_data + 2584(%rip), %ymm8
+	vmovdqu	glob_data + 2584(%rip), %ymm2
 	vpmullw	%ymm11, %ymm5, %ymm15
 	vpmulhw	%ymm11, %ymm14, %ymm7
-	vpmullw	%ymm2, %ymm5, %ymm5
-	vpmulhw	%ymm2, %ymm14, %ymm14
+	vpmullw	%ymm13, %ymm5, %ymm8
+	vpmulhw	%ymm13, %ymm14, %ymm14
 	vpmullw	%ymm4, %ymm12, %ymm11
-	vpmulhw	%ymm4, %ymm8, %ymm2
+	vpmulhw	%ymm4, %ymm2, %ymm5
 	vpmullw	%ymm3, %ymm12, %ymm13
-	vpmulhw	%ymm3, %ymm8, %ymm12
-	vpmulhw	%ymm0, %ymm15, %ymm15
-	vpmulhw	%ymm0, %ymm5, %ymm4
+	vpmulhw	%ymm3, %ymm2, %ymm12
+	vpmulhw	%ymm0, %ymm15, %ymm2
+	vpmulhw	%ymm0, %ymm8, %ymm4
 	vpmulhw	%ymm0, %ymm11, %ymm3
-	vpmulhw	%ymm0, %ymm13, %ymm5
+	vpmulhw	%ymm0, %ymm13, %ymm11
 	vpsubw	%ymm14, %ymm10, %ymm13
 	vpaddw	%ymm10, %ymm14, %ymm10
-	vpsubw	%ymm7, %ymm9, %ymm11
+	vpsubw	%ymm7, %ymm9, %ymm15
 	vpaddw	%ymm9, %ymm7, %ymm8
 	vpsubw	%ymm12, %ymm6, %ymm7
 	vpaddw	%ymm6, %ymm12, %ymm6
-	vpsubw	%ymm2, %ymm1, %ymm9
-	vpaddw	%ymm1, %ymm2, %ymm1
-	vpaddw	%ymm11, %ymm15, %ymm11
-	vpsubw	%ymm15, %ymm8, %ymm2
+	vpsubw	%ymm5, %ymm1, %ymm9
+	vpaddw	%ymm1, %ymm5, %ymm1
+	vpaddw	%ymm15, %ymm2, %ymm5
+	vpsubw	%ymm2, %ymm8, %ymm2
 	vpaddw	%ymm13, %ymm4, %ymm8
 	vpsubw	%ymm4, %ymm10, %ymm4
 	vpaddw	%ymm9, %ymm3, %ymm9
 	vpsubw	%ymm3, %ymm1, %ymm1
-	vpaddw	%ymm7, %ymm5, %ymm3
-	vpsubw	%ymm5, %ymm6, %ymm6
-	vmovdqu	glob_data + 928(%rip), %ymm5
-	vpmulhw	%ymm5, %ymm2, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm2, %ymm2
-	vpmulhw	%ymm5, %ymm4, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm4, %ymm4
-	vpmulhw	%ymm5, %ymm1, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm1, %ymm1
-	vpmulhw	%ymm5, %ymm6, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm6, %ymm10
-	vpmulhw	%ymm5, %ymm11, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm11, %ymm6
-	vpmulhw	%ymm5, %ymm8, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm8, %ymm8
-	vpmulhw	%ymm5, %ymm9, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm9, %ymm13
-	vpmulhw	%ymm5, %ymm3, %ymm5
+	vpaddw	%ymm7, %ymm11, %ymm3
+	vpsubw	%ymm11, %ymm6, %ymm6
+	vmovdqu	glob_data + 928(%rip), %ymm7
+	vpmulhw	%ymm7, %ymm2, %ymm10
+	vpsraw	$10, %ymm10, %ymm10
+	vpmullw	%ymm0, %ymm10, %ymm10
+	vpsubw	%ymm10, %ymm2, %ymm2
+	vpmulhw	%ymm7, %ymm4, %ymm10
+	vpsraw	$10, %ymm10, %ymm10
+	vpmullw	%ymm0, %ymm10, %ymm10
+	vpsubw	%ymm10, %ymm4, %ymm4
+	vpmulhw	%ymm7, %ymm1, %ymm10
+	vpsraw	$10, %ymm10, %ymm10
+	vpmullw	%ymm0, %ymm10, %ymm10
+	vpsubw	%ymm10, %ymm1, %ymm10
+	vpmulhw	%ymm7, %ymm6, %ymm1
+	vpsraw	$10, %ymm1, %ymm1
+	vpmullw	%ymm0, %ymm1, %ymm1
+	vpsubw	%ymm1, %ymm6, %ymm1
+	vpmulhw	%ymm7, %ymm5, %ymm6
+	vpsraw	$10, %ymm6, %ymm6
+	vpmullw	%ymm0, %ymm6, %ymm6
+	vpsubw	%ymm6, %ymm5, %ymm6
+	vpmulhw	%ymm7, %ymm8, %ymm5
+	vpsraw	$10, %ymm5, %ymm5
+	vpmullw	%ymm0, %ymm5, %ymm5
+	vpsubw	%ymm5, %ymm8, %ymm8
+	vpmulhw	%ymm7, %ymm9, %ymm5
+	vpsraw	$10, %ymm5, %ymm5
+	vpmullw	%ymm0, %ymm5, %ymm5
+	vpsubw	%ymm5, %ymm9, %ymm13
+	vpmulhw	%ymm7, %ymm3, %ymm5
 	vpsraw	$10, %ymm5, %ymm5
 	vpmullw	%ymm0, %ymm5, %ymm5
 	vpsubw	%ymm5, %ymm3, %ymm7
@@ -9052,8 +9051,8 @@ L_poly_ntt$1:
 	vmovdqu	%ymm4, 288(%rcx)
 	vmovdqu	%ymm6, 320(%rcx)
 	vmovdqu	%ymm8, 352(%rcx)
-	vmovdqu	%ymm1, 384(%rcx)
-	vmovdqu	%ymm10, 416(%rcx)
+	vmovdqu	%ymm10, 384(%rcx)
+	vmovdqu	%ymm1, 416(%rcx)
 	vmovdqu	%ymm13, 448(%rcx)
 	vmovdqu	%ymm7, 480(%rcx)
 	ret
@@ -9180,10 +9179,10 @@ L_poly_invntt$1:
 	vpsubw	%ymm13, %ymm7, %ymm3
 	vpsubw	%ymm4, %ymm8, %ymm4
 	vpsubw	%ymm5, %ymm14, %ymm5
-	vpmulhw	%ymm1, %ymm9, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm9, %ymm7
+	vpmulhw	%ymm1, %ymm9, %ymm8
+	vpsraw	$10, %ymm8, %ymm8
+	vpmullw	%ymm0, %ymm8, %ymm8
+	vpsubw	%ymm8, %ymm9, %ymm7
 	vmovsldup	%ymm10, %ymm11
 	vpblendd	$170, %ymm11, %ymm7, %ymm9
 	vpsrlq	$32, %ymm7, %ymm7
@@ -9264,10 +9263,10 @@ L_poly_invntt$1:
 	vpsubw	%ymm13, %ymm7, %ymm6
 	vpsubw	%ymm3, %ymm8, %ymm3
 	vpsubw	%ymm5, %ymm14, %ymm5
-	vpmulhw	%ymm1, %ymm9, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm9, %ymm7
+	vpmulhw	%ymm1, %ymm9, %ymm8
+	vpsraw	$10, %ymm8, %ymm8
+	vpmullw	%ymm0, %ymm8, %ymm8
+	vpsubw	%ymm8, %ymm9, %ymm7
 	vperm2i128	$32, %ymm10, %ymm7, %ymm9
 	vperm2i128	$49, %ymm10, %ymm7, %ymm11
 	vperm2i128	$32, %ymm2, %ymm4, %ymm10
@@ -9299,21 +9298,21 @@ L_poly_invntt$1:
 	vpmulhw	%ymm4, %ymm0, %ymm4
 	vpmulhw	%ymm5, %ymm0, %ymm5
 	vpsubw	%ymm11, %ymm6, %ymm6
-	vpsubw	%ymm13, %ymm8, %ymm8
-	vpsubw	%ymm4, %ymm12, %ymm4
-	vpsubw	%ymm5, %ymm14, %ymm7
-	vpmulhw	%ymm1, %ymm9, %ymm5
-	vpsraw	$10, %ymm5, %ymm5
-	vpmullw	%ymm0, %ymm5, %ymm5
-	vpsubw	%ymm5, %ymm9, %ymm9
-	vmovdqu	%ymm9, (%rcx)
+	vpsubw	%ymm13, %ymm8, %ymm7
+	vpsubw	%ymm4, %ymm12, %ymm8
+	vpsubw	%ymm5, %ymm14, %ymm4
+	vpmulhw	%ymm1, %ymm9, %ymm1
+	vpsraw	$10, %ymm1, %ymm1
+	vpmullw	%ymm0, %ymm1, %ymm1
+	vpsubw	%ymm1, %ymm9, %ymm1
+	vmovdqu	%ymm1, (%rcx)
 	vmovdqu	%ymm10, 32(%rcx)
 	vmovdqu	%ymm2, 64(%rcx)
 	vmovdqu	%ymm3, 96(%rcx)
 	vmovdqu	%ymm6, 128(%rcx)
-	vmovdqu	%ymm8, 160(%rcx)
-	vmovdqu	%ymm4, 192(%rcx)
-	vmovdqu	%ymm7, 224(%rcx)
+	vmovdqu	%ymm7, 160(%rcx)
+	vmovdqu	%ymm8, 192(%rcx)
+	vmovdqu	%ymm4, 224(%rcx)
 	vmovdqu	glob_data + 1416(%rip), %ymm10
 	vmovdqu	glob_data + 1480(%rip), %ymm1
 	vmovdqu	glob_data + 1448(%rip), %ymm2
@@ -9342,11 +9341,11 @@ L_poly_invntt$1:
 	vpmulhw	%ymm7, %ymm2, %ymm7
 	vpmulhw	%ymm8, %ymm5, %ymm2
 	vpmulhw	%ymm10, %ymm5, %ymm10
-	vpmulhw	%ymm9, %ymm0, %ymm9
+	vpmulhw	%ymm9, %ymm0, %ymm8
 	vpmulhw	%ymm13, %ymm0, %ymm13
 	vpmulhw	%ymm12, %ymm0, %ymm5
 	vpmulhw	%ymm1, %ymm0, %ymm1
-	vpsubw	%ymm9, %ymm15, %ymm12
+	vpsubw	%ymm8, %ymm15, %ymm12
 	vpsubw	%ymm13, %ymm7, %ymm8
 	vpsubw	%ymm5, %ymm2, %ymm9
 	vpsubw	%ymm1, %ymm10, %ymm7
@@ -9519,10 +9518,10 @@ L_poly_invntt$1:
 	vpsubw	%ymm13, %ymm7, %ymm6
 	vpsubw	%ymm3, %ymm8, %ymm3
 	vpsubw	%ymm5, %ymm14, %ymm5
-	vpmulhw	%ymm1, %ymm9, %ymm7
-	vpsraw	$10, %ymm7, %ymm7
-	vpmullw	%ymm0, %ymm7, %ymm7
-	vpsubw	%ymm7, %ymm9, %ymm7
+	vpmulhw	%ymm1, %ymm9, %ymm8
+	vpsraw	$10, %ymm8, %ymm8
+	vpmullw	%ymm0, %ymm8, %ymm8
+	vpsubw	%ymm8, %ymm9, %ymm7
 	vperm2i128	$32, %ymm10, %ymm7, %ymm9
 	vperm2i128	$49, %ymm10, %ymm7, %ymm11
 	vperm2i128	$32, %ymm2, %ymm4, %ymm10
@@ -9554,134 +9553,133 @@ L_poly_invntt$1:
 	vpmulhw	%ymm4, %ymm0, %ymm4
 	vpmulhw	%ymm5, %ymm0, %ymm5
 	vpsubw	%ymm11, %ymm6, %ymm6
-	vpsubw	%ymm13, %ymm8, %ymm8
-	vpsubw	%ymm4, %ymm12, %ymm4
-	vpsubw	%ymm5, %ymm14, %ymm7
-	vpmulhw	%ymm1, %ymm9, %ymm5
-	vpsraw	$10, %ymm5, %ymm5
-	vpmullw	%ymm0, %ymm5, %ymm5
-	vpsubw	%ymm5, %ymm9, %ymm9
+	vpsubw	%ymm13, %ymm8, %ymm7
+	vpsubw	%ymm4, %ymm12, %ymm8
+	vpsubw	%ymm5, %ymm14, %ymm4
+	vpmulhw	%ymm1, %ymm9, %ymm1
+	vpsraw	$10, %ymm1, %ymm1
+	vpmullw	%ymm0, %ymm1, %ymm1
+	vpsubw	%ymm1, %ymm9, %ymm1
 	vmovdqu	%ymm6, 384(%rcx)
-	vmovdqu	%ymm8, 416(%rcx)
-	vmovdqu	%ymm4, 448(%rcx)
-	vmovdqu	%ymm7, 480(%rcx)
-	vpbroadcastd	glob_data + 1808(%rip), %ymm1
+	vmovdqu	%ymm7, 416(%rcx)
+	vmovdqu	%ymm8, 448(%rcx)
+	vmovdqu	%ymm4, 480(%rcx)
+	vpbroadcastd	glob_data + 1808(%rip), %ymm4
 	vpbroadcastd	glob_data + 1812(%rip), %ymm5
-	vmovdqu	%ymm3, %ymm4
-	vmovdqu	%ymm2, %ymm6
-	vmovdqu	%ymm9, %ymm2
-	vmovdqu	(%rcx), %ymm3
+	vmovdqu	%ymm3, %ymm7
+	vmovdqu	%ymm1, %ymm3
+	vmovdqu	(%rcx), %ymm8
 	vmovdqu	32(%rcx), %ymm11
-	vmovdqu	64(%rcx), %ymm7
-	vmovdqu	96(%rcx), %ymm8
-	vpsubw	%ymm2, %ymm3, %ymm15
-	vpsubw	%ymm10, %ymm11, %ymm9
-	vpsubw	%ymm6, %ymm7, %ymm12
-	vpaddw	%ymm3, %ymm2, %ymm2
+	vmovdqu	64(%rcx), %ymm1
+	vmovdqu	96(%rcx), %ymm9
+	vpsubw	%ymm3, %ymm8, %ymm6
+	vpsubw	%ymm10, %ymm11, %ymm14
+	vpsubw	%ymm2, %ymm1, %ymm12
+	vpaddw	%ymm8, %ymm3, %ymm8
 	vpaddw	%ymm11, %ymm10, %ymm3
-	vpmullw	%ymm15, %ymm1, %ymm11
-	vpaddw	%ymm7, %ymm6, %ymm6
-	vpmullw	%ymm9, %ymm1, %ymm13
-	vpsubw	%ymm4, %ymm8, %ymm10
-	vpaddw	%ymm8, %ymm4, %ymm7
-	vpmullw	%ymm12, %ymm1, %ymm4
-	vpmullw	%ymm10, %ymm1, %ymm8
-	vpmulhw	%ymm15, %ymm5, %ymm15
-	vpmulhw	%ymm9, %ymm5, %ymm9
+	vpmullw	%ymm6, %ymm4, %ymm11
+	vpaddw	%ymm1, %ymm2, %ymm1
+	vpmullw	%ymm14, %ymm4, %ymm13
+	vpsubw	%ymm7, %ymm9, %ymm10
+	vpaddw	%ymm9, %ymm7, %ymm2
+	vpmullw	%ymm12, %ymm4, %ymm9
+	vpmullw	%ymm10, %ymm4, %ymm7
+	vpmulhw	%ymm6, %ymm5, %ymm6
+	vpmulhw	%ymm14, %ymm5, %ymm14
 	vpmulhw	%ymm12, %ymm5, %ymm12
 	vpmulhw	%ymm10, %ymm5, %ymm10
 	vpmulhw	%ymm11, %ymm0, %ymm11
 	vpmulhw	%ymm13, %ymm0, %ymm13
-	vpmulhw	%ymm4, %ymm0, %ymm4
-	vpmulhw	%ymm8, %ymm0, %ymm8
-	vpsubw	%ymm11, %ymm15, %ymm11
-	vpsubw	%ymm13, %ymm9, %ymm9
-	vpsubw	%ymm4, %ymm12, %ymm12
-	vpsubw	%ymm8, %ymm10, %ymm10
-	vmovdqu	glob_data + 864(%rip), %ymm4
-	vmovdqu	glob_data + 896(%rip), %ymm8
-	vmovdqu	%ymm11, 256(%rcx)
-	vmovdqu	%ymm9, 288(%rcx)
+	vpmulhw	%ymm9, %ymm0, %ymm9
+	vpmulhw	%ymm7, %ymm0, %ymm7
+	vpsubw	%ymm11, %ymm6, %ymm6
+	vpsubw	%ymm13, %ymm14, %ymm11
+	vpsubw	%ymm9, %ymm12, %ymm12
+	vpsubw	%ymm7, %ymm10, %ymm10
+	vmovdqu	glob_data + 864(%rip), %ymm7
+	vmovdqu	glob_data + 896(%rip), %ymm9
+	vmovdqu	%ymm6, 256(%rcx)
+	vmovdqu	%ymm11, 288(%rcx)
 	vmovdqu	%ymm12, 320(%rcx)
 	vmovdqu	%ymm10, 352(%rcx)
-	vpmullw	%ymm2, %ymm4, %ymm12
-	vpmulhw	%ymm2, %ymm8, %ymm2
-	vpmulhw	%ymm0, %ymm12, %ymm12
-	vpsubw	%ymm12, %ymm2, %ymm2
-	vpmullw	%ymm3, %ymm4, %ymm12
-	vpmulhw	%ymm3, %ymm8, %ymm3
-	vpmulhw	%ymm0, %ymm12, %ymm12
-	vpsubw	%ymm12, %ymm3, %ymm9
-	vpmullw	%ymm6, %ymm4, %ymm3
-	vpmulhw	%ymm6, %ymm8, %ymm6
-	vpmulhw	%ymm0, %ymm3, %ymm3
-	vpsubw	%ymm3, %ymm6, %ymm10
-	vpmullw	%ymm7, %ymm4, %ymm3
-	vpmulhw	%ymm7, %ymm8, %ymm6
-	vpmulhw	%ymm0, %ymm3, %ymm3
-	vpsubw	%ymm3, %ymm6, %ymm8
-	vmovdqu	%ymm2, (%rcx)
-	vmovdqu	%ymm9, 32(%rcx)
-	vmovdqu	%ymm10, 64(%rcx)
-	vmovdqu	%ymm8, 96(%rcx)
-	vmovdqu	384(%rcx), %ymm3
-	vmovdqu	416(%rcx), %ymm10
-	vmovdqu	448(%rcx), %ymm12
+	vpmullw	%ymm8, %ymm7, %ymm6
+	vpmulhw	%ymm8, %ymm9, %ymm8
+	vpmulhw	%ymm0, %ymm6, %ymm6
+	vpsubw	%ymm6, %ymm8, %ymm6
+	vpmullw	%ymm3, %ymm7, %ymm8
+	vpmulhw	%ymm3, %ymm9, %ymm3
+	vpmulhw	%ymm0, %ymm8, %ymm8
+	vpsubw	%ymm8, %ymm3, %ymm3
+	vpmullw	%ymm1, %ymm7, %ymm8
+	vpmulhw	%ymm1, %ymm9, %ymm1
+	vpmulhw	%ymm0, %ymm8, %ymm8
+	vpsubw	%ymm8, %ymm1, %ymm1
+	vpmullw	%ymm2, %ymm7, %ymm8
+	vpmulhw	%ymm2, %ymm9, %ymm2
+	vpmulhw	%ymm0, %ymm8, %ymm8
+	vpsubw	%ymm8, %ymm2, %ymm7
+	vmovdqu	%ymm6, (%rcx)
+	vmovdqu	%ymm3, 32(%rcx)
+	vmovdqu	%ymm1, 64(%rcx)
+	vmovdqu	%ymm7, 96(%rcx)
+	vmovdqu	384(%rcx), %ymm9
+	vmovdqu	416(%rcx), %ymm2
+	vmovdqu	448(%rcx), %ymm3
 	vmovdqu	480(%rcx), %ymm7
-	vmovdqu	128(%rcx), %ymm9
-	vmovdqu	160(%rcx), %ymm14
+	vmovdqu	128(%rcx), %ymm13
+	vmovdqu	160(%rcx), %ymm11
 	vmovdqu	192(%rcx), %ymm6
-	vmovdqu	224(%rcx), %ymm11
-	vpsubw	%ymm3, %ymm9, %ymm15
-	vpsubw	%ymm10, %ymm14, %ymm8
-	vpsubw	%ymm12, %ymm6, %ymm4
-	vpaddw	%ymm9, %ymm3, %ymm2
-	vpaddw	%ymm14, %ymm10, %ymm3
-	vpmullw	%ymm15, %ymm1, %ymm9
-	vpaddw	%ymm6, %ymm12, %ymm6
-	vpmullw	%ymm8, %ymm1, %ymm13
-	vpsubw	%ymm7, %ymm11, %ymm10
-	vpaddw	%ymm11, %ymm7, %ymm7
-	vpmullw	%ymm4, %ymm1, %ymm12
-	vpmullw	%ymm10, %ymm1, %ymm1
+	vmovdqu	224(%rcx), %ymm12
+	vpsubw	%ymm9, %ymm13, %ymm15
+	vpsubw	%ymm2, %ymm11, %ymm10
+	vpsubw	%ymm3, %ymm6, %ymm8
+	vpaddw	%ymm13, %ymm9, %ymm1
+	vpaddw	%ymm11, %ymm2, %ymm2
+	vpmullw	%ymm15, %ymm4, %ymm9
+	vpaddw	%ymm6, %ymm3, %ymm3
+	vpmullw	%ymm10, %ymm4, %ymm13
+	vpsubw	%ymm7, %ymm12, %ymm6
+	vpaddw	%ymm12, %ymm7, %ymm7
+	vpmullw	%ymm8, %ymm4, %ymm12
+	vpmullw	%ymm6, %ymm4, %ymm4
 	vpmulhw	%ymm15, %ymm5, %ymm15
-	vpmulhw	%ymm8, %ymm5, %ymm8
-	vpmulhw	%ymm4, %ymm5, %ymm4
 	vpmulhw	%ymm10, %ymm5, %ymm10
+	vpmulhw	%ymm8, %ymm5, %ymm8
+	vpmulhw	%ymm6, %ymm5, %ymm6
 	vpmulhw	%ymm9, %ymm0, %ymm9
 	vpmulhw	%ymm13, %ymm0, %ymm11
-	vpmulhw	%ymm12, %ymm0, %ymm12
-	vpmulhw	%ymm1, %ymm0, %ymm1
-	vpsubw	%ymm9, %ymm15, %ymm5
-	vpsubw	%ymm11, %ymm8, %ymm9
-	vpsubw	%ymm12, %ymm4, %ymm12
-	vpsubw	%ymm1, %ymm10, %ymm10
-	vmovdqu	glob_data + 864(%rip), %ymm4
-	vmovdqu	glob_data + 896(%rip), %ymm8
-	vmovdqu	%ymm5, 384(%rcx)
-	vmovdqu	%ymm9, 416(%rcx)
-	vmovdqu	%ymm12, 448(%rcx)
-	vmovdqu	%ymm10, 480(%rcx)
-	vpmullw	%ymm2, %ymm4, %ymm5
-	vpmulhw	%ymm2, %ymm8, %ymm1
-	vpmulhw	%ymm0, %ymm5, %ymm5
-	vpsubw	%ymm5, %ymm1, %ymm2
-	vpmullw	%ymm3, %ymm4, %ymm5
-	vpmulhw	%ymm3, %ymm8, %ymm1
-	vpmulhw	%ymm0, %ymm5, %ymm3
-	vpsubw	%ymm3, %ymm1, %ymm9
-	vpmullw	%ymm6, %ymm4, %ymm3
-	vpmulhw	%ymm6, %ymm8, %ymm1
+	vpmulhw	%ymm12, %ymm0, %ymm5
+	vpmulhw	%ymm4, %ymm0, %ymm12
+	vpsubw	%ymm9, %ymm15, %ymm4
+	vpsubw	%ymm11, %ymm10, %ymm11
+	vpsubw	%ymm5, %ymm8, %ymm10
+	vpsubw	%ymm12, %ymm6, %ymm6
+	vmovdqu	glob_data + 864(%rip), %ymm5
+	vmovdqu	glob_data + 896(%rip), %ymm9
+	vmovdqu	%ymm4, 384(%rcx)
+	vmovdqu	%ymm11, 416(%rcx)
+	vmovdqu	%ymm10, 448(%rcx)
+	vmovdqu	%ymm6, 480(%rcx)
+	vpmullw	%ymm1, %ymm5, %ymm4
+	vpmulhw	%ymm1, %ymm9, %ymm1
+	vpmulhw	%ymm0, %ymm4, %ymm4
+	vpsubw	%ymm4, %ymm1, %ymm6
+	vpmullw	%ymm2, %ymm5, %ymm1
+	vpmulhw	%ymm2, %ymm9, %ymm2
+	vpmulhw	%ymm0, %ymm1, %ymm1
+	vpsubw	%ymm1, %ymm2, %ymm1
+	vpmullw	%ymm3, %ymm5, %ymm4
+	vpmulhw	%ymm3, %ymm9, %ymm2
+	vpmulhw	%ymm0, %ymm4, %ymm3
+	vpsubw	%ymm3, %ymm2, %ymm10
+	vpmullw	%ymm7, %ymm5, %ymm3
+	vpmulhw	%ymm7, %ymm9, %ymm2
 	vpmulhw	%ymm0, %ymm3, %ymm3
-	vpsubw	%ymm3, %ymm1, %ymm1
-	vpmullw	%ymm7, %ymm4, %ymm3
-	vpmulhw	%ymm7, %ymm8, %ymm5
-	vpmulhw	%ymm0, %ymm3, %ymm3
-	vpsubw	%ymm3, %ymm5, %ymm8
-	vmovdqu	%ymm2, 128(%rcx)
-	vmovdqu	%ymm9, 160(%rcx)
-	vmovdqu	%ymm1, 192(%rcx)
-	vmovdqu	%ymm8, 224(%rcx)
+	vpsubw	%ymm3, %ymm2, %ymm7
+	vmovdqu	%ymm6, 128(%rcx)
+	vmovdqu	%ymm1, 160(%rcx)
+	vmovdqu	%ymm10, 192(%rcx)
+	vmovdqu	%ymm7, 224(%rcx)
 	ret
 L_poly_getnoise_eta1_4x$1:
 	leaq	32(%rsp), %rsi
@@ -9699,7 +9697,7 @@ L_poly_getnoise_eta1_4x$1:
 	movb	%r9b, 546(%rsp)
 	incb	%r9b
 	movb	%r9b, 547(%rsp)
-	leaq	544(%rsp), %r9
+	leaq	544(%rsp), %rdx
 	leaq	-824(%rsp), %rsp
 	call	L_shake256x4_A128__A32_A1$1
 L_poly_getnoise_eta1_4x$2:
@@ -10437,148 +10435,148 @@ L_poly_frommont$1:
 L_i_poly_frombytes$1:
 	vmovdqu	glob_data + 832(%rip), %ymm0
 	vmovdqu	(%rsi), %ymm2
-	vmovdqu	32(%rsi), %ymm1
-	vmovdqu	64(%rsi), %ymm3
-	vmovdqu	96(%rsi), %ymm5
-	vmovdqu	128(%rsi), %ymm6
-	vmovdqu	160(%rsi), %ymm7
-	vperm2i128	$32, %ymm5, %ymm2, %ymm4
-	vperm2i128	$49, %ymm5, %ymm2, %ymm5
-	vperm2i128	$32, %ymm6, %ymm1, %ymm9
-	vperm2i128	$49, %ymm6, %ymm1, %ymm1
-	vperm2i128	$32, %ymm7, %ymm3, %ymm6
-	vperm2i128	$49, %ymm7, %ymm3, %ymm7
-	vpunpcklqdq	%ymm1, %ymm4, %ymm10
-	vpunpckhqdq	%ymm1, %ymm4, %ymm2
-	vpunpcklqdq	%ymm6, %ymm5, %ymm3
-	vpunpckhqdq	%ymm6, %ymm5, %ymm5
-	vpunpcklqdq	%ymm7, %ymm9, %ymm6
-	vpunpckhqdq	%ymm7, %ymm9, %ymm1
-	vmovsldup	%ymm5, %ymm11
-	vpblendd	$170, %ymm11, %ymm10, %ymm4
-	vpsrlq	$32, %ymm10, %ymm7
-	vpblendd	$170, %ymm5, %ymm7, %ymm5
+	vmovdqu	32(%rsi), %ymm3
+	vmovdqu	64(%rsi), %ymm4
+	vmovdqu	96(%rsi), %ymm1
+	vmovdqu	128(%rsi), %ymm5
+	vmovdqu	160(%rsi), %ymm6
+	vperm2i128	$32, %ymm1, %ymm2, %ymm7
+	vperm2i128	$49, %ymm1, %ymm2, %ymm9
+	vperm2i128	$32, %ymm5, %ymm3, %ymm11
+	vperm2i128	$49, %ymm5, %ymm3, %ymm1
+	vperm2i128	$32, %ymm6, %ymm4, %ymm3
+	vperm2i128	$49, %ymm6, %ymm4, %ymm5
+	vpunpcklqdq	%ymm1, %ymm7, %ymm8
+	vpunpckhqdq	%ymm1, %ymm7, %ymm1
+	vpunpcklqdq	%ymm3, %ymm9, %ymm2
+	vpunpckhqdq	%ymm3, %ymm9, %ymm6
+	vpunpcklqdq	%ymm5, %ymm11, %ymm9
+	vpunpckhqdq	%ymm5, %ymm11, %ymm3
 	vmovsldup	%ymm6, %ymm11
-	vpblendd	$170, %ymm11, %ymm2, %ymm7
+	vpblendd	$170, %ymm11, %ymm8, %ymm4
+	vpsrlq	$32, %ymm8, %ymm5
+	vpblendd	$170, %ymm6, %ymm5, %ymm5
+	vmovsldup	%ymm9, %ymm6
+	vpblendd	$170, %ymm6, %ymm1, %ymm7
+	vpsrlq	$32, %ymm1, %ymm10
+	vpblendd	$170, %ymm9, %ymm10, %ymm6
+	vmovsldup	%ymm3, %ymm11
+	vpblendd	$170, %ymm11, %ymm2, %ymm1
 	vpsrlq	$32, %ymm2, %ymm2
-	vpblendd	$170, %ymm6, %ymm2, %ymm6
-	vmovsldup	%ymm1, %ymm2
-	vpblendd	$170, %ymm2, %ymm3, %ymm2
-	vpsrlq	$32, %ymm3, %ymm3
-	vpblendd	$170, %ymm1, %ymm3, %ymm1
+	vpblendd	$170, %ymm3, %ymm2, %ymm2
 	vpslld	$16, %ymm6, %ymm11
 	vpblendw	$170, %ymm11, %ymm4, %ymm11
 	vpsrld	$16, %ymm4, %ymm3
 	vpblendw	$170, %ymm6, %ymm3, %ymm6
-	vpslld	$16, %ymm2, %ymm15
+	vpslld	$16, %ymm1, %ymm15
 	vpblendw	$170, %ymm15, %ymm5, %ymm15
 	vpsrld	$16, %ymm5, %ymm3
-	vpblendw	$170, %ymm2, %ymm3, %ymm3
-	vpslld	$16, %ymm1, %ymm2
-	vpblendw	$170, %ymm2, %ymm7, %ymm8
+	vpblendw	$170, %ymm1, %ymm3, %ymm1
+	vpslld	$16, %ymm2, %ymm3
+	vpblendw	$170, %ymm3, %ymm7, %ymm3
 	vpsrld	$16, %ymm7, %ymm7
-	vpblendw	$170, %ymm1, %ymm7, %ymm1
+	vpblendw	$170, %ymm2, %ymm7, %ymm5
 	vpsrlw	$12, %ymm11, %ymm12
 	vpsllw	$4, %ymm6, %ymm4
 	vpor	%ymm4, %ymm12, %ymm12
 	vpand	%ymm11, %ymm0, %ymm2
 	vpand	%ymm12, %ymm0, %ymm12
 	vpsrlw	$8, %ymm6, %ymm4
-	vpsllw	$8, %ymm15, %ymm5
-	vpor	%ymm5, %ymm4, %ymm4
+	vpsllw	$8, %ymm15, %ymm6
+	vpor	%ymm6, %ymm4, %ymm4
 	vpand	%ymm4, %ymm0, %ymm4
-	vpsrlw	$4, %ymm15, %ymm5
-	vpand	%ymm5, %ymm0, %ymm5
-	vpsrlw	$12, %ymm3, %ymm6
-	vpsllw	$4, %ymm8, %ymm7
-	vpor	%ymm7, %ymm6, %ymm6
-	vpand	%ymm3, %ymm0, %ymm3
+	vpsrlw	$4, %ymm15, %ymm6
 	vpand	%ymm6, %ymm0, %ymm6
-	vpsrlw	$8, %ymm8, %ymm7
-	vpsllw	$8, %ymm1, %ymm8
+	vpsrlw	$12, %ymm1, %ymm7
+	vpsllw	$4, %ymm3, %ymm8
 	vpor	%ymm8, %ymm7, %ymm7
+	vpand	%ymm1, %ymm0, %ymm1
 	vpand	%ymm7, %ymm0, %ymm7
-	vpsrlw	$4, %ymm1, %ymm8
+	vpsrlw	$8, %ymm3, %ymm8
+	vpsllw	$8, %ymm5, %ymm3
+	vpor	%ymm3, %ymm8, %ymm8
 	vpand	%ymm8, %ymm0, %ymm8
+	vpsrlw	$4, %ymm5, %ymm3
+	vpand	%ymm3, %ymm0, %ymm3
 	vmovdqu	%ymm2, (%rcx)
 	vmovdqu	%ymm12, 32(%rcx)
 	vmovdqu	%ymm4, 64(%rcx)
-	vmovdqu	%ymm5, 96(%rcx)
-	vmovdqu	%ymm3, 128(%rcx)
-	vmovdqu	%ymm6, 160(%rcx)
-	vmovdqu	%ymm7, 192(%rcx)
-	vmovdqu	%ymm8, 224(%rcx)
+	vmovdqu	%ymm6, 96(%rcx)
+	vmovdqu	%ymm1, 128(%rcx)
+	vmovdqu	%ymm7, 160(%rcx)
+	vmovdqu	%ymm8, 192(%rcx)
+	vmovdqu	%ymm3, 224(%rcx)
 	vmovdqu	192(%rsi), %ymm2
 	vmovdqu	224(%rsi), %ymm3
 	vmovdqu	256(%rsi), %ymm4
 	vmovdqu	288(%rsi), %ymm1
 	vmovdqu	320(%rsi), %ymm5
-	vmovdqu	352(%rsi), %ymm7
-	vperm2i128	$32, %ymm1, %ymm2, %ymm8
-	vperm2i128	$49, %ymm1, %ymm2, %ymm6
-	vperm2i128	$32, %ymm5, %ymm3, %ymm11
+	vmovdqu	352(%rsi), %ymm6
+	vperm2i128	$32, %ymm1, %ymm2, %ymm7
+	vperm2i128	$49, %ymm1, %ymm2, %ymm9
+	vperm2i128	$32, %ymm5, %ymm3, %ymm10
 	vperm2i128	$49, %ymm5, %ymm3, %ymm1
-	vperm2i128	$32, %ymm7, %ymm4, %ymm5
-	vperm2i128	$49, %ymm7, %ymm4, %ymm7
-	vpunpcklqdq	%ymm1, %ymm8, %ymm9
-	vpunpckhqdq	%ymm1, %ymm8, %ymm2
-	vpunpcklqdq	%ymm5, %ymm6, %ymm3
-	vpunpckhqdq	%ymm5, %ymm6, %ymm5
-	vpunpcklqdq	%ymm7, %ymm11, %ymm6
-	vpunpckhqdq	%ymm7, %ymm11, %ymm1
+	vperm2i128	$32, %ymm6, %ymm4, %ymm3
+	vperm2i128	$49, %ymm6, %ymm4, %ymm5
+	vpunpcklqdq	%ymm1, %ymm7, %ymm4
+	vpunpckhqdq	%ymm1, %ymm7, %ymm1
+	vpunpcklqdq	%ymm3, %ymm9, %ymm2
+	vpunpckhqdq	%ymm3, %ymm9, %ymm3
+	vpunpcklqdq	%ymm5, %ymm10, %ymm14
+	vpunpckhqdq	%ymm5, %ymm10, %ymm5
+	vmovsldup	%ymm3, %ymm6
+	vpblendd	$170, %ymm6, %ymm4, %ymm6
+	vpsrlq	$32, %ymm4, %ymm4
+	vpblendd	$170, %ymm3, %ymm4, %ymm3
+	vmovsldup	%ymm14, %ymm11
+	vpblendd	$170, %ymm11, %ymm1, %ymm4
+	vpsrlq	$32, %ymm1, %ymm7
+	vpblendd	$170, %ymm14, %ymm7, %ymm7
 	vmovsldup	%ymm5, %ymm11
-	vpblendd	$170, %ymm11, %ymm9, %ymm4
-	vpsrlq	$32, %ymm9, %ymm7
-	vpblendd	$170, %ymm5, %ymm7, %ymm5
-	vmovsldup	%ymm6, %ymm11
-	vpblendd	$170, %ymm11, %ymm2, %ymm7
+	vpblendd	$170, %ymm11, %ymm2, %ymm1
 	vpsrlq	$32, %ymm2, %ymm2
-	vpblendd	$170, %ymm6, %ymm2, %ymm6
-	vmovsldup	%ymm1, %ymm2
-	vpblendd	$170, %ymm2, %ymm3, %ymm2
-	vpsrlq	$32, %ymm3, %ymm3
-	vpblendd	$170, %ymm1, %ymm3, %ymm1
-	vpslld	$16, %ymm6, %ymm11
-	vpblendw	$170, %ymm11, %ymm4, %ymm11
-	vpsrld	$16, %ymm4, %ymm3
-	vpblendw	$170, %ymm6, %ymm3, %ymm6
-	vpslld	$16, %ymm2, %ymm15
-	vpblendw	$170, %ymm15, %ymm5, %ymm15
-	vpsrld	$16, %ymm5, %ymm3
-	vpblendw	$170, %ymm2, %ymm3, %ymm3
-	vpslld	$16, %ymm1, %ymm2
-	vpblendw	$170, %ymm2, %ymm7, %ymm8
-	vpsrld	$16, %ymm7, %ymm7
-	vpblendw	$170, %ymm1, %ymm7, %ymm1
-	vpsrlw	$12, %ymm11, %ymm12
+	vpblendd	$170, %ymm5, %ymm2, %ymm2
+	vpslld	$16, %ymm7, %ymm11
+	vpblendw	$170, %ymm11, %ymm6, %ymm5
+	vpsrld	$16, %ymm6, %ymm8
+	vpblendw	$170, %ymm7, %ymm8, %ymm6
+	vpslld	$16, %ymm1, %ymm11
+	vpblendw	$170, %ymm11, %ymm3, %ymm11
+	vpsrld	$16, %ymm3, %ymm3
+	vpblendw	$170, %ymm1, %ymm3, %ymm1
+	vpslld	$16, %ymm2, %ymm3
+	vpblendw	$170, %ymm3, %ymm4, %ymm3
+	vpsrld	$16, %ymm4, %ymm7
+	vpblendw	$170, %ymm2, %ymm7, %ymm7
+	vpsrlw	$12, %ymm5, %ymm12
 	vpsllw	$4, %ymm6, %ymm4
 	vpor	%ymm4, %ymm12, %ymm12
-	vpand	%ymm11, %ymm0, %ymm2
+	vpand	%ymm5, %ymm0, %ymm2
 	vpand	%ymm12, %ymm0, %ymm12
 	vpsrlw	$8, %ymm6, %ymm4
-	vpsllw	$8, %ymm15, %ymm5
-	vpor	%ymm5, %ymm4, %ymm4
+	vpsllw	$8, %ymm11, %ymm6
+	vpor	%ymm6, %ymm4, %ymm4
 	vpand	%ymm4, %ymm0, %ymm4
-	vpsrlw	$4, %ymm15, %ymm5
-	vpand	%ymm5, %ymm0, %ymm5
-	vpsrlw	$12, %ymm3, %ymm6
-	vpsllw	$4, %ymm8, %ymm7
-	vpor	%ymm7, %ymm6, %ymm6
-	vpand	%ymm3, %ymm0, %ymm3
+	vpsrlw	$4, %ymm11, %ymm6
 	vpand	%ymm6, %ymm0, %ymm6
-	vpsrlw	$8, %ymm8, %ymm7
-	vpsllw	$8, %ymm1, %ymm8
-	vpor	%ymm8, %ymm7, %ymm7
-	vpand	%ymm7, %ymm0, %ymm7
-	vpsrlw	$4, %ymm1, %ymm8
-	vpand	%ymm8, %ymm0, %ymm0
+	vpsrlw	$12, %ymm1, %ymm5
+	vpsllw	$4, %ymm3, %ymm8
+	vpor	%ymm8, %ymm5, %ymm5
+	vpand	%ymm1, %ymm0, %ymm1
+	vpand	%ymm5, %ymm0, %ymm5
+	vpsrlw	$8, %ymm3, %ymm8
+	vpsllw	$8, %ymm7, %ymm3
+	vpor	%ymm3, %ymm8, %ymm8
+	vpand	%ymm8, %ymm0, %ymm8
+	vpsrlw	$4, %ymm7, %ymm3
+	vpand	%ymm3, %ymm0, %ymm0
 	vmovdqu	%ymm2, 256(%rcx)
 	vmovdqu	%ymm12, 288(%rcx)
 	vmovdqu	%ymm4, 320(%rcx)
-	vmovdqu	%ymm5, 352(%rcx)
-	vmovdqu	%ymm3, 384(%rcx)
-	vmovdqu	%ymm6, 416(%rcx)
-	vmovdqu	%ymm7, 448(%rcx)
+	vmovdqu	%ymm6, 352(%rcx)
+	vmovdqu	%ymm1, 384(%rcx)
+	vmovdqu	%ymm5, 416(%rcx)
+	vmovdqu	%ymm8, 448(%rcx)
 	vmovdqu	%ymm0, 480(%rcx)
 	ret
 L_poly_basemul$1:
@@ -10607,23 +10605,23 @@ L_poly_basemul$1:
 	vpunpcklwd	%ymm6, %ymm12, %ymm5
 	vpunpckhwd	%ymm6, %ymm12, %ymm6
 	vpmullw	%ymm7, %ymm8, %ymm12
-	vpmulhw	%ymm7, %ymm8, %ymm8
-	vpunpcklwd	%ymm8, %ymm12, %ymm7
-	vpunpckhwd	%ymm8, %ymm12, %ymm8
-	vpaddd	%ymm7, %ymm9, %ymm7
-	vpaddd	%ymm8, %ymm10, %ymm8
+	vpmulhw	%ymm7, %ymm8, %ymm7
+	vpunpcklwd	%ymm7, %ymm12, %ymm8
+	vpunpckhwd	%ymm7, %ymm12, %ymm12
+	vpaddd	%ymm8, %ymm9, %ymm7
+	vpaddd	%ymm12, %ymm10, %ymm8
 	vpaddd	%ymm11, %ymm5, %ymm5
 	vpaddd	%ymm4, %ymm6, %ymm4
 	vpxor	%ymm9, %ymm9, %ymm9
-	vpblendw	$170, %ymm9, %ymm7, %ymm10
-	vpblendw	$170, %ymm9, %ymm8, %ymm6
-	vpackusdw	%ymm6, %ymm10, %ymm6
+	vpblendw	$170, %ymm9, %ymm7, %ymm6
+	vpblendw	$170, %ymm9, %ymm8, %ymm11
+	vpackusdw	%ymm11, %ymm6, %ymm6
 	vpsrld	$16, %ymm7, %ymm7
 	vpsrld	$16, %ymm8, %ymm8
 	vpackusdw	%ymm8, %ymm7, %ymm7
 	vpblendw	$170, %ymm9, %ymm5, %ymm10
-	vpblendw	$170, %ymm9, %ymm4, %ymm8
-	vpackusdw	%ymm8, %ymm10, %ymm8
+	vpblendw	$170, %ymm9, %ymm4, %ymm9
+	vpackusdw	%ymm9, %ymm10, %ymm8
 	vpsrld	$16, %ymm5, %ymm5
 	vpsrld	$16, %ymm4, %ymm4
 	vpackusdw	%ymm4, %ymm5, %ymm4
@@ -10657,10 +10655,10 @@ L_poly_basemul$1:
 	vpunpckhwd	%ymm3, %ymm2, %ymm6
 	vpmullw	%ymm7, %ymm8, %ymm2
 	vpmulhw	%ymm7, %ymm8, %ymm3
-	vpunpcklwd	%ymm3, %ymm2, %ymm7
-	vpunpckhwd	%ymm3, %ymm2, %ymm8
-	vpsubd	%ymm7, %ymm9, %ymm7
-	vpsubd	%ymm8, %ymm10, %ymm8
+	vpunpcklwd	%ymm3, %ymm2, %ymm8
+	vpunpckhwd	%ymm3, %ymm2, %ymm12
+	vpsubd	%ymm8, %ymm9, %ymm7
+	vpsubd	%ymm12, %ymm10, %ymm8
 	vpaddd	%ymm11, %ymm5, %ymm5
 	vpaddd	%ymm4, %ymm6, %ymm4
 	vpxor	%ymm9, %ymm9, %ymm9
@@ -10707,23 +10705,23 @@ L_poly_basemul$1:
 	vpunpcklwd	%ymm6, %ymm12, %ymm5
 	vpunpckhwd	%ymm6, %ymm12, %ymm6
 	vpmullw	%ymm7, %ymm8, %ymm12
-	vpmulhw	%ymm7, %ymm8, %ymm8
-	vpunpcklwd	%ymm8, %ymm12, %ymm7
-	vpunpckhwd	%ymm8, %ymm12, %ymm8
-	vpaddd	%ymm7, %ymm9, %ymm7
-	vpaddd	%ymm8, %ymm10, %ymm8
+	vpmulhw	%ymm7, %ymm8, %ymm7
+	vpunpcklwd	%ymm7, %ymm12, %ymm8
+	vpunpckhwd	%ymm7, %ymm12, %ymm12
+	vpaddd	%ymm8, %ymm9, %ymm7
+	vpaddd	%ymm12, %ymm10, %ymm8
 	vpaddd	%ymm11, %ymm5, %ymm5
 	vpaddd	%ymm4, %ymm6, %ymm4
 	vpxor	%ymm9, %ymm9, %ymm9
-	vpblendw	$170, %ymm9, %ymm7, %ymm10
-	vpblendw	$170, %ymm9, %ymm8, %ymm6
-	vpackusdw	%ymm6, %ymm10, %ymm6
+	vpblendw	$170, %ymm9, %ymm7, %ymm6
+	vpblendw	$170, %ymm9, %ymm8, %ymm11
+	vpackusdw	%ymm11, %ymm6, %ymm6
 	vpsrld	$16, %ymm7, %ymm7
 	vpsrld	$16, %ymm8, %ymm8
 	vpackusdw	%ymm8, %ymm7, %ymm7
 	vpblendw	$170, %ymm9, %ymm5, %ymm10
-	vpblendw	$170, %ymm9, %ymm4, %ymm8
-	vpackusdw	%ymm8, %ymm10, %ymm8
+	vpblendw	$170, %ymm9, %ymm4, %ymm9
+	vpackusdw	%ymm9, %ymm10, %ymm8
 	vpsrld	$16, %ymm5, %ymm5
 	vpsrld	$16, %ymm4, %ymm4
 	vpackusdw	%ymm4, %ymm5, %ymm4
@@ -10757,10 +10755,10 @@ L_poly_basemul$1:
 	vpunpckhwd	%ymm3, %ymm2, %ymm6
 	vpmullw	%ymm7, %ymm8, %ymm2
 	vpmulhw	%ymm7, %ymm8, %ymm3
-	vpunpcklwd	%ymm3, %ymm2, %ymm7
-	vpunpckhwd	%ymm3, %ymm2, %ymm8
-	vpsubd	%ymm7, %ymm9, %ymm7
-	vpsubd	%ymm8, %ymm10, %ymm8
+	vpunpcklwd	%ymm3, %ymm2, %ymm8
+	vpunpckhwd	%ymm3, %ymm2, %ymm12
+	vpsubd	%ymm8, %ymm9, %ymm7
+	vpsubd	%ymm12, %ymm10, %ymm8
 	vpaddd	%ymm11, %ymm5, %ymm5
 	vpaddd	%ymm4, %ymm6, %ymm4
 	vpxor	%ymm9, %ymm9, %ymm9
@@ -10807,23 +10805,23 @@ L_poly_basemul$1:
 	vpunpcklwd	%ymm6, %ymm12, %ymm5
 	vpunpckhwd	%ymm6, %ymm12, %ymm6
 	vpmullw	%ymm7, %ymm8, %ymm12
-	vpmulhw	%ymm7, %ymm8, %ymm8
-	vpunpcklwd	%ymm8, %ymm12, %ymm7
-	vpunpckhwd	%ymm8, %ymm12, %ymm8
-	vpaddd	%ymm7, %ymm9, %ymm7
-	vpaddd	%ymm8, %ymm10, %ymm8
+	vpmulhw	%ymm7, %ymm8, %ymm7
+	vpunpcklwd	%ymm7, %ymm12, %ymm8
+	vpunpckhwd	%ymm7, %ymm12, %ymm12
+	vpaddd	%ymm8, %ymm9, %ymm7
+	vpaddd	%ymm12, %ymm10, %ymm8
 	vpaddd	%ymm11, %ymm5, %ymm5
 	vpaddd	%ymm4, %ymm6, %ymm4
 	vpxor	%ymm9, %ymm9, %ymm9
-	vpblendw	$170, %ymm9, %ymm7, %ymm10
-	vpblendw	$170, %ymm9, %ymm8, %ymm6
-	vpackusdw	%ymm6, %ymm10, %ymm6
+	vpblendw	$170, %ymm9, %ymm7, %ymm6
+	vpblendw	$170, %ymm9, %ymm8, %ymm11
+	vpackusdw	%ymm11, %ymm6, %ymm6
 	vpsrld	$16, %ymm7, %ymm7
 	vpsrld	$16, %ymm8, %ymm8
 	vpackusdw	%ymm8, %ymm7, %ymm7
 	vpblendw	$170, %ymm9, %ymm5, %ymm10
-	vpblendw	$170, %ymm9, %ymm4, %ymm8
-	vpackusdw	%ymm8, %ymm10, %ymm8
+	vpblendw	$170, %ymm9, %ymm4, %ymm9
+	vpackusdw	%ymm9, %ymm10, %ymm8
 	vpsrld	$16, %ymm5, %ymm5
 	vpsrld	$16, %ymm4, %ymm4
 	vpackusdw	%ymm4, %ymm5, %ymm4
@@ -10857,10 +10855,10 @@ L_poly_basemul$1:
 	vpunpckhwd	%ymm3, %ymm2, %ymm6
 	vpmullw	%ymm7, %ymm8, %ymm2
 	vpmulhw	%ymm7, %ymm8, %ymm3
-	vpunpcklwd	%ymm3, %ymm2, %ymm7
-	vpunpckhwd	%ymm3, %ymm2, %ymm8
-	vpsubd	%ymm7, %ymm9, %ymm7
-	vpsubd	%ymm8, %ymm10, %ymm8
+	vpunpcklwd	%ymm3, %ymm2, %ymm8
+	vpunpckhwd	%ymm3, %ymm2, %ymm12
+	vpsubd	%ymm8, %ymm9, %ymm7
+	vpsubd	%ymm12, %ymm10, %ymm8
 	vpaddd	%ymm11, %ymm5, %ymm5
 	vpaddd	%ymm4, %ymm6, %ymm4
 	vpxor	%ymm9, %ymm9, %ymm9
@@ -10907,33 +10905,33 @@ L_poly_basemul$1:
 	vpunpcklwd	%ymm6, %ymm12, %ymm5
 	vpunpckhwd	%ymm6, %ymm12, %ymm6
 	vpmullw	%ymm7, %ymm8, %ymm12
-	vpmulhw	%ymm7, %ymm8, %ymm8
-	vpunpcklwd	%ymm8, %ymm12, %ymm7
-	vpunpckhwd	%ymm8, %ymm12, %ymm8
-	vpaddd	%ymm7, %ymm9, %ymm7
-	vpaddd	%ymm8, %ymm10, %ymm8
+	vpmulhw	%ymm7, %ymm8, %ymm7
+	vpunpcklwd	%ymm7, %ymm12, %ymm8
+	vpunpckhwd	%ymm7, %ymm12, %ymm12
+	vpaddd	%ymm8, %ymm9, %ymm7
+	vpaddd	%ymm12, %ymm10, %ymm8
 	vpaddd	%ymm11, %ymm5, %ymm5
 	vpaddd	%ymm4, %ymm6, %ymm4
 	vpxor	%ymm9, %ymm9, %ymm9
-	vpblendw	$170, %ymm9, %ymm7, %ymm10
-	vpblendw	$170, %ymm9, %ymm8, %ymm6
-	vpackusdw	%ymm6, %ymm10, %ymm6
+	vpblendw	$170, %ymm9, %ymm7, %ymm6
+	vpblendw	$170, %ymm9, %ymm8, %ymm11
+	vpackusdw	%ymm11, %ymm6, %ymm6
 	vpsrld	$16, %ymm7, %ymm7
 	vpsrld	$16, %ymm8, %ymm8
 	vpackusdw	%ymm8, %ymm7, %ymm7
 	vpblendw	$170, %ymm9, %ymm5, %ymm10
-	vpblendw	$170, %ymm9, %ymm4, %ymm8
-	vpackusdw	%ymm8, %ymm10, %ymm8
+	vpblendw	$170, %ymm9, %ymm4, %ymm9
+	vpackusdw	%ymm9, %ymm10, %ymm8
 	vpsrld	$16, %ymm5, %ymm5
 	vpsrld	$16, %ymm4, %ymm4
 	vpackusdw	%ymm4, %ymm5, %ymm4
 	vpmullw	%ymm1, %ymm6, %ymm5
 	vpmulhw	%ymm0, %ymm5, %ymm5
-	vpsubw	%ymm5, %ymm7, %ymm6
-	vpmullw	%ymm1, %ymm8, %ymm5
-	vpmulhw	%ymm0, %ymm5, %ymm5
-	vpsubw	%ymm5, %ymm4, %ymm4
-	vmovdqu	%ymm6, 384(%rcx)
+	vpsubw	%ymm5, %ymm7, %ymm5
+	vpmullw	%ymm1, %ymm8, %ymm6
+	vpmulhw	%ymm0, %ymm6, %ymm6
+	vpsubw	%ymm6, %ymm4, %ymm4
+	vmovdqu	%ymm5, 384(%rcx)
 	vmovdqu	%ymm4, 416(%rcx)
 	vmovdqu	448(%rsi), %ymm4
 	vmovdqu	480(%rsi), %ymm5
@@ -10957,10 +10955,10 @@ L_poly_basemul$1:
 	vpunpckhwd	%ymm3, %ymm2, %ymm6
 	vpmullw	%ymm7, %ymm8, %ymm2
 	vpmulhw	%ymm7, %ymm8, %ymm3
-	vpunpcklwd	%ymm3, %ymm2, %ymm7
-	vpunpckhwd	%ymm3, %ymm2, %ymm8
-	vpsubd	%ymm7, %ymm9, %ymm7
-	vpsubd	%ymm8, %ymm10, %ymm8
+	vpunpcklwd	%ymm3, %ymm2, %ymm8
+	vpunpckhwd	%ymm3, %ymm2, %ymm12
+	vpsubd	%ymm8, %ymm9, %ymm7
+	vpsubd	%ymm12, %ymm10, %ymm8
 	vpaddd	%ymm11, %ymm5, %ymm5
 	vpaddd	%ymm4, %ymm6, %ymm4
 	vpxor	%ymm9, %ymm9, %ymm9
@@ -11159,10 +11157,10 @@ L_shake256_A32__A1120$1:
 	vpxor	%ymm2, %ymm2, %ymm2
 	vpxor	%ymm6, %ymm6, %ymm6
 	movq	$0, %rcx
-	vpbroadcastq	(%rbp,%rcx), %ymm9
-	vpxor	%ymm9, %ymm3, %ymm3
-	vmovdqu	8(%rbp,%rcx), %ymm7
-	vpxor	%ymm7, %ymm4, %ymm4
+	vpbroadcastq	(%rbp,%rcx), %ymm8
+	vpxor	%ymm8, %ymm3, %ymm3
+	vmovdqu	8(%rbp,%rcx), %ymm9
+	vpxor	%ymm9, %ymm4, %ymm4
 	movq	40(%rbp,%rcx), %rdx
 	movq	%rdx, %xmm7
 	vmovdqu	48(%rbp,%rcx), %ymm14
@@ -11200,10 +11198,10 @@ L_shake256_A32__A1120$9:
 	movq	$0, %rdx
 	jmp 	L_shake256_A32__A1120$6
 L_shake256_A32__A1120$7:
-	vpbroadcastq	(%rbp,%rcx), %ymm9
-	vpxor	%ymm9, %ymm3, %ymm3
-	vmovdqu	8(%rbp,%rcx), %ymm7
-	vpxor	%ymm7, %ymm4, %ymm4
+	vpbroadcastq	(%rbp,%rcx), %ymm8
+	vpxor	%ymm8, %ymm3, %ymm3
+	vmovdqu	8(%rbp,%rcx), %ymm9
+	vpxor	%ymm9, %ymm4, %ymm4
 	movq	40(%rbp,%rcx), %rdi
 	movq	%rdi, %xmm7
 	vmovdqu	48(%rbp,%rcx), %ymm14
@@ -11242,17 +11240,17 @@ L_shake256_A32__A1120$8:
 L_shake256_A32__A1120$6:
 	cmpq	$7, %rdx
 	jb  	L_shake256_A32__A1120$7
-	vpbroadcastq	(%rbp,%rcx), %ymm9
-	vpxor	%ymm9, %ymm3, %ymm3
+	vpbroadcastq	(%rbp,%rcx), %ymm8
+	vpxor	%ymm8, %ymm3, %ymm3
 	vmovdqu	8(%rbp,%rcx), %xmm9
-	movq	24(%rbp,%rcx), %rdx
-	movq	%rdx, %xmm7
+	movq	24(%rbp,%rcx), %rdi
+	movq	%rdi, %xmm7
 	movq	$0, %rdx
 	movq	$31, %rcx
 	orq 	%rcx, %rdx
 	vpinsrq	$1, %rdx, %xmm7, %xmm7
-	vinserti128	$1, %xmm7, %ymm9, %ymm7
-	vpxor	%ymm7, %ymm4, %ymm4
+	vinserti128	$1, %xmm7, %ymm9, %ymm9
+	vpxor	%ymm9, %ymm4, %ymm4
 	movq	$1, %rcx
 	shlq	$63, %rcx
 	movq	%rcx, %xmm7
@@ -11295,8 +11293,8 @@ L_shake256_A32__A1120$3:
 	call	L_keccakf1600_avx2$1
 L_shake256_A32__A1120$2:
 	movq	%xmm3, (%rsi,%rcx)
-	vmovdqu	%xmm4, %xmm7
-	vmovdqu	%xmm7, 8(%rsi,%rcx)
+	vmovdqu	%xmm4, %xmm3
+	vmovdqu	%xmm3, 8(%rsi,%rcx)
 	vextracti128	$1, %ymm4, %xmm3
 	movq	%xmm3, 24(%rsi,%rcx)
 	ret
@@ -11309,10 +11307,10 @@ L_sha3_256A_A1184$1:
 	vpxor	%ymm2, %ymm2, %ymm2
 	vpxor	%ymm6, %ymm6, %ymm6
 	movq	$0, %rcx
-	vpbroadcastq	(%rbp,%rcx), %ymm9
-	vpxor	%ymm9, %ymm3, %ymm3
-	vmovdqu	8(%rbp,%rcx), %ymm7
-	vpxor	%ymm7, %ymm4, %ymm4
+	vpbroadcastq	(%rbp,%rcx), %ymm8
+	vpxor	%ymm8, %ymm3, %ymm3
+	vmovdqu	8(%rbp,%rcx), %ymm9
+	vpxor	%ymm9, %ymm4, %ymm4
 	movq	40(%rbp,%rcx), %rdi
 	movq	%rdi, %xmm7
 	vmovdqu	48(%rbp,%rcx), %ymm14
@@ -11350,10 +11348,10 @@ L_sha3_256A_A1184$9:
 	movq	$0, %rax
 	jmp 	L_sha3_256A_A1184$6
 L_sha3_256A_A1184$7:
-	vpbroadcastq	(%rbp,%rcx), %ymm9
-	vpxor	%ymm9, %ymm3, %ymm3
-	vmovdqu	8(%rbp,%rcx), %ymm7
-	vpxor	%ymm7, %ymm4, %ymm4
+	vpbroadcastq	(%rbp,%rcx), %ymm8
+	vpxor	%ymm8, %ymm3, %ymm3
+	vmovdqu	8(%rbp,%rcx), %ymm9
+	vpxor	%ymm9, %ymm4, %ymm4
 	movq	40(%rbp,%rcx), %rdi
 	movq	%rdi, %xmm7
 	vmovdqu	48(%rbp,%rcx), %ymm14
@@ -11392,10 +11390,10 @@ L_sha3_256A_A1184$8:
 L_sha3_256A_A1184$6:
 	cmpq	$7, %rax
 	jb  	L_sha3_256A_A1184$7
-	vpbroadcastq	(%rbp,%rcx), %ymm9
-	vpxor	%ymm9, %ymm3, %ymm3
-	vmovdqu	8(%rbp,%rcx), %ymm7
-	vpxor	%ymm7, %ymm4, %ymm4
+	vpbroadcastq	(%rbp,%rcx), %ymm8
+	vpxor	%ymm8, %ymm3, %ymm3
+	vmovdqu	8(%rbp,%rcx), %ymm9
+	vpxor	%ymm9, %ymm4, %ymm4
 	movq	40(%rbp,%rcx), %rdi
 	movq	%rdi, %xmm7
 	vmovdqu	48(%rbp,%rcx), %ymm14
@@ -11471,8 +11469,8 @@ L_sha3_256A_A1184$3:
 	call	L_keccakf1600_avx2$1
 L_sha3_256A_A1184$2:
 	movq	%xmm3, (%rsi,%rcx)
-	vmovdqu	%xmm4, %xmm7
-	vmovdqu	%xmm7, 8(%rsi,%rcx)
+	vmovdqu	%xmm4, %xmm3
+	vmovdqu	%xmm3, 8(%rsi,%rcx)
 	vextracti128	$1, %ymm4, %xmm3
 	movq	%xmm3, 24(%rsi,%rcx)
 	ret
@@ -11489,14 +11487,14 @@ L_shake128x4_squeeze3blocks$16:
 	movq	$0, %r12
 	jmp 	L_shake128x4_squeeze3blocks$14
 L_shake128x4_squeeze3blocks$15:
-	vmovdqu	(%r8,%r12,4), %ymm8
+	vmovdqu	(%r8,%r12,4), %ymm5
 	vmovdqu	32(%r8,%r12,4), %ymm4
 	vmovdqu	64(%r8,%r12,4), %ymm0
 	vmovdqu	96(%r8,%r12,4), %ymm1
 	addq	$32, %r12
-	vperm2i128	$32, %ymm0, %ymm8, %ymm2
+	vperm2i128	$32, %ymm0, %ymm5, %ymm2
 	vperm2i128	$32, %ymm1, %ymm4, %ymm3
-	vperm2i128	$49, %ymm0, %ymm8, %ymm0
+	vperm2i128	$49, %ymm0, %ymm5, %ymm0
 	vperm2i128	$49, %ymm1, %ymm4, %ymm1
 	vpunpcklqdq	%ymm3, %ymm2, %ymm4
 	vpunpckhqdq	%ymm3, %ymm2, %ymm3
@@ -11532,14 +11530,14 @@ L_shake128x4_squeeze3blocks$11:
 	movq	$0, %r12
 	jmp 	L_shake128x4_squeeze3blocks$9
 L_shake128x4_squeeze3blocks$10:
-	vmovdqu	(%r8,%r12,4), %ymm8
+	vmovdqu	(%r8,%r12,4), %ymm5
 	vmovdqu	32(%r8,%r12,4), %ymm4
 	vmovdqu	64(%r8,%r12,4), %ymm0
 	vmovdqu	96(%r8,%r12,4), %ymm1
 	addq	$32, %r12
-	vperm2i128	$32, %ymm0, %ymm8, %ymm2
+	vperm2i128	$32, %ymm0, %ymm5, %ymm2
 	vperm2i128	$32, %ymm1, %ymm4, %ymm3
-	vperm2i128	$49, %ymm0, %ymm8, %ymm0
+	vperm2i128	$49, %ymm0, %ymm5, %ymm0
 	vperm2i128	$49, %ymm1, %ymm4, %ymm1
 	vpunpcklqdq	%ymm3, %ymm2, %ymm4
 	vpunpckhqdq	%ymm3, %ymm2, %ymm3
@@ -11575,14 +11573,14 @@ L_shake128x4_squeeze3blocks$6:
 	movq	$0, %r12
 	jmp 	L_shake128x4_squeeze3blocks$4
 L_shake128x4_squeeze3blocks$5:
-	vmovdqu	(%r8,%r12,4), %ymm8
+	vmovdqu	(%r8,%r12,4), %ymm5
 	vmovdqu	32(%r8,%r12,4), %ymm4
 	vmovdqu	64(%r8,%r12,4), %ymm0
 	vmovdqu	96(%r8,%r12,4), %ymm1
 	addq	$32, %r12
-	vperm2i128	$32, %ymm0, %ymm8, %ymm2
+	vperm2i128	$32, %ymm0, %ymm5, %ymm2
 	vperm2i128	$32, %ymm1, %ymm4, %ymm3
-	vperm2i128	$49, %ymm0, %ymm8, %ymm0
+	vperm2i128	$49, %ymm0, %ymm5, %ymm0
 	vperm2i128	$49, %ymm1, %ymm4, %ymm1
 	vpunpcklqdq	%ymm3, %ymm2, %ymm4
 	vpunpckhqdq	%ymm3, %ymm2, %ymm3
@@ -11726,10 +11724,10 @@ L_shake128x4_absorb_A32_A2$5:
 L_shake128x4_absorb_A32_A2$4:
 	cmpq	$128, %r12
 	jb  	L_shake128x4_absorb_A32_A2$5
-	movq	%r9, %r10
-	leaq	2(%r9), %rbx
-	leaq	4(%r9), %r11
-	leaq	6(%r9), %r9
+	movq	%r11, %r10
+	leaq	2(%r11), %rbx
+	leaq	4(%r11), %r9
+	leaq	6(%r11), %r11
 	movq	$0, %rbp
 	movq	$16, %r12
 	jmp 	L_shake128x4_absorb_A32_A2$2
@@ -11738,9 +11736,9 @@ L_shake128x4_absorb_A32_A2$3:
 	xorq	%r13, (%r8,%r12,8)
 	movq	(%rbx,%rbp), %r13
 	xorq	%r13, 8(%r8,%r12,8)
-	movq	(%r11,%rbp), %r13
-	xorq	%r13, 16(%r8,%r12,8)
 	movq	(%r9,%rbp), %r13
+	xorq	%r13, 16(%r8,%r12,8)
+	movq	(%r11,%rbp), %r13
 	addq	$8, %rbp
 	xorq	%r13, 24(%r8,%r12,8)
 	addq	$4, %r12
@@ -11762,14 +11760,14 @@ L_shake128x4_absorb_A32_A2$2:
 	orq 	%r10, %r13
 	xorq	%r13, 8(%r8,%r12,8)
 	movq	$0, %r13
-	movzwq	(%r11,%rbp), %r10
+	movzwq	(%r9,%rbp), %r10
 	orq 	%r10, %r13
 	movq	$31, %r10
 	shlq	$16, %r10
 	orq 	%r10, %r13
 	xorq	%r13, 16(%r8,%r12,8)
 	movq	$0, %r13
-	movzwq	(%r9,%rbp), %r10
+	movzwq	(%r11,%rbp), %r10
 	orq 	%r10, %r13
 	movq	$31, %r10
 	shlq	$16, %r10
@@ -11777,8 +11775,8 @@ L_shake128x4_absorb_A32_A2$2:
 	xorq	%r13, 24(%r8,%r12,8)
 	movq	$1, %r9
 	shlq	$63, %r9
-	movq	%r9, %xmm7
-	vpbroadcastq	%xmm7, %ymm8
+	movq	%r9, %xmm3
+	vpbroadcastq	%xmm3, %ymm8
 	vpxor	640(%r8), %ymm8, %ymm8
 	vmovdqu	%ymm8, 640(%r8)
 	ret
@@ -11791,15 +11789,15 @@ L_shake128_absorb_A32_A2$1:
 	vpxor	%ymm2, %ymm2, %ymm2
 	vpxor	%ymm6, %ymm6, %ymm6
 	movq	$0, %rbp
-	vpbroadcastq	(%rdx,%rbp), %ymm9
-	vpxor	%ymm9, %ymm3, %ymm3
+	vpbroadcastq	(%rdx,%rbp), %ymm8
+	vpxor	%ymm8, %ymm3, %ymm3
 	vmovdqu	8(%rdx,%rbp), %xmm9
 	movq	24(%rdx,%rbp), %rdx
 	movq	%rdx, %xmm7
 	movq	$0, %rdx
 	vpinsrq	$1, %rdx, %xmm7, %xmm7
-	vinserti128	$1, %xmm7, %ymm9, %ymm7
-	vpxor	%ymm7, %ymm4, %ymm4
+	vinserti128	$1, %xmm7, %ymm9, %ymm9
+	vpxor	%ymm9, %ymm4, %ymm4
 	movq	$0, %rbp
 	vpxor	%ymm7, %ymm7, %ymm7
 	vpxor	%xmm9, %xmm9, %xmm9
@@ -11810,8 +11808,8 @@ L_shake128_absorb_A32_A2$1:
 	shlq	$16, %rcx
 	orq 	%rcx, %rdx
 	vpinsrq	$1, %rdx, %xmm9, %xmm10
-	vinserti128	$1, %xmm10, %ymm7, %ymm7
-	vpxor	%ymm7, %ymm4, %ymm4
+	vinserti128	$1, %xmm10, %ymm7, %ymm9
+	vpxor	%ymm9, %ymm4, %ymm4
 	movq	$1, %rcx
 	shlq	$63, %rcx
 	vpxor	%xmm7, %xmm7, %xmm7
@@ -11843,21 +11841,21 @@ L_shake256x4_A128__A32_A1$10:
 L_shake256x4_A128__A32_A1$9:
 	cmpq	$128, %r12
 	jb  	L_shake256x4_A128__A32_A1$10
-	movq	%r9, %rax
-	leaq	1(%r9), %rcx
-	leaq	2(%r9), %rdx
-	leaq	3(%r9), %r9
+	movq	%rdx, %r9
+	leaq	1(%rdx), %rax
+	leaq	2(%rdx), %rcx
+	leaq	3(%rdx), %rdx
 	movq	$0, %rbp
 	movq	$16, %r12
 	jmp 	L_shake256x4_A128__A32_A1$7
 L_shake256x4_A128__A32_A1$8:
-	movq	(%rax,%rbp), %r13
-	xorq	%r13, (%r8,%r12,8)
-	movq	(%rcx,%rbp), %r13
-	xorq	%r13, 8(%r8,%r12,8)
-	movq	(%rdx,%rbp), %r13
-	xorq	%r13, 16(%r8,%r12,8)
 	movq	(%r9,%rbp), %r13
+	xorq	%r13, (%r8,%r12,8)
+	movq	(%rax,%rbp), %r13
+	xorq	%r13, 8(%r8,%r12,8)
+	movq	(%rcx,%rbp), %r13
+	xorq	%r13, 16(%r8,%r12,8)
+	movq	(%rdx,%rbp), %r13
 	addq	$8, %rbp
 	xorq	%r13, 24(%r8,%r12,8)
 	addq	$4, %r12
@@ -11865,29 +11863,29 @@ L_shake256x4_A128__A32_A1$7:
 	cmpq	$16, %r12
 	jb  	L_shake256x4_A128__A32_A1$8
 	movq	$0, %r13
-	movzbq	(%rax,%rbp), %rax
-	orq 	$7936, %rax
-	orq 	%rax, %r13
+	movzbq	(%r9,%rbp), %r9
+	orq 	$7936, %r9
+	orq 	%r9, %r13
 	xorq	%r13, (%r8,%r12,8)
 	movq	$0, %r13
-	movzbq	(%rcx,%rbp), %rax
-	orq 	$7936, %rax
-	orq 	%rax, %r13
+	movzbq	(%rax,%rbp), %r9
+	orq 	$7936, %r9
+	orq 	%r9, %r13
 	xorq	%r13, 8(%r8,%r12,8)
 	movq	$0, %r13
-	movzbq	(%rdx,%rbp), %rax
-	orq 	$7936, %rax
-	orq 	%rax, %r13
+	movzbq	(%rcx,%rbp), %rcx
+	orq 	$7936, %rcx
+	orq 	%rcx, %r13
 	xorq	%r13, 16(%r8,%r12,8)
 	movq	$0, %r13
-	movzbq	(%r9,%rbp), %rax
-	orq 	$7936, %rax
-	orq 	%rax, %r13
+	movzbq	(%rdx,%rbp), %rcx
+	orq 	$7936, %rcx
+	orq 	%rcx, %r13
 	xorq	%r13, 24(%r8,%r12,8)
 	movq	$1, %rcx
 	shlq	$63, %rcx
-	movq	%rcx, %xmm7
-	vpbroadcastq	%xmm7, %ymm8
+	movq	%rcx, %xmm3
+	vpbroadcastq	%xmm3, %ymm8
 	vpxor	512(%r8), %ymm8, %ymm8
 	vmovdqu	%ymm8, 512(%r8)
 	movq	$0, %rcx
@@ -11898,14 +11896,14 @@ L_shake256x4_A128__A32_A1$6:
 	movq	$0, %rax
 	jmp 	L_shake256x4_A128__A32_A1$4
 L_shake256x4_A128__A32_A1$5:
-	vmovdqu	(%r8,%rax,4), %ymm8
+	vmovdqu	(%r8,%rax,4), %ymm5
 	vmovdqu	32(%r8,%rax,4), %ymm4
 	vmovdqu	64(%r8,%rax,4), %ymm0
 	vmovdqu	96(%r8,%rax,4), %ymm1
 	addq	$32, %rax
-	vperm2i128	$32, %ymm0, %ymm8, %ymm2
+	vperm2i128	$32, %ymm0, %ymm5, %ymm2
 	vperm2i128	$32, %ymm1, %ymm4, %ymm3
-	vperm2i128	$49, %ymm0, %ymm8, %ymm0
+	vperm2i128	$49, %ymm0, %ymm5, %ymm0
 	vperm2i128	$49, %ymm1, %ymm4, %ymm1
 	vpunpcklqdq	%ymm3, %ymm2, %ymm4
 	vpunpckhqdq	%ymm3, %ymm2, %ymm3
@@ -11944,16 +11942,16 @@ L_sha3_512A_A64$1:
 	vpxor	%ymm2, %ymm2, %ymm2
 	vpxor	%ymm6, %ymm6, %ymm6
 	movq	$0, %rcx
-	vpbroadcastq	(%rbp,%rcx), %ymm9
-	vpxor	%ymm9, %ymm3, %ymm3
-	vmovdqu	8(%rbp,%rcx), %ymm7
-	vpxor	%ymm7, %ymm4, %ymm4
+	vpbroadcastq	(%rbp,%rcx), %ymm8
+	vpxor	%ymm8, %ymm3, %ymm3
+	vmovdqu	8(%rbp,%rcx), %ymm9
+	vpxor	%ymm9, %ymm4, %ymm4
 	movq	40(%rbp,%rcx), %rdi
 	movq	%rdi, %xmm7
 	vmovdqu	48(%rbp,%rcx), %xmm9
 	movq	$0, %rdi
-	movq	$6, %rax
-	orq 	%rax, %rdi
+	movq	$6, %rcx
+	orq 	%rcx, %rdi
 	movq	%rdi, %xmm11
 	movq	$0, %rdi
 	vpinsrq	$1, %rdi, %xmm11, %xmm10
@@ -12032,18 +12030,18 @@ L_sha3_512A_A33$1:
 	vpxor	%ymm2, %ymm2, %ymm2
 	vpxor	%ymm6, %ymm6, %ymm6
 	movq	$0, %rcx
-	vpbroadcastq	(%rbp,%rcx), %ymm9
-	vpxor	%ymm9, %ymm3, %ymm3
+	vpbroadcastq	(%rbp,%rcx), %ymm8
+	vpxor	%ymm8, %ymm3, %ymm3
 	vmovdqu	8(%rbp,%rcx), %xmm9
 	movq	24(%rbp,%rcx), %rdx
 	movq	%rdx, %xmm7
 	movq	$0, %rdx
-	movzbq	32(%rbp,%rcx), %rax
-	orq 	$1536, %rax
-	orq 	%rax, %rdx
+	movzbq	32(%rbp,%rcx), %rcx
+	orq 	$1536, %rcx
+	orq 	%rcx, %rdx
 	vpinsrq	$1, %rdx, %xmm7, %xmm7
-	vinserti128	$1, %xmm7, %ymm9, %ymm7
-	vpxor	%ymm7, %ymm4, %ymm4
+	vinserti128	$1, %xmm7, %ymm9, %ymm9
+	vpxor	%ymm9, %ymm4, %ymm4
 	movq	$1, %rcx
 	shlq	$63, %rcx
 	movq	%rcx, %xmm7
@@ -12518,69 +12516,69 @@ L__keccakf1600_avx2$2:
 	ret
 L_nttunpack$1:
 	vmovdqu	(%rcx), %ymm3
-	vmovdqu	32(%rcx), %ymm0
-	vmovdqu	64(%rcx), %ymm1
-	vmovdqu	96(%rcx), %ymm8
-	vmovdqu	128(%rcx), %ymm4
-	vmovdqu	160(%rcx), %ymm9
-	vmovdqu	192(%rcx), %ymm6
-	vmovdqu	224(%rcx), %ymm7
-	vperm2i128	$32, %ymm4, %ymm3, %ymm2
-	vperm2i128	$49, %ymm4, %ymm3, %ymm3
-	vperm2i128	$32, %ymm9, %ymm0, %ymm4
-	vperm2i128	$49, %ymm9, %ymm0, %ymm5
-	vperm2i128	$32, %ymm6, %ymm1, %ymm9
-	vperm2i128	$49, %ymm6, %ymm1, %ymm1
-	vperm2i128	$32, %ymm7, %ymm8, %ymm6
-	vperm2i128	$49, %ymm7, %ymm8, %ymm8
-	vpunpcklqdq	%ymm9, %ymm2, %ymm7
-	vpunpckhqdq	%ymm9, %ymm2, %ymm9
-	vpunpcklqdq	%ymm1, %ymm3, %ymm10
-	vpunpckhqdq	%ymm1, %ymm3, %ymm11
-	vpunpcklqdq	%ymm6, %ymm4, %ymm2
-	vpunpckhqdq	%ymm6, %ymm4, %ymm1
-	vpunpcklqdq	%ymm8, %ymm5, %ymm6
-	vpunpckhqdq	%ymm8, %ymm5, %ymm5
-	vmovsldup	%ymm2, %ymm15
-	vpblendd	$170, %ymm15, %ymm7, %ymm4
-	vpsrlq	$32, %ymm7, %ymm3
+	vmovdqu	32(%rcx), %ymm4
+	vmovdqu	64(%rcx), %ymm5
+	vmovdqu	96(%rcx), %ymm7
+	vmovdqu	128(%rcx), %ymm1
+	vmovdqu	160(%rcx), %ymm8
+	vmovdqu	192(%rcx), %ymm9
+	vmovdqu	224(%rcx), %ymm10
+	vperm2i128	$32, %ymm1, %ymm3, %ymm2
+	vperm2i128	$49, %ymm1, %ymm3, %ymm3
+	vperm2i128	$32, %ymm8, %ymm4, %ymm6
+	vperm2i128	$49, %ymm8, %ymm4, %ymm8
+	vperm2i128	$32, %ymm9, %ymm5, %ymm1
+	vperm2i128	$49, %ymm9, %ymm5, %ymm12
+	vperm2i128	$32, %ymm10, %ymm7, %ymm13
+	vperm2i128	$49, %ymm10, %ymm7, %ymm7
+	vpunpcklqdq	%ymm1, %ymm2, %ymm0
+	vpunpckhqdq	%ymm1, %ymm2, %ymm10
+	vpunpcklqdq	%ymm12, %ymm3, %ymm4
+	vpunpckhqdq	%ymm12, %ymm3, %ymm5
+	vpunpcklqdq	%ymm13, %ymm6, %ymm2
+	vpunpckhqdq	%ymm13, %ymm6, %ymm1
+	vpunpcklqdq	%ymm7, %ymm8, %ymm6
+	vpunpckhqdq	%ymm7, %ymm8, %ymm7
+	vmovsldup	%ymm2, %ymm3
+	vpblendd	$170, %ymm3, %ymm0, %ymm9
+	vpsrlq	$32, %ymm0, %ymm3
 	vpblendd	$170, %ymm2, %ymm3, %ymm2
-	vmovsldup	%ymm1, %ymm15
-	vpblendd	$170, %ymm15, %ymm9, %ymm3
-	vpsrlq	$32, %ymm9, %ymm7
-	vpblendd	$170, %ymm1, %ymm7, %ymm7
-	vmovsldup	%ymm6, %ymm15
-	vpblendd	$170, %ymm15, %ymm10, %ymm1
-	vpsrlq	$32, %ymm10, %ymm9
-	vpblendd	$170, %ymm6, %ymm9, %ymm6
-	vmovsldup	%ymm5, %ymm15
-	vpblendd	$170, %ymm15, %ymm11, %ymm8
-	vpsrlq	$32, %ymm11, %ymm9
-	vpblendd	$170, %ymm5, %ymm9, %ymm5
+	vmovsldup	%ymm1, %ymm3
+	vpblendd	$170, %ymm3, %ymm10, %ymm3
+	vpsrlq	$32, %ymm10, %ymm10
+	vpblendd	$170, %ymm1, %ymm10, %ymm10
+	vmovsldup	%ymm6, %ymm11
+	vpblendd	$170, %ymm11, %ymm4, %ymm1
+	vpsrlq	$32, %ymm4, %ymm4
+	vpblendd	$170, %ymm6, %ymm4, %ymm6
+	vmovsldup	%ymm7, %ymm11
+	vpblendd	$170, %ymm11, %ymm5, %ymm8
+	vpsrlq	$32, %ymm5, %ymm4
+	vpblendd	$170, %ymm7, %ymm4, %ymm5
 	vpslld	$16, %ymm1, %ymm11
-	vpblendw	$170, %ymm11, %ymm4, %ymm9
-	vpsrld	$16, %ymm4, %ymm10
-	vpblendw	$170, %ymm1, %ymm10, %ymm0
+	vpblendw	$170, %ymm11, %ymm9, %ymm0
+	vpsrld	$16, %ymm9, %ymm7
+	vpblendw	$170, %ymm1, %ymm7, %ymm9
 	vpslld	$16, %ymm6, %ymm11
 	vpblendw	$170, %ymm11, %ymm2, %ymm1
-	vpsrld	$16, %ymm2, %ymm10
-	vpblendw	$170, %ymm6, %ymm10, %ymm13
+	vpsrld	$16, %ymm2, %ymm7
+	vpblendw	$170, %ymm6, %ymm7, %ymm7
 	vpslld	$16, %ymm8, %ymm2
 	vpblendw	$170, %ymm2, %ymm3, %ymm2
 	vpsrld	$16, %ymm3, %ymm3
-	vpblendw	$170, %ymm8, %ymm3, %ymm4
-	vpslld	$16, %ymm5, %ymm6
-	vpblendw	$170, %ymm6, %ymm7, %ymm3
-	vpsrld	$16, %ymm7, %ymm7
-	vpblendw	$170, %ymm5, %ymm7, %ymm7
-	vmovdqu	%ymm9, (%rcx)
-	vmovdqu	%ymm0, 32(%rcx)
+	vpblendw	$170, %ymm8, %ymm3, %ymm8
+	vpslld	$16, %ymm5, %ymm3
+	vpblendw	$170, %ymm3, %ymm10, %ymm3
+	vpsrld	$16, %ymm10, %ymm10
+	vpblendw	$170, %ymm5, %ymm10, %ymm4
+	vmovdqu	%ymm0, (%rcx)
+	vmovdqu	%ymm9, 32(%rcx)
 	vmovdqu	%ymm1, 64(%rcx)
-	vmovdqu	%ymm13, 96(%rcx)
+	vmovdqu	%ymm7, 96(%rcx)
 	vmovdqu	%ymm2, 128(%rcx)
-	vmovdqu	%ymm4, 160(%rcx)
+	vmovdqu	%ymm8, 160(%rcx)
 	vmovdqu	%ymm3, 192(%rcx)
-	vmovdqu	%ymm7, 224(%rcx)
+	vmovdqu	%ymm4, 224(%rcx)
 	vmovdqu	256(%rcx), %ymm3
 	vmovdqu	288(%rcx), %ymm5
 	vmovdqu	320(%rcx), %ymm7
@@ -12605,12 +12603,12 @@ L_nttunpack$1:
 	vpunpckhqdq	%ymm8, %ymm4, %ymm1
 	vpunpcklqdq	%ymm13, %ymm5, %ymm6
 	vpunpckhqdq	%ymm13, %ymm5, %ymm5
-	vmovsldup	%ymm2, %ymm15
-	vpblendd	$170, %ymm15, %ymm7, %ymm4
+	vmovsldup	%ymm2, %ymm3
+	vpblendd	$170, %ymm3, %ymm7, %ymm4
 	vpsrlq	$32, %ymm7, %ymm3
 	vpblendd	$170, %ymm2, %ymm3, %ymm2
-	vmovsldup	%ymm1, %ymm15
-	vpblendd	$170, %ymm15, %ymm9, %ymm3
+	vmovsldup	%ymm1, %ymm3
+	vpblendd	$170, %ymm3, %ymm9, %ymm3
 	vpsrlq	$32, %ymm9, %ymm7
 	vpblendd	$170, %ymm1, %ymm7, %ymm7
 	vmovsldup	%ymm6, %ymm15
@@ -12622,9 +12620,9 @@ L_nttunpack$1:
 	vpsrlq	$32, %ymm11, %ymm9
 	vpblendd	$170, %ymm5, %ymm9, %ymm5
 	vpslld	$16, %ymm1, %ymm11
-	vpblendw	$170, %ymm11, %ymm4, %ymm9
-	vpsrld	$16, %ymm4, %ymm10
-	vpblendw	$170, %ymm1, %ymm10, %ymm0
+	vpblendw	$170, %ymm11, %ymm4, %ymm0
+	vpsrld	$16, %ymm4, %ymm9
+	vpblendw	$170, %ymm1, %ymm9, %ymm9
 	vpslld	$16, %ymm6, %ymm11
 	vpblendw	$170, %ymm11, %ymm2, %ymm1
 	vpsrld	$16, %ymm2, %ymm10
@@ -12632,19 +12630,19 @@ L_nttunpack$1:
 	vpslld	$16, %ymm8, %ymm2
 	vpblendw	$170, %ymm2, %ymm3, %ymm2
 	vpsrld	$16, %ymm3, %ymm3
-	vpblendw	$170, %ymm8, %ymm3, %ymm4
-	vpslld	$16, %ymm5, %ymm6
-	vpblendw	$170, %ymm6, %ymm7, %ymm3
+	vpblendw	$170, %ymm8, %ymm3, %ymm8
+	vpslld	$16, %ymm5, %ymm3
+	vpblendw	$170, %ymm3, %ymm7, %ymm3
 	vpsrld	$16, %ymm7, %ymm7
-	vpblendw	$170, %ymm5, %ymm7, %ymm7
-	vmovdqu	%ymm9, 256(%rcx)
-	vmovdqu	%ymm0, 288(%rcx)
+	vpblendw	$170, %ymm5, %ymm7, %ymm4
+	vmovdqu	%ymm0, 256(%rcx)
+	vmovdqu	%ymm9, 288(%rcx)
 	vmovdqu	%ymm1, 320(%rcx)
 	vmovdqu	%ymm13, 352(%rcx)
 	vmovdqu	%ymm2, 384(%rcx)
-	vmovdqu	%ymm4, 416(%rcx)
+	vmovdqu	%ymm8, 416(%rcx)
 	vmovdqu	%ymm3, 448(%rcx)
-	vmovdqu	%ymm7, 480(%rcx)
+	vmovdqu	%ymm4, 480(%rcx)
 	ret
 	.data
 	.p2align	5
