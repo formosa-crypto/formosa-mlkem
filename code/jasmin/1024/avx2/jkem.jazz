@@ -9,10 +9,10 @@ require "kem.jinc"
 public
 "]
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand(
-    #secret reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-    #secret reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key,
-    #secret reg ptr u8[2*MLKEM_SYMBYTES] coins)
- -> #secret reg ptr u8[MLKEM_PUBLICKEYBYTES], #secret reg ptr u8[MLKEM_SECRETKEYBYTES], #public reg u64
+    reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
+    reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key,
+    reg ptr u8[2*MLKEM_SYMBYTES] coins)
+ -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES], reg u64
 requires{is_arr_init(coins,0,2*MLKEM_SYMBYTES)}
 ensures{is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,MLKEM_SECRETKEYBYTES)}
 {
@@ -36,11 +36,11 @@ ensures{is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,M
 public
 "]
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand(
-    #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
-    #secret reg ptr u8[MLKEM_SYMBYTES] shared_secret,
-    #secret reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-    #secret reg ptr u8[MLKEM_SYMBYTES] coins)
-    -> #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES], #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
+    reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
+    reg ptr u8[MLKEM_SYMBYTES] shared_secret,
+    reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
+    reg ptr u8[MLKEM_SYMBYTES] coins)
+    -> reg ptr u8[MLKEM_CIPHERTEXTBYTES], reg ptr u8[MLKEM_SYMBYTES], reg u64
 requires{is_arr_init(coins,0,MLKEM_SYMBYTES) && is_arr_init(public_key,0,MLKEM_PUBLICKEYBYTES)}
 ensures{is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(result.1,0,MLKEM_SYMBYTES)}
 {
@@ -64,9 +64,9 @@ ensures{is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(result.1,0,
 public
 "]
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair(
-    #secret reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-    #secret reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
- -> #secret reg ptr u8[MLKEM_PUBLICKEYBYTES], #secret reg ptr u8[MLKEM_SECRETKEYBYTES], #public reg u64
+    reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
+    reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
+ -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES], reg u64
 ensures{is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,MLKEM_SECRETKEYBYTES)}
 {
   reg u64 r;
@@ -95,10 +95,10 @@ ensures{is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,M
 public
 "]
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc(
-    #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
-    #secret reg ptr u8[MLKEM_SYMBYTES] shared_secret,
-    #secret reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key)
-    -> #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES], #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
+    reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
+    reg ptr u8[MLKEM_SYMBYTES] shared_secret,
+    reg ptr u8[MLKEM_PUBLICKEYBYTES] public_key)
+    -> reg ptr u8[MLKEM_CIPHERTEXTBYTES], reg ptr u8[MLKEM_SYMBYTES], reg u64
 requires{is_arr_init(public_key,0,MLKEM_PUBLICKEYBYTES)}
 ensures{is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(result.1,0,MLKEM_SYMBYTES)}
 {
@@ -129,10 +129,10 @@ ensures{is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(result.1,0,
 public
 "]
 export fn jade_kem_mlkem_mlkem1024_amd64_avx2_dec(
-    #secret reg ptr u8[MLKEM_SYMBYTES] shared_secret,
-    #secret reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
-    #secret reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
-    -> #secret reg ptr u8[MLKEM_SYMBYTES], #public reg u64
+    reg ptr u8[MLKEM_SYMBYTES] shared_secret,
+    reg ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
+    reg ptr u8[MLKEM_SECRETKEYBYTES] secret_key)
+    -> reg ptr u8[MLKEM_SYMBYTES], reg u64
 requires{is_arr_init(ciphertext,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(secret_key,0,MLKEM_SECRETKEYBYTES)}
 ensures{is_arr_init(result.0,0,MLKEM_SYMBYTES)}
 {
