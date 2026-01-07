@@ -29,7 +29,8 @@ fn __indcpa_keypair(reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg mut ptr u8[MLKE
 
   for i = 0 to MLKEM_SYMBYTES/8
   {
-    #declassify t64 = buf[:u64 i];
+    t64 = buf[:u64 i];
+    () = #declassify(t64);
     publicseed[:u64 i] = t64;
     t64 = buf[:u64 i + MLKEM_SYMBYTES/8];
     noiseseed[:u64 i] = t64;
@@ -100,7 +101,8 @@ fn __indcpa_enc(
 
   for w = 0 to MLKEM_SYMBYTES/8
   {
-    #declassify t64 = pk.[:u64 (MLKEM_POLYVECBYTES/8 + w)*8];
+    t64 = pk.[:u64 (MLKEM_POLYVECBYTES/8 + w)*8];
+    () = #declassify(t64);
     publicseed[:u64 w] = t64;
   }
 

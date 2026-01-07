@@ -101,8 +101,8 @@ ensures {(uint) counter <=(uint) result.1 && (uint) result.1 <= MLKEM_N}
   g0 = #VPACKSS_16u16(g0, g1);
 
   // from Intel intrinsics: "Create mask from the most significant bit of each 8-bit element in a, and store the result in dst."
-  #declassify
   good = (64u)#MOVEMASK_32u8(g0);
+  () = #declassify(good);
 
   good = #protect(good, ms);
 
@@ -253,8 +253,8 @@ ensures {(uint) counter <= result.1 }
   g0 = #VPCMPGT_16u16(bounds, f0);
   g1 = #set0_256();
   g0 = #VPACKSS_16u16(g0, g1);
-  #declassify
   good = (64u)#MOVEMASK_32u8(g0);
+  () = #declassify(good);
 
   good = #protect(good, ms);
 
