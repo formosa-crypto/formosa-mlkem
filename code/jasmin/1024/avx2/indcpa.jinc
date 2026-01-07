@@ -32,7 +32,8 @@ ensures{is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,M
 
   for i = 0 to MLKEM_SYMBYTES/8
   {
-    #declassify t64 = buf[:u64 i];
+    t64 = buf[:u64 i];
+    () = #declassify(t64);
     publicseed[:u64 i] = t64;
     t64 = buf[:u64 i + MLKEM_SYMBYTES/8];
     noiseseed[:u64 i] = t64;
@@ -98,7 +99,8 @@ ensures{is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES)}
 
   for w = 0 to MLKEM_SYMBYTES/8
   {
-    #declassify t64 = pk.[:u64 (MLKEM_POLYVECBYTES/8 + w)*8];
+    t64 = pk.[:u64 (MLKEM_POLYVECBYTES/8 + w)*8];
+    () = #declassify(t64);
     publicseed[:u64 w] = t64;
   }
 
