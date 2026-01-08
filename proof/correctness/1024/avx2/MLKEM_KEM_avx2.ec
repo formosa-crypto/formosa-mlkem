@@ -66,10 +66,16 @@ seq 3 0 : (#pre /\
 seq 2 1 : (#pre /\
     (forall (k : int), 0 <= k < 32 => sk{1}.[k+1536 + 1568] = hpk{2}.[k])).
 wp;ecall {1} (sha3_256A_M1568_ph pk{1}).
-+ auto => /> &1 &2 ??????; do split.
-  + move => *; rewrite initiE 1:/# /= /#. 
-  + by move => *; rewrite initiE 1:/# /=; smt(Array1536.initiE).
-  + by move => *; rewrite initiE 1:/# /=; smt(Array32.initiE).
++ auto => /> &1 &2 _ _ hsk pk2 pk1 sk1; do split.
+  + move => *; rewrite initiE 1:/# /= /#.
+  + move => k *; rewrite initiE 1:/# /=.
+    have -> /= : (3104 <= k + 1536 < 3136) = false by smt().
+    by apply: sk1.
+  + move => k *; rewrite initiE 1:/# /=.
+    have -> /= : 3104 <= k + 3104 < 3136 by smt().
+    rewrite /H_pk.
+    congr; congr.
+    by rewrite -pk2 /#.
 
 seq  5 0 : (#pre /\
     (forall (k : int), 0 <= k < 32 => sk{1}.[k+1536 + 1568 + 32] =randomnessp{1}.[k+32])).
@@ -104,14 +110,12 @@ seq  5 0 : (#pre /\
     rewrite /get64 /init8 /(\bits8) wordP => kk kkb.
     rewrite initiE 1:/# /=  /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
 
-auto => /> &1 &2; rewrite !tP => ???Hpk1????pp H H0;do split.
-  + move => *; rewrite initiE 1:/# /= /#. 
-  + rewrite tP => *; rewrite initiE 1:/# /=.
-    have -> : pp = pk{2}.`1 by smt().
-    rewrite Hpk1;  smt(Array1536.initiE).
-  + by move => *; rewrite tP => *; rewrite initiE 1:/# /=  ; smt(Array32.initiE).
-  + move => *; rewrite initiE 1:/# /=;smt(Array32.initiE).
-  + by move => *; rewrite initiE 1:/# /=; smt(Array32.initiE).
+auto => /> &1 &2; rewrite !tP => ? Hcoins2 Hsk Hpk1 Hpk2 ? H Hrandom pp ? />; do split.
+  + move => *; rewrite initiE 1:/# /= /#.
+  + rewrite tP => i ?; rewrite Hpk1 1:// !initiE // /= /#.
+  + rewrite tP => *; rewrite Hpk2 1:// !initiE // /= /#.
+  + by move => *; rewrite initiE 1:// /= H.
+  + move => *; rewrite initiE 1:// Hcoins2 1:// /= initiE 1:// /= Hrandom 1:// /#.
 qed.
 
 from JazzEC require import WArray32 Array4.
@@ -396,7 +400,7 @@ wp;ecall{1} (shake256_A32_A1600_ph zp_ct{1}).
 
 + auto => /> &1 &2; rewrite  !tP =>??.
   have ->/= : (cph{2} = (cph{2}.`1,cph{2}.`2)) by smt(). 
-  move =>[#]; rewrite !tP => cphv1 cphv2 ???ceq cdif.
+  move =>[#]; rewrite !tP => cphv1 cphv2 ? Hkr1 ?ceq cdif.
 do split. 
 + move => badc back c0 c1.
   +  move : (c1 (cdif badc)).
@@ -404,20 +408,24 @@ do split.
     rewrite (H k kb) !initiE 1,2:/# /=.
     rewrite /J; congr; congr;congr;congr.
     + congr;rewrite tP => kk kkb; rewrite !initiE 1..3:/# /= ifF 1:/# initiE 1:/# /=kkb /= initiE 1:/#.
-      rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
-    rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+      clear -kkb.
+      rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => i Hi.
+    rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# initiE 1:/# /= /#.
     + congr;rewrite tP => kk kkb; rewrite !initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /=.
+      clear -kkb cphv1.
       rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
     rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-    smt(Array1408.initiE Array160.initiE).
+    rewrite cphv1 1:// initiE 1:// /#.
 
   rewrite tP => kk kkb; rewrite !initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /=.
+      clear -kkb cphv2.
       rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
     rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-    smt(Array1408.initiE Array160.initiE).
+    rewrite cphv2 1:// initiE 1:// /= /#.
 
 move => goodc  back c0 c1.
   + move : (c0 (ceq goodc)).
     rewrite !tP => H k kb.
-    by rewrite (H k kb) initiE /#.
+    rewrite (H k kb) initiE 1://.
+    exact: Hkr1.
 qed.
