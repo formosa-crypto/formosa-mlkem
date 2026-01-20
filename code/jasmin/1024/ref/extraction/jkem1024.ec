@@ -2780,6 +2780,7 @@ module M = {
     i <- 0;
     while ((i < inc)) {
       t64 <- (get64 (WArray64.init8 (fun i_0 => buf.[i_0])) i);
+      (* Erased call to declassify *)
       publicseed <-
       (Array32.init
       (WArray32.get8
@@ -2917,6 +2918,7 @@ module M = {
       t64 <-
       (get64_direct (WArray1568.init8 (fun i => pk.[i]))
       ((((4 * 384) %/ 8) + w) * 8));
+      (* Erased call to declassify *)
       publicseed <-
       (Array32.init
       (WArray32.get8

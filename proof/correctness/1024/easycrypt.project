@@ -21,8 +21,8 @@ idirs = CryptoSpecs:../../../crypto-specs/arrays
 rdirs = CryptoSpecs:../../../crypto-specs/fips202
 rdirs = CryptoSpecs:../../../crypto-specs/ml-kem
 
-idirs = JazzEC:../../crypto-specs/arrays
-idirs = JazzEC:../../crypto-specs/common
+idirs = JazzEC:../../../crypto-specs/arrays
+idirs = JazzEC:../../../crypto-specs/common
 idirs = JazzEC:../../../code/jasmin/1024/ref/extraction
 idirs = JazzEC:../../../code/jasmin/1024/avx2/extraction
 

@@ -8669,6 +8669,7 @@ module M = {
     g1 <- (VPCMPGT_16u16 bounds f1);
     g0 <- (VPACKSS_16u16 g0 g1);
     good <- (zeroextu64 (MOVEMASK_32u8 g0));
+    (* Erased call to declassify *)
     good <- (protect_64 good ms);
     t0_0 <- good;
     t0_0 <- (t0_0 `&` (W64.of_int 255));
@@ -8837,6 +8838,7 @@ module M = {
     g1 <- (set0_256);
     g0 <- (VPACKSS_16u16 g0 g1);
     good <- (zeroextu64 (MOVEMASK_32u8 g0));
+    (* Erased call to declassify *)
     good <- (protect_64 good ms);
     t0_0 <- good;
     t0_0 <- (t0_0 `&` (W64.of_int 255));
@@ -9186,6 +9188,7 @@ module M = {
     i <- 0;
     while ((i < inc)) {
       t64 <- (get64 (WArray64.init8 (fun i_0 => buf.[i_0])) i);
+      (* Erased call to declassify *)
       publicseed <-
       (Array32.init
       (WArray32.get8
@@ -9347,6 +9350,7 @@ module M = {
       t64 <-
       (get64_direct (WArray1184.init8 (fun i => pk.[i]))
       ((((3 * 384) %/ 8) + w) * 8));
+      (* Erased call to declassify *)
       publicseed <-
       (Array32.init
       (WArray32.get8
