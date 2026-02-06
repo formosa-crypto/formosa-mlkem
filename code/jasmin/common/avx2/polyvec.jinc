@@ -176,10 +176,13 @@ ensures:
     output these bytes encode the serialized polynomial
 */
 
+#[ safety =
+   { requires = is_arr_init(a,0,2*MLKEM_VECN)
+   , ensures = is_arr_init(result.0,0,MLKEM_POLYVECBYTES)
+   }
+ ]
 inline
 fn __i_polyvec_tobytes(reg ptr u8 [MLKEM_POLYVECBYTES] r, stack u16[MLKEM_VECN] a) -> reg ptr u8 [MLKEM_POLYVECBYTES]
-requires {is_arr_init(a,0,2*MLKEM_VECN)}
-ensures {is_arr_init(result.0,0,MLKEM_POLYVECBYTES)}
 {
   inline int i;
 
@@ -203,10 +206,13 @@ __polyvec_pointwise_acc : computes the inner product of the two
     and affected by spurious R^-1 mod q factor
 */
 
+#[safety =
+   { requires = is_arr_init(a,0, MLKEM_VECN*2) && is_arr_init(b,0,MLKEM_VECN*2)
+   , ensures = is_arr_init(result.0,0,MLKEM_N*2)
+   }
+ ]
 inline
 fn __polyvec_pointwise_acc(stack u16[MLKEM_N] r, stack u16[MLKEM_VECN] a b) -> stack u16[MLKEM_N]
-requires {is_arr_init(a,0, MLKEM_VECN*2) && is_arr_init(b,0,MLKEM_VECN*2)}
-ensures {is_arr_init(result.0,0,MLKEM_N*2)}
 {
   stack u16[MLKEM_N] t;
   inline int i;

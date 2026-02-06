@@ -17,11 +17,13 @@ requires: input coefficients to be in the range [0..2q)
 ensures:
     output bytes encode the compressed polynomial
 */
-
+#[safety =
+   { requires = is_arr_init(a,0,2*MLKEM_N)
+   , ensures = is_arr_init(result.0,0,MLKEM_POLYCOMPRESSEDBYTES) && is_arr_init(result.1,0,2*MLKEM_N)
+   }
+ ]
 inline
 fn _i_poly_compress(reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES], reg ptr u16[MLKEM_N]
-requires {is_arr_init(a,0,2*MLKEM_N)}
-ensures {is_arr_init(result.0,0,MLKEM_POLYCOMPRESSEDBYTES) && is_arr_init(result.1,0,2*MLKEM_N)}
 {
   inline int i;
   reg u256 f0 f1 v mask shift1 shift2 shift3 sllvdidx shufbidx;
@@ -79,10 +81,12 @@ u16[16] pd_mask_s = {31,992,124,3968,496,62,1984,248,
 u16[16] pd_shift_s = {1024,32,256,8,64,512,16,128,
                       1024,32,256,8,64,512,16,128};
 
-
+#[safety =
+   { requires = is_arr_init(a,0,MLKEM_POLYCOMPRESSEDBYTES)
+   , ensures = is_arr_init(result.0,0,2*MLKEM_N)
+   }
+ ]
 fn _i_poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg ptr u8 [MLKEM_POLYCOMPRESSEDBYTES] a) -> reg ptr u16[MLKEM_N]
-requires {is_arr_init(a,0,MLKEM_POLYCOMPRESSEDBYTES)}
-ensures {is_arr_init(result.0,0,2*MLKEM_N)}
 {
   inline int i;
   reg u256 f q shufbidx mask shift;

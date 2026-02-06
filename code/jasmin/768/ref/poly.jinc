@@ -1,9 +1,12 @@
 require "params.jinc"
 require "../../common/ref/poly.jinc"
 
+#[safety =
+   { requires = is_arr_init(a,0,2*MLKEM_N)
+   , ensures = is_arr_init(result.0,0,MLKEM_POLYCOMPRESSEDBYTES) && is_arr_init(result.1,0,2*MLKEM_N)
+   }
+ ]
 fn _i_poly_compress(reg mut ptr u8[MLKEM_POLYCOMPRESSEDBYTES] rp, reg mut ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYCOMPRESSEDBYTES], reg ptr u16[MLKEM_N]
-requires {is_arr_init(a,0,2*MLKEM_N)}
-ensures {is_arr_init(result.0,0,MLKEM_POLYCOMPRESSEDBYTES) && is_arr_init(result.1,0,2*MLKEM_N)}
 {
   reg u32 d0, d1;
   reg ui64 i;
@@ -33,10 +36,12 @@ ensures {is_arr_init(result.0,0,MLKEM_POLYCOMPRESSEDBYTES) && is_arr_init(result
   return rp, a;
 }
 
-
+#[safety =
+   { requires = is_arr_init(ap,0,MLKEM_POLYCOMPRESSEDBYTES)
+   , ensures = is_arr_init(result.0,0,2*MLKEM_N)
+   }
+ ]
 fn _i_poly_decompress(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_POLYCOMPRESSEDBYTES] ap) -> reg ptr u16[MLKEM_N]
-requires {is_arr_init(ap,0,MLKEM_POLYCOMPRESSEDBYTES)}
-ensures {is_arr_init(result.0,0,2*MLKEM_N)}
 {
   reg u8 t;
   reg u16 d0, d1;

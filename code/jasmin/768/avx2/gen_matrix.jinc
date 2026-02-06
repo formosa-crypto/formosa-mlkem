@@ -1,13 +1,16 @@
 require "gen_matrix_globals.jinc"
 require "../../common/avx2/gen_matrix.jinc"
 
+#[safety =
+   { requires = is_arr_init(rho,0,32) && 0<= transposed && transposed <= 1
+   , ensures = is_arr_init(result.0,0,MLKEM_K * MLKEM_K * MLKEM_N * 2)
+   }
+ ]
 fn _gen_matrix_avx2
 ( reg mut ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix
 , reg const ptr u8[32] rho
 , #spill_to_mmx reg u64 transposed
 ) -> reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N]
-requires {is_arr_init(rho,0,32) && 0<= transposed && transposed <= 1} 
-ensures { is_arr_init(result.0,0,MLKEM_K * MLKEM_K * MLKEM_N * 2)}
 {
   // local variables
   inline int i j;

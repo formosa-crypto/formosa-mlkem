@@ -92,6 +92,8 @@ mkShell ({
     { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/common"; }
     { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/ref"; }
     { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/avx2"; }
+    { key = "JazzEC"; val = "code/jasmin/768/avx2/extraction"; }
+    { key = "JazzEC"; val = "code/jasmin/1024/avx2/extraction"; }
     { key = "JazzEC"; val = "${formosa-keccak}/proof/amd64/extracted"; }
     { key = "JazzEC"; val = "${crypto-specs}/arrays"; }
     { key = "JazzEC"; val = "${crypto-specs}/common"; }

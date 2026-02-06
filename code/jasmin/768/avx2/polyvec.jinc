@@ -18,11 +18,14 @@ u8[32] pvd_shufbdidx_s = {0, 1, 1, 2, 2, 3, 3, 4,
 u64 pvd_sllvdidx_s = 0x04;
 u32 pvd_mask_s = 0x7fe01ff8;
 
+#[safety =
+   { requires = is_arr_init(rp,0,MLKEM_CIPHERTEXTBYTES)
+   , ensures = is_arr_init(result.0,0,MLKEM_VECN*2)
+   }
+ ]
 
 inline
 fn __i_polyvec_decompress(reg ptr u8[MLKEM_CIPHERTEXTBYTES] rp) -> stack u16[MLKEM_VECN]
-requires{is_arr_init(rp,0,MLKEM_CIPHERTEXTBYTES)}
-ensures{is_arr_init(result.0,0,MLKEM_VECN*2)}
 {
   inline int i k;
   reg u256 f q shufbidx sllvdidx mask;
@@ -72,10 +75,13 @@ u64 pvc_sllvdidx_s = 0x0C;
 u8[32] pvc_shufbidx_s = {0, 1, 2, 3, 4, 8, 9, 10, 11, 12, -1, -1, -1, -1, -1, -1,
                          9, 10, 11, 12, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4, 8};
 
+#[safety =
+   { requires = is_arr_init(a,0,MLKEM_VECN*2)
+   , ensures = is_arr_init(result.0,0,MLKEM_POLYVECCOMPRESSEDBYTES)
+   }
+ ]
 inline
 fn __i_polyvec_compress(reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECCOMPRESSEDBYTES]
-requires{is_arr_init(a,0,MLKEM_VECN*2)}
-ensures{is_arr_init(result.0,0,MLKEM_POLYVECCOMPRESSEDBYTES)}
 {
   inline int i;
   reg u256 f0 f1 f2 v v8 off shift1 mask shift2 sllvdidx shufbidx;

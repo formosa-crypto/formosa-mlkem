@@ -186,9 +186,12 @@ ensures:
      factor R^-1 % q.
 */
 
+#[safety =
+   { requires = is_arr_init(ap,0,32*16) && is_arr_init(bp,0,32*16)
+   , ensures = is_arr_init(result.0,0,32*16)
+   }
+ ]
 fn _poly_basemul(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
-requires {is_arr_init(ap,0,32*16) && is_arr_init(bp,0,32*16)}
-ensures {is_arr_init(result.0,0,32*16)}
 {
   reg u256 zeta zetaqinv qx16 qinvx16 are aim bre bim;
 
@@ -301,9 +304,12 @@ ensures:
 
 */
 
+#[safety =
+   { requires = is_arr_init(ap,0,MLKEM_POLYBYTES)
+   , ensures = is_arr_init(result.0,0,16*32)
+   }
+ ]
 fn _i_poly_frombytes(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_POLYBYTES] ap) -> reg ptr u16[MLKEM_N] 
-requires {is_arr_init(ap, 0,MLKEM_POLYBYTES)}
-ensures {is_arr_init(result.0,0,16*32)}
 {
   inline int i;
   reg u256 t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 tt mask;
@@ -429,9 +435,12 @@ u8[16] pfm_idx_s = {0, 1, 4, 5, 8, 9, 12, 13,
                     2, 3, 6, 7, 10, 11, 14, 15};
 
 
+#[ safety =
+   { requires = is_arr_init(ap,0,32)
+   , ensures = is_arr_init(result.0,0,16*32)
+   }
+ ]
 fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg ptr u8[32] ap) -> reg ptr u16[MLKEM_N]
-requires {is_arr_init(ap, 0, 32)}
-ensures {is_arr_init(result.0,0,16*32)}
 {
   inline int i;
   reg u256 f g0 g1 g2 g3 h0 h1 h2 h3;
@@ -486,10 +495,13 @@ ensures: output coefficient j is computed as
        buf[j/2][j%2*4]+buf[j/2][j%2*4+1] -
            (buf[j/2][j%2*4+2]+buf[j/2][j%2*4+3]).
 */
+#[ safety =
+   { requires = is_arr_init(buf,0,MLKEM_N/2)
+   , ensures = is_arr_init(result.0,0,MLKEM_N * 2)
+   }
+ ]
 inline
 fn __cbd2(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA2*MLKEM_N/4] buf) -> reg ptr u16[MLKEM_N]
-requires {is_arr_init(buf, 0, MLKEM_N/2)}
-ensures {is_arr_init(result.0,0,MLKEM_N * 2)}
 {
   inline int i;
   reg u256 f0 f1 f2 f3;
@@ -549,18 +561,24 @@ ensures {is_arr_init(result.0,0,MLKEM_N * 2)}
 }
 
 /* In MLKEM 768 and 1024 eta1 and eta2 is cbd2 */
+#[ safety =
+   { requires = is_arr_init(buf,0,MLKEM_N/2)
+   , ensures = is_arr_init(result.0,0,MLKEM_N * 2)
+   }
+ ]
 inline
 fn __poly_cbd_eta1(reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_ETA1*MLKEM_N/4+(MLKEM_ETA1 - 2)*8] buf) -> reg ptr u16[MLKEM_N]
-requires {is_arr_init(buf, 0, MLKEM_N/2)}
-ensures {is_arr_init(result.0,0,MLKEM_N * 2)}
 {
   rp = __cbd2(rp, buf[0:MLKEM_ETA2*MLKEM_N/4]);
   return rp;
 }
 
+#[ safety =
+   { requires = is_arr_init(seed,0,MLKEM_SYMBYTES)
+   , ensures = is_arr_init(result.0,0,MLKEM_N * 2)
+   }
+ ]
 fn _poly_getnoise_eta2(#spill_to_mmx reg ptr u16[MLKEM_N] rp, reg ptr u8[MLKEM_SYMBYTES] seed, reg u8 nonce) -> reg ptr u16[MLKEM_N]
-requires {is_arr_init(seed, 0, MLKEM_SYMBYTES)}
-ensures {is_arr_init(result.0,0,MLKEM_N * 2)}
 {
   stack u8[MLKEM_ETA2*MLKEM_N/4] buf;
   () = #spill(rp);
@@ -577,7 +595,14 @@ ensures {is_arr_init(result.0,0,MLKEM_N * 2)}
 
 /* _poly_getnoise_eta1_4x: computes 4x the binomial noise,
    where only the shake computation is parallelized. */
-
+#[safety =
+   { requires = is_arr_init(seed,0,MLKEM_SYMBYTES)
+   , ensures = is_arr_init(result.0,0,MLKEM_N * 2) &&
+                is_arr_init(result.1,0,MLKEM_N * 2) &&
+                is_arr_init(result.2,0,MLKEM_N * 2) &&
+                is_arr_init(result.3,0,MLKEM_N * 2)
+   }
+ ]
 fn _poly_getnoise_eta1_4x
 ( reg ptr u16[MLKEM_N] r0 r1 r2 r3
 , reg ptr u8[MLKEM_SYMBYTES] seed
@@ -586,11 +611,6 @@ fn _poly_getnoise_eta1_4x
    , reg ptr u16[MLKEM_N]
    , reg ptr u16[MLKEM_N]
    , reg ptr u16[MLKEM_N]
-requires {is_arr_init(seed, 0, MLKEM_SYMBYTES)}
-ensures {is_arr_init(result.0,0,MLKEM_N * 2) &&
-         is_arr_init(result.1,0,MLKEM_N * 2) &&
-         is_arr_init(result.2,0,MLKEM_N * 2) &&
-         is_arr_init(result.3,0,MLKEM_N * 2) }
 {
   stack u8[128] buf0_s buf1_s buf2_s buf3_s;
   stack u8[4] nonces;
@@ -1090,10 +1110,12 @@ ensures:
   - each entry in rp is in the range [-q*(A+B)...q*(A+B))
 */
 
-
+#[safety =
+   { requires = is_arr_init(ap, 0, 32*16) && is_arr_init(bp, 0, 32*16)
+   , ensures = is_arr_init(result.0,0, 32*16)
+   }
+ ]
 fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
-requires {is_arr_init(ap, 0, 32*16) && is_arr_init(bp, 0, 32*16)}
-ensures {is_arr_init(result.0,0, 32*16)}
 {
   inline int i;
   reg u256 a;
@@ -1121,10 +1143,12 @@ ensures:
 
 */
 
-
+#[safety =
+   { requires = is_arr_init(a, 0, 2*MLKEM_N)
+   , ensures = is_arr_init(result.0,0, MLKEM_POLYBYTES) && is_arr_init(result.1,0, 2*MLKEM_N)
+   }
+ ]
 fn _i_poly_tobytes(reg ptr u8[MLKEM_POLYBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYBYTES], reg ptr u16[MLKEM_N]
-requires {is_arr_init(a, 0, 2*MLKEM_N) }
-ensures {is_arr_init(result.0,0, MLKEM_POLYBYTES) && is_arr_init(result.1,0, 2*MLKEM_N)}
 {
   inline int i;
   reg u256 t0 t1 t2 t3 t4 t5 t6 t7 tt ttt;
@@ -1204,10 +1228,12 @@ ensures:
 
 */
 
-
+#[safety =
+   { requires = is_arr_init(a, 0, 2*MLKEM_N)
+   , ensures = is_arr_init(result.0,0, MLKEM_INDCPA_MSGBYTES) && is_arr_init(result.1,0, 2*MLKEM_N)
+   }
+ ]
 fn _i_poly_tomsg(reg ptr u8[MLKEM_INDCPA_MSGBYTES] rp, reg ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES], reg ptr u16[MLKEM_N]
-requires {is_arr_init(a, 0, 2* MLKEM_N)}
-ensures {is_arr_init(result.0,0, MLKEM_N/8) && is_arr_init(result.1,0, 2*MLKEM_N)}
 {
   inline int i;
   reg u256 f0 f1 g0 g1 hq hhq;

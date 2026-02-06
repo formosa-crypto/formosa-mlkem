@@ -3,11 +3,13 @@ require "poly.jinc"
 require "polyvec.jinc"
 require "gen_matrix.jinc"
 
-
+#[safety =
+   { requires = is_arr_init(randomnessp,0,MLKEM_SYMBYTES)
+   , ensures = is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,MLKEM_POLYVECBYTES)
+   }
+ ]
 inline
 fn __indcpa_keypair(#spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, #spill_to_mmx reg ptr u8[MLKEM_POLYVECBYTES] sk, reg ptr u8[MLKEM_SYMBYTES] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_POLYVECBYTES]
-requires{is_arr_init(randomnessp,0,MLKEM_SYMBYTES)}
-ensures{is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,MLKEM_POLYVECBYTES)}
 {
   stack u16[MLKEM_K*MLKEM_VECN] aa;
   stack u16[MLKEM_VECN] e pkpv skpv;
@@ -74,7 +76,11 @@ ensures{is_arr_init(result.0,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(result.1,0,M
   return pk, sk;
 }
 
-
+#[safety =
+   { requires = is_arr_init(msgp,0,MLKEM_INDCPA_MSGBYTES)  && is_arr_init(pk,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(noiseseed,0,MLKEM_SYMBYTES)
+   , ensures = is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES)
+   }
+ ]
 inline
 fn __indcpa_enc(
   #spill_to_mmx reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
@@ -82,8 +88,6 @@ fn __indcpa_enc(
   reg ptr u8[MLKEM_PUBLICKEYBYTES] pk,
   reg ptr u8[MLKEM_SYMBYTES] noiseseed)
 -> reg ptr u8[MLKEM_CIPHERTEXTBYTES]
-requires{is_arr_init(msgp,0,MLKEM_INDCPA_MSGBYTES)  && is_arr_init(pk,0,MLKEM_PUBLICKEYBYTES) && is_arr_init(noiseseed,0,MLKEM_SYMBYTES)}
-ensures{is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES)}
 {
   stack u16[MLKEM_VECN] pkpv sp ep bp;
   stack u16[MLKEM_K*MLKEM_VECN] aat;
@@ -140,11 +144,13 @@ ensures{is_arr_init(result.0,0,MLKEM_CIPHERTEXTBYTES)}
   return ct;
 }
 
-
+#[safety =
+   { requires = is_arr_init(ct,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(sk,0,MLKEM_POLYVECBYTES)
+   , ensures = is_arr_init(result.0,0,MLKEM_INDCPA_MSGBYTES)
+   }
+ ]
 inline
 fn __indcpa_dec(reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_POLYVECBYTES] sk) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES]
-requires{is_arr_init(ct,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(sk,0,MLKEM_POLYVECBYTES)}
-ensures{is_arr_init(result.0,0,MLKEM_INDCPA_MSGBYTES)}
 {
   stack u16[MLKEM_N] t v mp;
   stack u16[MLKEM_VECN] bp skpv;

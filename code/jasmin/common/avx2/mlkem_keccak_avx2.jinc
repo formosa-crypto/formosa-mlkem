@@ -71,12 +71,15 @@ namespace ABUFLEN {
 /*
 /* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1184 byte
    memory region */
+#[safety =
+   { requires = is_mem_init((64u)in, 1184)
+   , ensures = is_arr_init(result.0,0,32)
+   }
+ ]
 fn _sha3_256A_M1184
 ( #spill_to_mmx reg mut ptr u8[32] out
 , #spill_to_mmx reg ui64 in
 ) -> reg ptr u8[32]
-requires {is_mem_init((64u)in, 1184)}
-ensures {is_arr_init(result.0,0,32)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = __absorb_m_avx2(st, 0, in, 1184, SHA3, R136);
@@ -86,12 +89,15 @@ ensures {is_arr_init(result.0,0,32)}
 
 /* SHA3-256 writing to a 32-byte stack array (256A) and reading from 1568 byte
    memory region */
+#[safety =
+   { requires = is_mem_init((64u)in, 1568)
+   , ensures = is_arr_init(result.0,0,32)
+   }
+ ]
 fn _sha3_256A_M1568
 ( #spill_to_mmx reg mut ptr u8[32] out
 , #spill_to_mmx reg ui64 in
 ) -> reg ptr u8[32]
-requires {is_mem_init((64u)in,1568)}
-ensures {is_arr_init(result.0,0,32)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = __absorb_m_avx2(st, 0, in, 1568, SHA3, R136);
@@ -102,12 +108,15 @@ ensures {is_arr_init(result.0,0,32)}
 
 /* SHA3-512 writing to a 64-byte stack array (512A) and reading from 33 byte
    stack array */
+#[safety =
+   { requires = is_arr_init(in,0,33)
+   , ensures = is_arr_init(result.0,0,64)
+   }
+ ]
 fn _sha3_512A_A33
 ( #spill_to_mmx reg mut ptr u8[64] out
 , reg const ptr u8[33] in
 ) -> reg ptr u8[64]
-requires {is_arr_init(in, 0, 33)}
-ensures {is_arr_init(result.0,0,64)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = A33::__absorb_avx2(st, 0, in, SHA3, R72);
@@ -117,12 +126,15 @@ ensures {is_arr_init(result.0,0,64)}
 
 /* SHA3-512 writing to a 64-byte stack array (512A) and reading from 64 byte
    stack array */
+#[safety =
+   { requires = is_arr_init(in,0,64)
+   , ensures = is_arr_init(result.0,0,64)
+   }
+ ]
 fn _sha3_512A_A64
 ( reg mut ptr u8[64] out
 , reg const ptr u8[64] in
 ) -> reg ptr u8[64]
-requires {is_arr_init(in, 0, 64)}
-ensures {is_arr_init(result.0,0,64)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = A64::__absorb_avx2(st, 0, in, SHA3, R72);
@@ -133,11 +145,11 @@ ensures {is_arr_init(result.0,0,64)}
 /*
 /* SHAKE-256 writing to a 32-byte memory region (32M) and reading from 32 byte
    stack array first, and then from a 1088 byte memory region */
+#[safety = { requires = is_mem_init((64u)in0, 32) && is_mem_init((64u)in1, 1088) && is_mem_init((64u)out, 32)}]
 fn _shake256_M32__M32_M1088
 ( reg ui64 out
 , reg ui64 in0 in1 // 32+MLKEM_INDCPA_CIPHERTEXTBYTES
 )
-requires { is_mem_init((64u)in0, 32) && is_mem_init((64u)in1, 1088) && is_mem_init((64u)out, 32)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = __absorb_m_avx2(st, 0, in0, 32, UNFINISHED, R136);
@@ -147,11 +159,11 @@ requires { is_mem_init((64u)in0, 32) && is_mem_init((64u)in1, 1088) && is_mem_in
 
 /* SHAKE-256 writing to a 32-byte memory region (32M) and reading from 32 byte
    stack array first, and then from a 1600 byte memory region */
+#[safety = { requires = is_mem_init((64u)in0, 32) && is_mem_init((64u)in1, 1600) && is_mem_init((64u)out, 32)}]
 fn _shake256_M32__M32_M1600
 ( reg ui64 out
 , reg ui64 in0 in1 // 32+MLKEM_INDCPA_CIPHERTEXTBYTES
 )
-requires {is_mem_init((64u)in0, 32) && is_mem_init((64u)in1, 1600) && is_mem_init((64u)out, 32)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = __absorb_m_avx2(st, 0, in0, 32, UNFINISHED, R136);
@@ -162,13 +174,16 @@ requires {is_mem_init((64u)in0, 32) && is_mem_init((64u)in1, 1600) && is_mem_ini
 
 /* SHAKE-256 writing to a 128-byte stack array (A128) and reading from 32 byte
    stack array first, and then from a 1 byte stack array next */
+#[safety =
+   { requires = is_arr_init(seed,0,32) && is_arr_init(nonce,0,1)
+   , ensures = is_arr_init(result.0,0,128)
+   }
+ ]
 fn _shake256_A128__A32_A1
 ( reg mut ptr u8[128] out
 , reg const ptr u8[32] seed
 , reg const ptr u8[1] nonce
 ) -> reg ptr u8[128]
-requires {is_arr_init(seed, 0, 32) && is_arr_init(nonce, 0, 1)}
-ensures {is_arr_init(result.0,0,128)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = A32::__absorb_avx2(st, 0, seed, UNFINISHED, R136);
@@ -180,6 +195,14 @@ ensures {is_arr_init(result.0,0,128)}
 
 /* 4-way parallel SHAKE-256 writing to 128-byte stack arrays (A128) and reading from 32 byte
    stack array first (same input on all lanes), and then from 1 byte stack arrays next */
+#[safety =
+   { requires = is_arr_init(seed,0,32) && is_arr_init(nonces,0,4) 
+    , ensures = is_arr_init(result.0,0,128) &&
+                is_arr_init(result.1,0,128) &&
+                is_arr_init(result.2,0,128) &&
+                is_arr_init(result.3,0,128)
+    }
+]
 fn _shake256x4_A128__A32_A1
 ( reg mut ptr u8[128] out0 out1 out2 out3
 , reg const ptr u8[32] seed
@@ -188,11 +211,6 @@ fn _shake256x4_A128__A32_A1
    , reg ptr u8[128] /* out1 */
    , reg ptr u8[128] /* out2 */
    , reg ptr u8[128] /* out3 */
-requires {is_arr_init(seed, 0, 32) && is_arr_init(nonces, 0, 4)}
-ensures {is_arr_init(result.0,0, 128) &&
-         is_arr_init(result.1,0, 128) &&
-         is_arr_init(result.2,0, 128) &&
-         is_arr_init(result.3,0, 128) }
 { stack u256[25] st_s;
   reg ptr u256[25] st;
   st = st_s;
@@ -207,12 +225,15 @@ ensures {is_arr_init(result.0,0, 128) &&
 
 /* SHAKE-128 absorb reading from a 32-byte stack array (A32) first and from 2 byte
    stack array next */
+#[safety =
+   { requires = is_arr_init(seed,0,32) && is_arr_init(pos,0,2)
+   , ensures = is_arr_init(result.0,0,32*7)
+   }
+ ]
 fn _shake128_absorb_A32_A2
 ( reg const ptr u8[32] seed
 , reg const ptr u8[2] pos
 ) -> reg u256[7]
-requires {is_arr_init(seed, 0, 32) && is_arr_init(pos, 0, 2)}
-ensures {is_arr_init(result.0,0,32*7)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = A32::__absorb_avx2(st, 0, seed, UNFINISHED, R168);
@@ -223,13 +244,16 @@ ensures {is_arr_init(result.0,0,32*7)}
 
 /* 4-way SHAKE-128 absorb reading from a 32-byte stack array (A32) first (same on all
    lanes) and from 2 byte stack arrays next */
+#[safety =
+   { requires = is_arr_init(seed,0,32) && is_arr_init(pos,0,4*2)
+   , ensures = is_arr_init(result.0,0,32*25)
+   }
+]  
 fn _shake128x4_absorb_A32_A2
 ( reg mut ptr u256[25] st
 , reg const ptr u8[32] seed
 , reg const ptr u8[4*2] pos
 ) -> reg ptr u256[25]
-requires {is_arr_init(seed, 0, 32) && is_arr_init(pos, 0, 4*2)}
-ensures {is_arr_init(result.0,0,32*25)}
 { inline int AT;
   st = __state_init_avx2x4(st);
   st, AT = A32::__absorb_bcast_avx2x4(st, 0, seed, UNFINISHED, R168);
@@ -240,12 +264,15 @@ ensures {is_arr_init(result.0,0,32*25)}
 
 /* SHAKE-128 squeeze the next 504 bytes and keep the full state
    at the end so it can be resumed */
+#[safety =
+   { requires = is_arr_init(st,0,32*7)
+   , ensures = is_arr_init(result.0,0,ABUFLEN::_ASIZE)
+   }
+ ]
 fn _shake128_squeeze3blocks
 ( reg mut ptr u8[ABUFLEN::_ASIZE] buf
 , reg u256[7] st
 ) -> reg ptr u8[ABUFLEN::_ASIZE]
-requires {is_arr_init(st, 0, 32*7)}
-ensures {is_arr_init(result.0,0,ABUFLEN::_ASIZE)}
 {
  reg ui64 offset;
  st = _keccakf1600_avx2(st);
@@ -260,11 +287,14 @@ ensures {is_arr_init(result.0,0,ABUFLEN::_ASIZE)}
 
 /* SHAKE-128 squeeze the next 168 bytes and keep the full state
    at the end so it can be resumed */
+#[safety =
+   { requires = is_arr_init(buf,0,ABUFLEN::_ASIZE)
+   , ensures = is_arr_init(result.0,0,ABUFLEN::_ASIZE)
+   }
+ ]
 fn _shake128_next_state
 ( reg mut ptr u8[ABUFLEN::_ASIZE] buf
 ) -> reg ptr u8[ABUFLEN::_ASIZE] /* buf */
-requires {is_arr_init(buf, 0,ABUFLEN::_ASIZE)}
-ensures {is_arr_init(result.0,0,ABUFLEN::_ASIZE)}
 {
  reg ptr u64[25] pst;
 /*
@@ -285,13 +315,16 @@ ensures {is_arr_init(result.0,0,ABUFLEN::_ASIZE)}
 
 /* 4-way parallel SHAKE-128 squeeze the next 504 bytes and keep the full states
    at the end so they can be resumed */
+#[safety =
+   { requires = is_arr_init(st,0,32*25)
+   , ensures = is_arr_init(result.1,0,4*ABUFLEN::_ASIZE)
+   }
+ ]
 fn _shake128x4_squeeze3blocks
 ( reg mut ptr u256[25] st
 , reg mut ptr u8[4*ABUFLEN::_ASIZE] buf
 ) -> reg ptr u256[25]
    , reg ptr u8[4*ABUFLEN::_ASIZE] /* buf */
-requires {is_arr_init(st, 0, 32*25)}
-ensures {is_arr_init(result.1,0,4*ABUFLEN::_ASIZE)}
 {
  reg ptr u8[ABUFLEN::_ASIZE] buf0 buf1 buf2 buf3;
  reg ui64 offset;
@@ -317,12 +350,15 @@ ensures {is_arr_init(result.1,0,4*ABUFLEN::_ASIZE)}
  return st, buf;
 }
 
+#[safety =
+   { requires = is_arr_init(in,0,1184)
+   , ensures = is_arr_init(result.0,0,32)
+   }
+ ]
 fn _sha3_256A_A1184
 ( #spill_to_mmx reg mut ptr u8[32] out
 , #spill_to_mmx reg const ptr u8[1184] in
 ) -> reg ptr u8[32]
-requires {is_arr_init(in,0,1184)}
-ensures {is_arr_init(result.0,0,32)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = A1184::__absorb_avx2(st, 0, in, SHA3, R136);
@@ -331,12 +367,15 @@ ensures {is_arr_init(result.0,0,32)}
   return out;
 }
 
+#[ safety =
+   { requires = is_arr_init(in,0,1568)
+   , ensures = is_arr_init(result.0,0,32)
+   }
+ ]
 fn _sha3_256A_A1568
 ( #spill_to_mmx reg mut ptr u8[32] out
 , #spill_to_mmx reg const ptr u8[1568] in
 ) -> reg ptr u8[32]
-requires {is_arr_init(in,0,1568)}
-ensures {is_arr_init(result.0,0,32)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = A1568::__absorb_avx2(st, 0, in, SHA3, R136);
@@ -345,12 +384,15 @@ ensures {is_arr_init(result.0,0,32)}
   return out;
 }
 
+#[ safety =
+   { requires = is_arr_init(in,0,1120)
+   , ensures = is_arr_init(result.0,0,32)
+   }
+ ]
 fn _shake256_A32__A1120
 (  reg mut ptr u8[32] out
 ,  reg const ptr u8[1120] in
 ) -> reg ptr u8[32]
-requires {is_arr_init(in,0,1120)}
-ensures {is_arr_init(result.0,0,32)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = A1120::__absorb_avx2(st, 0, in, SHAKE, R136);
@@ -358,12 +400,15 @@ ensures {is_arr_init(result.0,0,32)}
   return out;
 }
 
+#[ safety =
+   { requires = is_arr_init(in,0,1600)
+   , ensures = is_arr_init(result.0,0,32)
+   }
+ ]
 fn _shake256_A32__A1600
 (  reg mut ptr u8[32] out
 ,  reg const ptr u8[1600] in
 ) -> reg ptr u8[32]
-requires {is_arr_init(in,0,1600)}
-ensures {is_arr_init(result.0,0,32)}
 { reg u256[7] st;
   st = __state_init_avx2();
   st, _ = A1600::__absorb_avx2(st, 0, in, SHAKE, R136);
