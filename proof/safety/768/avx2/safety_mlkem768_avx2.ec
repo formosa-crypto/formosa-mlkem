@@ -38283,17 +38283,16 @@ module M(SC:Syscall_t) = {
     var b_result_1:BArray512.t;
     var b_result_2:BArray512.t;
     var b_param_0:BArray512.t;
-    var b_param_1:BArray512.t;
     var b_t:BArray512.t;
     var b_v:BArray512.t;
     var b_result_3:BArray512.t;
     var b_result_4:BArray512.t;
-    var b_param_2:BArray512.t;
+    var b_param_1:BArray512.t;
     var b_result_5:BArray1536.t;
     var b_result_6:BArray1536.t;
     var b_result_7:BArray512.t;
-    var b_param_3:BArray128.t;
-    var b_param_4:BArray512.t;
+    var b_param_2:BArray128.t;
+    var b_param_3:BArray512.t;
     var b_result_8:BArray1536.t;
     var trace___indcpa_dec:trace;
     b_mp <- witness;
@@ -38302,7 +38301,6 @@ module M(SC:Syscall_t) = {
     b_param_1 <- witness;
     b_param_2 <- witness;
     b_param_3 <- witness;
-    b_param_4 <- witness;
     b_result <- witness;
     b_result_0 <- witness;
     b_result_1 <- witness;
@@ -38363,18 +38361,17 @@ module M(SC:Syscall_t) = {
     (trace___indcpa_dec ++
     [(Assert, (BArray1536.is_init b_result_8 0 1536))]);
     bp <- result;
-    b_param_4 <- b_v;
+    b_param_3 <- b_v;
     param_1 <- v;
-    b_param_3 <- (SBArray1088_128.get_sub8 b_ct 960);
+    b_param_2 <- (SBArray1088_128.get_sub8 b_ct 960);
     param_0 <- (SBArray1088_128.get_sub8 ct 960);
-    (aux_1, aux_2, tmp__trace) <@ _i_poly_decompress (param_1, b_param_4,
-    param_0, b_param_3);
+    (aux_1, aux_2, tmp__trace) <@ _i_poly_decompress (param_1, b_param_3,
+    param_0, b_param_2);
     result_0 <- aux_1;
     b_result_7 <- aux_2;
     trace___indcpa_dec <- (trace___indcpa_dec ++ tmp__trace);
     trace___indcpa_dec <-
-    (trace___indcpa_dec ++ [(Assert, (BArray512.is_init b_result_7 0 1536))]);
-    b_v <- b_result_7;
+    (trace___indcpa_dec ++ [(Assert, (BArray512.is_init b_result_7 0 512))]);
     v <- result_0;
     param_2 <- sk;
     (aux, aux_0, tmp__trace) <@ __i_polyvec_frombytes (param_2,
@@ -38396,12 +38393,12 @@ module M(SC:Syscall_t) = {
     (trace___indcpa_dec ++
     [(Assert, (BArray1536.is_init b_result_5 0 1536))]);
     bp <- result_2;
-    b_param_2 <- b_t;
+    b_param_1 <- b_t;
     param_6 <- t;
     param_5 <- skpv;
     param_4 <- bp;
     (aux_1, aux_2, tmp__trace) <@ __polyvec_pointwise_acc (param_6,
-    b_param_2, param_5, (BArray1536.init_arr (W8.of_int 255)), param_4,
+    b_param_1, param_5, (BArray1536.init_arr (W8.of_int 255)), param_4,
     (BArray1536.init_arr (W8.of_int 255)));
     result_3 <- aux_1;
     b_result_4 <- aux_2;
@@ -38418,13 +38415,13 @@ module M(SC:Syscall_t) = {
     trace___indcpa_dec <-
     (trace___indcpa_dec ++ [(Assert, (BArray512.is_init b_result_3 0 512))]);
     t <- result_4;
-    b_param_1 <- b_mp;
+    b_param_0 <- b_mp;
     param_10 <- mp;
-    b_param_0 <- b_v;
     param_9 <- v;
     param_8 <- t;
-    (aux_1, aux_2, tmp__trace) <@ _poly_sub (param_10, b_param_1, param_9,
-    b_param_0, param_8, (BArray512.init_arr (W8.of_int 255)));
+    (aux_1, aux_2, tmp__trace) <@ _poly_sub (param_10, b_param_0, param_9,
+    (BArray512.init_arr (W8.of_int 255)), param_8,
+    (BArray512.init_arr (W8.of_int 255)));
     result_5 <- aux_1;
     b_result_2 <- aux_2;
     trace___indcpa_dec <- (trace___indcpa_dec ++ tmp__trace);
@@ -45562,7 +45559,7 @@ op _i_poly_decompress_spec _rp _b_rp _a _b_a =
    hoare [M(Syscall)._i_poly_decompress :
    (((_b_a = b_a) /\ ((_a = a) /\ ((_b_rp = b_rp) /\ (_rp = rp)))) /\
    (BArray128.is_init _b_a 0 128)) ==>
-   ((BArray512.is_init res.`2 0 ((3 * 256) * 2)) /\ (valid res.`3))].
+   ((BArray512.is_init res.`2 0 (256 * 2)) /\ (valid res.`3))].
 
 op __polyvec_add2_spec _r _b_r _b _b_b =
    hoare [M(Syscall).__polyvec_add2 :

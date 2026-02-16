@@ -1936,8 +1936,8 @@ auto .
 rewrite /is_init /valid /=.
 smt (List.all_cat).
 auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat).
+rewrite /is_init /valid /= => &m /> *.
+smt ().
 qed .
 
 
@@ -2557,12 +2557,12 @@ ecall (_i_poly_tomsg_proof param_13 b_param param_12 (BArray512.init_arr
 auto .
 ecall (__poly_reduce_proof param_11 (BArray512.init_arr (JWord.W8.of_int 255))).
 auto .
-ecall (_poly_sub_proof param_10 b_param_1 param_9 b_param_0 param_8
+ecall (_poly_sub_proof param_10 b_param_0 param_9 (BArray512.init_arr (W8.of_int 255)) param_8
        (BArray512.init_arr (JWord.W8.of_int 255))).
 auto .
 ecall (_poly_invntt_proof param_7 (BArray512.init_arr (JWord.W8.of_int 255))).
 auto .
-ecall (__polyvec_pointwise_acc_proof param_6 b_param_2 param_5 (
+ecall (__polyvec_pointwise_acc_proof param_6 b_param_1 param_5 (
                                                                BArray1536.init_arr
                                                                (JWord.W8.of_int 255
                                                                )) param_4 
@@ -2573,7 +2573,7 @@ auto .
 ecall (__i_polyvec_frombytes_proof param_2 (BArray1152.init_arr
                                            (JWord.W8.of_int 255))).
 auto .
-ecall (_i_poly_decompress_proof param_1 b_param_4 param_0 b_param_3).
+ecall (_i_poly_decompress_proof param_1 b_param_3 param_0 b_param_2).
 auto .
 ecall (__i_polyvec_decompress_proof param (
                                                             BArray1088.init_arr
@@ -2585,7 +2585,6 @@ move => *. split.  smt(SBArray1088_128.SBArray1088_128.is_init_cell_get).
 move => *. split.  smt(BArray1152.init_arrP).
 move => *. split. smt(BArray1536.init_arrP).
 move => *. split. smt(BArray512.init_arrP).
-move => *. split. smt().
 move => *. split. smt(BArray32.init_arrP).
 smt (List.all_cat).
 qed .
