@@ -16,5 +16,12 @@ ec:
 	  -f jade_kem_mlkem_mlkem768_amd64_ref_enc_derand \
 	  -f jade_kem_mlkem_mlkem768_amd64_ref_dec
 
+ec_safety: 
+	$(JASMIN2EC) ../jkem.jazz -m safety -o jkem768_safety.ec \
+	  --output-proof jkem768_safety_proof.ec \
+	  -f jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand \
+	  -f jade_kem_mlkem_mlkem768_amd64_ref_enc_derand \
+	  -f jade_kem_mlkem_mlkem768_amd64_ref_dec
+
 clean:
 	rm -f *.ec
