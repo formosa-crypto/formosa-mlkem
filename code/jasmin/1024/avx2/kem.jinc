@@ -9,12 +9,12 @@ require "../../common/avx2/verify.jinc"
 inline
 fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLKEM_SECRETKEYBYTES] sk, reg ptr u8[MLKEM_SYMBYTES*2] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES]
 {
-  #mmx reg ptr u8[MLKEM_SYMBYTES*2] s_randomnessp;
+  #[mmx] reg ptr u8[MLKEM_SYMBYTES*2] s_randomnessp;
   reg ptr u8[MLKEM_SYMBYTES] randomnessp1;
   reg u64 t64;
   inline int i;
   reg ptr u8[MLKEM_POLYVECBYTES] skcpa;
-  #mmx reg ptr u8[MLKEM_SECRETKEYBYTES]sk_s;
+  #[mmx] reg ptr u8[MLKEM_SECRETKEYBYTES]sk_s;
 
   s_randomnessp = randomnessp;
 
@@ -50,8 +50,8 @@ fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLK
 inline
 fn __crypto_kem_enc_jazz(
   reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
-  #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shk,
-  #spill_to_mmx reg ptr u8[MLKEM_PUBLICKEYBYTES] pk,
+  #[spill_to_mmx] reg ptr u8[MLKEM_SYMBYTES] shk,
+  #[spill_to_mmx] reg ptr u8[MLKEM_PUBLICKEYBYTES] pk,
   reg ptr u8[MLKEM_SYMBYTES] randomnessp)
   -> reg ptr u8[MLKEM_CIPHERTEXTBYTES], reg ptr u8[MLKEM_SYMBYTES]
 {
@@ -83,9 +83,9 @@ fn __crypto_kem_enc_jazz(
  ]
 inline
 fn __crypto_kem_dec_jazz(
-  #spill_to_mmx reg ptr u8[MLKEM_SYMBYTES] shk,
-  #spill_to_mmx reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
-  #spill_to_mmx reg ptr u8[MLKEM_SECRETKEYBYTES] sk)
+  #[spill_to_mmx] reg ptr u8[MLKEM_SYMBYTES] shk,
+  #[spill_to_mmx] reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
+  #[spill_to_mmx] reg ptr u8[MLKEM_SECRETKEYBYTES] sk)
   -> reg ptr u8[MLKEM_SYMBYTES]
 {
   stack u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctc;

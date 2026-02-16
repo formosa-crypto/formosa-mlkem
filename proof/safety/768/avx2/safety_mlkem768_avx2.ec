@@ -6,7 +6,7 @@ import SLH64.
 
 from Jasmin require import Jcheck JSafety.
 
-from JazzEC  require import
+from JazzEC require import
 Array1 Array2 Array4 Array5 Array6 Array7 Array8 Array16 Array24 Array25
 Array32 Array33 Array64 Array128 Array160 Array200 Array224 Array256 Array384
 Array400 Array512 Array536 Array768 Array800 Array960 Array1024 Array1088
@@ -30291,7 +30291,7 @@ module M(SC:Syscall_t) = {
     (trace__shake256x4_A128__A32_A1 ++
     [(Assert,
      ((BArray800.is_init b_result_4 0 800) /\
-     (result_2 = ((param_11 + 1) + ((param_6 <> 0) ? 1 : 0)))))]);
+     (result_2 = (((param_11 + 1) %% param_5) + ((param_6 <> 0) ? 1 : 0)))))]);
     st <- result_3;
     param_18 <- st;
     b_param_2 <- b_out0;
@@ -30546,7 +30546,7 @@ module M(SC:Syscall_t) = {
     (trace__shake128x4_absorb_A32_A2 ++
     [(Assert,
      ((BArray800.is_init b_result 0 800) /\
-     (result_2 = ((param_11 + 2) + ((param_6 <> 0) ? 1 : 0)))))]);
+     (result_2 = (((param_11 + 2) %% param_5) + ((param_6 <> 0) ? 1 : 0)))))]);
     st <- result_3;
     b_st <- (BArray800.init_arr (W8.of_int 255));
     return (st, b_st, trace__shake128x4_absorb_A32_A2);
@@ -36198,18 +36198,7 @@ module M(SC:Syscall_t) = {
     trace___gen_matrix_buf_rejection_filter24 <-
     (trace___gen_matrix_buf_rejection_filter24 ++
     [(Assert,
-     (BArray512.is_init b_result_0 0
-     ((2 * (W64.to_uint param_1)) +
-     ((((16 < (2 * (256 - (W64.to_uint param_1)))) ? 16 : (2 *
-                                                          (256 -
-                                                          (W64.to_uint
-                                                          param_1)))) <
-      0) ? 0 : ((16 < (2 * (256 - (W64.to_uint param_1)))) ? 16 : (2 *
-                                                                  (256 -
-                                                                  (
-                                                                  W64.to_uint
-                                                                  param_1))))))
-     ))]);
+     (BArray512.is_init b_result_0 0 ((2 * (W64.to_uint param_1)) + 16)))]);
     b_pol <- b_result_0;
     pol <- result_0;
     ms <- result;
@@ -36229,18 +36218,7 @@ module M(SC:Syscall_t) = {
     trace___gen_matrix_buf_rejection_filter24 <-
     (trace___gen_matrix_buf_rejection_filter24 ++
     [(Assert,
-     (BArray512.is_init b_result 0
-     ((2 * (W64.to_uint param_5)) +
-     ((((16 < (2 * (256 - (W64.to_uint param_5)))) ? 16 : (2 *
-                                                          (256 -
-                                                          (W64.to_uint
-                                                          param_5)))) <
-      0) ? 0 : ((16 < (2 * (256 - (W64.to_uint param_5)))) ? 16 : (2 *
-                                                                  (256 -
-                                                                  (
-                                                                  W64.to_uint
-                                                                  param_5))))))
-     ))]);
+     (BArray512.is_init b_result 0 ((2 * (W64.to_uint param_5)) + 16)))]);
     b_pol <- b_result;
     pol <- result_2;
     ms <- result_1;
@@ -36506,7 +36484,7 @@ module M(SC:Syscall_t) = {
     (trace___gen_matrix_fill_polynomial ++
     [(Assert,
      (((W64.of_int (W64.to_uint param_1)) \ule result) /\
-     (BArray512.is_init b_param_0 0 (2 * (W64.to_uint result)))))]);
+     (BArray512.is_init b_result_1 0 (2 * (W64.to_uint result)))))]);
     b_pol <- b_result_1;
     pol <- result_0;
     counter <- result;
@@ -36538,7 +36516,7 @@ module M(SC:Syscall_t) = {
       (trace___gen_matrix_fill_polynomial ++
       [(Assert,
        (((W64.of_int (W64.to_uint param_6)) \ule result_2) /\
-       (BArray512.is_init b_param 0 (2 * (W64.to_uint result_2)))))]);
+       (BArray512.is_init b_result 0 (2 * (W64.to_uint result_2)))))]);
       b_pol <- b_result;
       pol <- result_3;
       counter <- result_2;
@@ -39782,8 +39760,9 @@ op a1____absorb_avx2x4_spec _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_b
    ((true /\
     (true /\
     (true /\
+    (true /\
     ((BArray800.is_init res.`2 0 (25 * 32)) /\
-    (res.`3 = ((_aT + 1) + ((__TRAILB <> 0) ? 1 : 0))))))) /\
+    (res.`3 = (((_aT + 1) %% __RATE8) + ((__TRAILB <> 0) ? 1 : 0)))))))) /\
    (valid res.`4))].
 
 op a2____a_ilen_read_upto8_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT =
@@ -40483,8 +40462,9 @@ op a2____absorb_avx2x4_spec _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_b
    ((true /\
     (true /\
     (true /\
+    (true /\
     ((BArray800.is_init res.`2 0 (25 * 32)) /\
-    (res.`3 = ((_aT + 2) + ((__TRAILB <> 0) ? 1 : 0))))))) /\
+    (res.`3 = (((_aT + 2) %% __RATE8) + ((__TRAILB <> 0) ? 1 : 0)))))))) /\
    (valid res.`4))].
 
 op a32____a_ilen_read_upto8_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT =
@@ -45680,21 +45660,7 @@ op __write_u128_boundchk_spec _pol _b_pol _ctr _data _ms =
    (((_ms = ms) /\
     ((_data = data) /\ ((_ctr = ctr) /\ ((_b_pol = b_pol) /\ (_pol = pol))))) /\
    (true /\ (BArray512.is_init _b_pol 0 (2 * (W64.to_uint _ctr))))) ==>
-   ((true /\
-    (true /\
-    (true /\
-    (true /\
-    (true /\
-    (BArray512.is_init res.`2 0
-    ((2 * (W64.to_uint _ctr)) +
-    ((((16 < (2 * (256 - (W64.to_uint _ctr)))) ? 16 : (2 *
-                                                      (256 -
-                                                      (W64.to_uint _ctr)))) <
-     0) ? 0 : ((16 < (2 * (256 - (W64.to_uint _ctr)))) ? 16 : (2 *
-                                                              (256 -
-                                                              (W64.to_uint
-                                                              _ctr))))))
-    )))))) /\
+   ((true /\ (BArray512.is_init res.`2 0 ((2 * (W64.to_uint _ctr)) + 16))) /\
    (valid res.`4))].
 
 op __gen_matrix_buf_rejection_filter24_spec _pol _b_pol _counter _buf _b_buf _buf_offset _load_shuffle _mask _bounds _sst _b_sst _ones _ms =

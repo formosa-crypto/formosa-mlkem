@@ -77,8 +77,8 @@ namespace ABUFLEN {
    }
  ]
 fn _sha3_256A_M1184
-( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg ui64 in
+( #[spill_to_mmx] reg mut ptr u8[32] out
+, #[spill_to_mmx] reg ui64 in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
   st = __state_init_avx2();
@@ -95,8 +95,8 @@ fn _sha3_256A_M1184
    }
  ]
 fn _sha3_256A_M1568
-( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg ui64 in
+( #[spill_to_mmx] reg mut ptr u8[32] out
+, #[spill_to_mmx] reg ui64 in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
   st = __state_init_avx2();
@@ -114,7 +114,7 @@ fn _sha3_256A_M1568
    }
  ]
 fn _sha3_512A_A33
-( #spill_to_mmx reg mut ptr u8[64] out
+( #[spill_to_mmx] reg mut ptr u8[64] out
 , reg const ptr u8[33] in
 ) -> reg ptr u8[64]
 { reg u256[7] st;
@@ -356,8 +356,8 @@ fn _shake128x4_squeeze3blocks
    }
  ]
 fn _sha3_256A_A1184
-( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg const ptr u8[1184] in
+( #[spill_to_mmx] reg mut ptr u8[32] out
+, #[spill_to_mmx] reg const ptr u8[1184] in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
   st = __state_init_avx2();
@@ -373,8 +373,8 @@ fn _sha3_256A_A1184
    }
  ]
 fn _sha3_256A_A1568
-( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg const ptr u8[1568] in
+( #[spill_to_mmx] reg mut ptr u8[32] out
+, #[spill_to_mmx] reg const ptr u8[1568] in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
   st = __state_init_avx2();

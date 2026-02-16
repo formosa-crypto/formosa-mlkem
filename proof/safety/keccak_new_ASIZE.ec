@@ -8,9 +8,8 @@ from Jasmin require import Jcheck JSafety.
 
 from JazzEC require import
 Array5 Array6 Array7 Array24 Array25 Array40 Array160 Array200 Array224
-Array800 WArray192 BArray40 BArray160 BArray192 BArray200 BArray224
-  BArray800.
-
+Array800  WArray192 BArray40 BArray160 BArray192 BArray200 BArray224
+BArray800.
 
 theory KECCAK_ARRAY_ASIZE.
 
@@ -8290,8 +8289,8 @@ module M = {
     return (off, w, trace___a_rlen_read_upto8);
   }
   proc __a_rlen_read_upto8_noninline (a:BArrayS.t, b_a:BArrayS.t,
-                                      off_:W64.t, len_:W64.t) : W64.t *
-                                                                W64.t * trace = {
+                                      off_:int, len_:int) : int * W64.t *
+                                                            trace = {
     var w:W64.t;
     var zf:bool;
     var sh:W8.t;
@@ -8315,14 +8314,20 @@ module M = {
     trace___a_rlen_read_upto8_noninline <-
     (trace___a_rlen_read_upto8_noninline ++
     [(Assert,
-     (((BArrayS.is_init b_a (W64.to_uint off_)
-       (((W64.to_uint len_) < 8) ? (W64.to_uint len_) : 8)) /\
-      ((W64.of_int 0) \ule off_)) /\
-     ((off_ +
-      (W64.of_int (((W64.to_uint len_) < 8) ? (W64.to_uint len_) : 8))) \ule
-     (W64.of_int size))))]);
-    off <- (W64.to_uint off_);
-    len <- (W64.to_uint len_);
+     (((0 <= ((len_ < 8) ? len_ : 8)) /\
+      (((len_ < 8) ? len_ : 8) <= 18446744073709551615)) /\
+     (((0 <= (off_ + ((len_ < 8) ? len_ : 8))) /\
+      ((off_ + ((len_ < 8) ? len_ : 8)) <= 18446744073709551615)) /\
+     (((BArrayS.is_init b_a off_ ((len_ < 8) ? len_ : 8)) /\ (0 <= off_)) /\
+     ((off_ + ((len_ < 8) ? len_ : 8)) <= size)))))]);
+    trace___a_rlen_read_upto8_noninline <-
+    (trace___a_rlen_read_upto8_noninline ++
+    [(Assert, ((0 <= off_) /\ (off_ <= 18446744073709551615)))]);
+    trace___a_rlen_read_upto8_noninline <-
+    (trace___a_rlen_read_upto8_noninline ++
+    [(Assert, ((0 <= len_) /\ (len_ <= 18446744073709551615)))]);
+    off <- off_;
+    len <- len_;
     if ((8 <= len)) {
       trace___a_rlen_read_upto8_noninline <-
       (trace___a_rlen_read_upto8_noninline ++
@@ -8402,10 +8407,7 @@ module M = {
         
       }
     }
-    trace___a_rlen_read_upto8_noninline <-
-    (trace___a_rlen_read_upto8_noninline ++
-    [(Assert, ((0 <= off) /\ (off <= 18446744073709551615)))]);
-    off_ <- (W64.of_int off);
+    off_ <- off;
     return (off_, w, trace___a_rlen_read_upto8_noninline);
   }
   proc __a_rlen_write_upto8 (buf:BArrayS.t, b_buf:BArrayS.t, off:int,
@@ -17178,6 +17180,8 @@ op __a_rlen_read_upto8_spec _a _b_a _off _len =
 op __a_rlen_read_upto8_noninline_spec _a _b_a _off_ _len_ =
    hoare [M.__a_rlen_read_upto8_noninline :
    (((_len_ = len_) /\ ((_off_ = off_) /\ ((_b_a = b_a) /\ (_a = a)))) /\
+   ((true /\ (true /\ ((0 <= _len_) /\ (_len_ <= 18446744073709551615)))) /\
+   ((true /\ (true /\ ((0 <= _off_) /\ (_off_ <= 18446744073709551615)))) /\
    (true /\
    (true /\
    (true /\
@@ -17185,23 +17189,63 @@ op __a_rlen_read_upto8_noninline_spec _a _b_a _off_ _len_ =
    (true /\
    (true /\
    (true /\
-   (((BArrayS.is_init _b_a (W64.to_uint _off_)
-     (((W64.to_uint _len_) < 8) ? (W64.to_uint _len_) : 8)) /\
-    ((W64.of_int 0) \ule _off_)) /\
-   ((_off_ +
-    (W64.of_int (((W64.to_uint _len_) < 8) ? (W64.to_uint _len_) : 8))) \ule
-   (W64.of_int size))))))))))) ==>
-   ((true /\
+   (true /\
+   (true /\
+   (true /\
+   (true /\
+   (true /\
+   (true /\
+   (true /\
+   (true /\
+   (true /\
+   (true /\
+   (((0 <= 0) /\ (0 <= 18446744073709551615)) /\
+   (((0 <= ((_len_ < 8) ? _len_ : 8)) /\
+    (((_len_ < 8) ? _len_ : 8) <= 18446744073709551615)) /\
+   (((0 <= (_off_ + ((_len_ < 8) ? _len_ : 8))) /\
+    ((_off_ + ((_len_ < 8) ? _len_ : 8)) <= 18446744073709551615)) /\
+   (((0 <= size) /\ (size <= 18446744073709551615)) /\
+   (((BArrayS.is_init _b_a _off_ ((_len_ < 8) ? _len_ : 8)) /\
+    (0 <= _off_)) /\
+   ((_off_ + ((_len_ < 8) ? _len_ : 8)) <= size)))))))))))))))))))))))))) ==>
+   (((true /\ (true /\ ((0 <= res.`1) /\ (res.`1 <= 18446744073709551615)))) /\
     (true /\
     (true /\
     (true /\
     (true /\
     (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (true /\
+    (((0 <=
+      ((((_len_ < 8) ? _len_ : 8) < 0) ? 0 : ((_len_ < 8) ? _len_ : 8))) /\
+     (((((_len_ < 8) ? _len_ : 8) < 0) ? 0 : ((_len_ < 8) ? _len_ : 8)) <=
+     18446744073709551615)) /\
+    (((0 <=
+      (_off_ +
+      ((((_len_ < 8) ? _len_ : 8) < 0) ? 0 : ((_len_ < 8) ? _len_ : 8)))) /\
+     ((_off_ +
+      ((((_len_ < 8) ? _len_ : 8) < 0) ? 0 : ((_len_ < 8) ? _len_ : 8))) <=
+     18446744073709551615)) /\
     (res.`1 =
     (_off_ +
-    (W64.of_int
-    (((((W64.to_uint _len_) < 8) ? (W64.to_uint _len_) : 8) < 0) ? 0 : 
-    (((W64.to_uint _len_) < 8) ? (W64.to_uint _len_) : 8))))))))))) /\
+    ((((_len_ < 8) ? _len_ : 8) < 0) ? 0 : ((_len_ < 8) ? _len_ : 8))))))))))))))))))))))))))))))) /\
    (valid res.`3))].
 
 op __a_rlen_write_upto8_spec _buf _b_buf _off _data _len =
@@ -17670,8 +17714,9 @@ op __absorb_avx2x4_spec _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 
    ((true /\
     (true /\
     (true /\
+    (true /\
     ((BArray800.is_init res.`2 0 (25 * 32)) /\
-    (res.`3 = ((_aT + size) + ((__TRAILB <> 0) ? 1 : 0))))))) /\
+    (res.`3 = (((_aT + size) %% __RATE8) + ((__TRAILB <> 0) ? 1 : 0)))))))) /\
    (valid res.`4))].
 
 op __dumpstate_avx2x4_spec _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN _st _b_st =
@@ -17799,6 +17844,8 @@ op __squeeze_avx2x4_spec _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _bu
    (valid res.`11))].
 
 
+(* The post and trace are valid. *)
+
 lemma __SHLQ_proof _x _shbytes : (__SHLQ_spec _x _shbytes).
 proof.
 rewrite /__SHLQ_spec .
@@ -17822,7 +17869,6 @@ lemma __m_ilen_read_upto8_at_proof _buf _lEN _tRAIL _cUR _aT :
 proof.
   rewrite /__m_ilen_read_upto8_at_spec .
   proc; auto.
-
  inline *. auto.   rewrite /is_init /valid /= => &m /> *. smt(List.all_cat).
 (*
   seq 3: (#pre /\ valid trace___m_ilen_read_upto8_at). auto. 
@@ -17939,7 +17985,7 @@ proof.
   ecall (__m_ilen_read_upto8_at_proof param_5 param_4 param_3 param_2 param_1).
   auto .
   rewrite /is_init /valid /=.
-  admit.
+  admit. (*assert false - waiting for compiler fix*)
 qed .
 
 lemma __m_ilen_write_upto8_proof _buf _lEN _w :
@@ -17967,7 +18013,7 @@ ecall (__m_ilen_write_upto8_proof param_1 param_0 param).
 if. 
   auto .
   rewrite /is_init /valid /= => &m /> *. split. move => *.  split.  smt().  move => *.  smt(List.all_cat).
-admit.  auto.
+admit.  (*assert false - waiting for compiler fix*) auto.
 smt (List.all_cat).
 auto .
 rewrite /is_init /valid /=.
@@ -17995,21 +18041,91 @@ rewrite /is_init /valid /=.
 smt (List.all_cat).
 qed .
 
+import JWord JUtils.
+
+lemma and_shlwE (x y: W64.t) k:
+ x `&` (y `<<<` k) = ((x `>>>` k) `&` y) `<<<` k.
+proof.
+apply W64.ext_eq => i Hi.
+rewrite andwE !shlwE andwE !shrwE !Hi /=.
+case: (0 <= i - k < 64 ) => C/=; first smt().
+by  rewrite (W64.get_out y) //.
+qed.
+
+lemma test_64_zf k x:
+ 0 <= k < 64 =>
+ (TEST_64 x (W64.of_int (2^k))).`5 <=> !(x.[k]).
+proof.
+move => Hk; rewrite /TEST_64 /rflags_of_bwop /= /ZF_of get_to_uint Hk /=.
+have ->: W64.of_int (2 ^ k) = W64.one `<<<` k by rewrite shlMP 1:/#.
+rewrite and_shlwE to_uint_eq /= (:1=2^1-1) 1:/# and_mod //= to_uint_shl 1:/# of_uintK.
+rewrite (modz_small (to_uint (x `>>>` k)%%2)) 1:/# modz_small.
+ move: (modz_cmp (to_uint (x `>>>` k)) 2 _) => //.
+ have ?: 0 <= 2^k < W64.modulus.
+  split => *; first smt(gt0_pow2).
+  rewrite ltz_def; split.
+   apply (contra (W64.modulus = 2^k) (64=k) ).
+    by apply (StdOrder.IntOrder.ieexprIn 2) => /#.
+   smt().
+  by apply StdOrder.IntOrder.ler_weexpn2l => /#.
+ move=> ?.
+ have: to_uint (x `>>>` k) %% 2 = 0 \/ to_uint (x `>>>` k) %% 2 = 1 by smt().
+ by move=> [->|->] //=.
+rewrite to_uint_shr 1:/#.
+case: (to_uint x %/ 2 ^ k %% 2 = 0) => ?.
+ smt().
+smt(gt0_pow2).
+qed.
+
 lemma __m_rlen_read_upto8_proof _buf _len :
       (__m_rlen_read_upto8_spec _buf _len).
 proof.
-rewrite /__m_rlen_read_upto8_spec .
-proc; auto .
-rewrite /is_init /valid /= => &m /> *. admit.
-qed .
+  rewrite /__m_rlen_read_upto8_spec .
+  proc. auto .
+  rewrite /is_init /valid /= => &m /> *.
+  split. smt().
+  case(len{m} = 0). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0); by auto.
+  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+ smt().
+qed.
+
 
 lemma __m_rlen_write_upto8_proof _buf _data _len :
       (__m_rlen_write_upto8_spec _buf _data _len).
 proof.
-rewrite /__m_rlen_write_upto8_spec .
-proc; auto .
-rewrite /is_init /valid /= .
-admit.
+  rewrite /__m_rlen_write_upto8_spec .
+  proc; auto .
+  rewrite /is_init /valid /= => &m /> *.
+  split. smt().
+  case(len{m} = 0). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0); by auto.
+  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+ smt().
 qed .
 
 lemma __ANDN_64_proof _a _b : (__ANDN_64_spec _a _b).
@@ -18104,106 +18220,6 @@ auto .
 rewrite /is_init /valid /= .
 smt (List.all_cat).
 qed .
-(*
-lemma __set_row_ref_proof _e _b_e _b _b_b _y :
-      (__set_row_ref_spec _e _b_e _b _b_b _y).
-proof.
-rewrite /__set_row_ref_spec .
-proc; auto .
-while ((valid trace___set_row_ref) /\ 0 <= x /\ x <= 5).
-auto .
-ecall (__ANDN_64_proof param_0 param).
-auto .
-admit.
-qed .
-
-lemma _pround_ref_proof _e _b_e _a _b_a : (_pround_ref_spec _e _b_e _a _b_a).
-proof.
-rewrite /_pround_ref_spec .
-proc; auto .
-while ((valid trace__pround_ref) /\ ...).
-auto .
-ecall (__set_row_ref_proof param_6 (BArray200.init_arr (W8.of_int 255)) 
-       param_5 (BArray40.init_arr (W8.of_int 255)) param_4).
-auto .
-ecall (__rol_sum_ref_proof param_3 (BArray200.init_arr (W8.of_int 255)) 
-       param_2 (BArray40.init_arr (W8.of_int 255)) param_1).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-ecall (__theta_rol_ref_proof param_0 (BArray40.init_arr (W8.of_int 255))).
-auto .
-ecall (__theta_sum_ref_proof param (BArray200.init_arr (W8.of_int 255))).
-auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat).
-qed .
-
-lemma __keccakf1600_ref_proof _a _b_a : (__keccakf1600_ref_spec _a _b_a).
-proof.
-rewrite /__keccakf1600_ref_spec .
-proc; auto .
-while ((valid trace___keccakf1600_ref) /\ ...).
-auto .
-ecall (_pround_ref_proof param_2 b_param_0 param_1 b_param).
-auto .
-ecall (_pround_ref_proof param_0 b_param_1 param (BArray200.init_arr
-                                                 (W8.of_int 255))).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-ecall (_pround_ref_proof param_2 b_param_0 param_1 b_param).
-auto .
-ecall (_pround_ref_proof param_0 b_param_1 param (BArray200.init_arr
-                                                 (W8.of_int 255))).
-auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat).
-qed .
-
-lemma _keccakf1600_ref_proof _a _b_a : (_keccakf1600_ref_spec _a _b_a).
-proof.
-rewrite /_keccakf1600_ref_spec .
-proc; auto .
-ecall (__keccakf1600_ref_proof param (BArray200.init_arr (W8.of_int 255))).
-auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat).
-qed .
-
-lemma _keccakf1600_ref__proof _a _b_a : (_keccakf1600_ref__spec _a _b_a).
-proof.
-rewrite /_keccakf1600_ref__spec .
-proc; auto .
-ecall (_keccakf1600_ref_proof param (BArray200.init_arr (W8.of_int 255))).
-auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat).
-qed .
-
-lemma __state_init_ref_proof _st _b_st : (__state_init_ref_spec _st _b_st).
-proof.
-rewrite /__state_init_ref_spec .
-proc; auto .
-while ((valid trace___state_init_ref) /\ ...).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat).
-qed .
-
-lemma __addratebit_ref_proof _st _b_st __RATE8 :
-      (__addratebit_ref_spec _st _b_st __RATE8).
-proof.
-rewrite /__addratebit_ref_spec .
-proc; auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat).
-qed .*)
 
 lemma __keccakf1600_pround_avx2_proof _state _b_state :
       (__keccakf1600_pround_avx2_spec _state _b_state).
@@ -18223,13 +18239,13 @@ proc; auto .
 while ((valid trace___keccakf1600_avx2) /\ 0<=r).
 auto .
 ecall (__keccakf1600_pround_avx2_proof param (BArray224.init_arr
-                                             (JWord.W8.of_int 255))).
+                                             (W8.of_int 255))).
 auto .
 rewrite /is_init /valid /=.
 smt (List.all_cat BArray224.init_arrP).
 auto .
 ecall (__keccakf1600_pround_avx2_proof param (BArray224.init_arr
-                                             (JWord.W8.of_int 255))).
+                                             (W8.of_int 255))).
 auto .
 rewrite /is_init /valid /= .
 smt (List.all_cat BArray224.init_arrP).
@@ -18240,7 +18256,7 @@ lemma _keccakf1600_avx2_proof _state _b_state :
 proof.
 rewrite /_keccakf1600_avx2_spec .
 proc; auto .
-ecall (__keccakf1600_avx2_proof param (BArray224.init_arr (JWord.W8.of_int 255))).
+ecall (__keccakf1600_avx2_proof param (BArray224.init_arr (W8.of_int 255))).
 auto .
 rewrite /is_init /valid /= .
 smt (List.all_cat BArray224.init_arrP).
@@ -18268,12 +18284,12 @@ lemma _keccakf1600_st25_avx2_proof _st25 _b_st25 :
 proof.
 rewrite /_keccakf1600_st25_avx2_spec .
 proc; auto .
-ecall (__stavx2_unpack_proof param_2 (BArray200.init_arr (JWord.W8.of_int 255)) 
-       param_1 (BArray224.init_arr (JWord.W8.of_int 255))).
+ecall (__stavx2_unpack_proof param_2 (BArray200.init_arr (W8.of_int 255)) 
+       param_1 (BArray224.init_arr (W8.of_int 255))).
 auto .
-ecall (__keccakf1600_avx2_proof param_0 (BArray224.init_arr (JWord.W8.of_int 255))).
+ecall (__keccakf1600_avx2_proof param_0 (BArray224.init_arr (W8.of_int 255))).
 auto .
-ecall (__stavx2_pack_proof param (BArray200.init_arr (JWord.W8.of_int 255))).
+ecall (__stavx2_pack_proof param (BArray200.init_arr (W8.of_int 255))).
 auto .
 rewrite /is_init /valid /= .
 smt (List.all_cat BArray224.init_arrP BArray200.init_arrP).
@@ -18369,7 +18385,7 @@ ecall (_keccakf1600_4x_pround_proof param_6 b_param_0 param_5 b_param
 auto .
 ecall (_keccakf1600_4x_pround_proof param_2 b_param_1 param_1 (
                                                               BArray800.init_arr
-                                                              (JWord.W8.of_int 255)
+                                                              (W8.of_int 255)
                                                               ) param_0 
        param).
 auto .
@@ -18384,7 +18400,7 @@ lemma _keccakf1600_avx2x4_proof _a _b_a : (_keccakf1600_avx2x4_spec _a _b_a).
 proof.
 rewrite /_keccakf1600_avx2x4_spec .
 proc; auto .
-ecall (__keccakf1600_avx2x4_proof param (BArray800.init_arr (JWord.W8.of_int 255))).
+ecall (__keccakf1600_avx2x4_proof param (BArray800.init_arr (W8.of_int 255))).
 auto .
 rewrite /is_init /valid /= .
 smt (List.all_cat BArray800.init_arrP).
@@ -18395,7 +18411,7 @@ lemma _keccakf1600_avx2x4__proof _a _b_a :
 proof.
 rewrite /_keccakf1600_avx2x4__spec .
 proc; auto .
-ecall (_keccakf1600_avx2x4_proof param (BArray800.init_arr (JWord.W8.of_int 255))).
+ecall (_keccakf1600_avx2x4_proof param (BArray800.init_arr (W8.of_int 255))).
 auto .
 rewrite /is_init /valid /= .
 smt (List.all_cat BArray800.init_arrP).
@@ -18455,24 +18471,24 @@ lemma __keccakf1600_pround_unpacked_proof _st0 _b_st0 _st1 _b_st1 _st2 _b_st2 _s
 proof.
 rewrite /__keccakf1600_pround_unpacked_spec .
 proc; auto .
-ecall (__st4x_unpack_proof param_12 (BArray200.init_arr (JWord.W8.of_int 255)) 
-       param_11 (BArray200.init_arr (JWord.W8.of_int 255)) param_10 (
+ecall (__st4x_unpack_proof param_12 (BArray200.init_arr (W8.of_int 255)) 
+       param_11 (BArray200.init_arr (W8.of_int 255)) param_10 (
                                                               BArray200.init_arr
-                                                              (JWord.W8.of_int 255)
+                                                              (W8.of_int 255)
                                                               ) param_9 
-       (BArray200.init_arr (JWord.W8.of_int 255)) param_8 (BArray800.init_arr
-                                                    (JWord.W8.of_int 255))).
+       (BArray200.init_arr (W8.of_int 255)) param_8 (BArray800.init_arr
+                                                    (W8.of_int 255))).
 auto .
 ecall (_keccakf1600_4x_pround_proof param_7 b_param param_6 (
                                                             BArray800.init_arr
-                                                            (JWord.W8.of_int 255)) 
+                                                            (W8.of_int 255)) 
        param_5 param_4).
 auto .
 ecall (__st4x_pack_proof param_3 b_param_0 param_2 (BArray200.init_arr
-                                                   (JWord.W8.of_int 255)) param_1 
-       (BArray200.init_arr (JWord.W8.of_int 255)) param_0 (BArray200.init_arr
-                                                    (JWord.W8.of_int 255)) 
-       param (BArray200.init_arr (JWord.W8.of_int 255))).
+                                                   (W8.of_int 255)) param_1 
+       (BArray200.init_arr (W8.of_int 255)) param_0 (BArray200.init_arr
+                                                    (W8.of_int 255)) 
+       param (BArray200.init_arr (W8.of_int 255))).
 auto .
 rewrite /is_init /valid /= .
 smt (List.all_cat BArray800.init_arrP BArray200.init_arrP).
@@ -18484,19 +18500,19 @@ proof.
 rewrite /__keccakf1600_pround_equiv_spec .
 proc; auto .
 ecall (__st4x_pack_proof param_12 b_param param_11 (BArray200.init_arr
-                                                   (JWord.W8.of_int 255)) param_10 
-       (BArray200.init_arr (JWord.W8.of_int 255)) param_9 (BArray200.init_arr
-                                                    (JWord.W8.of_int 255)) 
-       param_8 (BArray200.init_arr (JWord.W8.of_int 255))).
+                                                   (W8.of_int 255)) param_10 
+       (BArray200.init_arr (W8.of_int 255)) param_9 (BArray200.init_arr
+                                                    (W8.of_int 255)) 
+       param_8 (BArray200.init_arr (W8.of_int 255))).
 auto .
 ecall (__keccakf1600_pround_unpacked_proof param_7 (BArray200.init_arr
-                                                   (JWord.W8.of_int 255)) param_6 
-       (BArray200.init_arr (JWord.W8.of_int 255)) param_5 (BArray200.init_arr
-                                                    (JWord.W8.of_int 255)) 
-       param_4 (BArray200.init_arr (JWord.W8.of_int 255))).
+                                                   (W8.of_int 255)) param_6 
+       (BArray200.init_arr (W8.of_int 255)) param_5 (BArray200.init_arr
+                                                    (W8.of_int 255)) 
+       param_4 (BArray200.init_arr (W8.of_int 255))).
 auto .
 ecall (__st4x_unpack_proof param_3 b_param_3 param_2 b_param_2 param_1 
-       b_param_1 param_0 b_param_0 param (BArray800.init_arr (JWord.W8.of_int 255))).
+       b_param_1 param_0 b_param_0 param (BArray800.init_arr (W8.of_int 255))).
 auto .
 rewrite /is_init /valid /= .
 smt (List.all_cat BArray800.init_arrP BArray200.init_arrP).
@@ -18521,7 +18537,7 @@ lemma __addratebit_avx2x4_proof _st _b_st _rATE8 :
 proof.
 rewrite /__addratebit_avx2x4_spec .
 proc; auto .
-rewrite /is_init /valid /= . admit.
+rewrite /is_init /valid /= . admit. (*assert false - fix in the compiler*)
 (*smt (List.all_cat BArray800.init_arrP).*)
 qed .
 
@@ -18578,12 +18594,14 @@ seq 3: (#pre /\ valid trace___a_ilen_read_upto8_at). auto.
     inline *. auto. 
   case(lEN = 6).
   +  auto. if.
-    + auto. inline *. auto. rewrite /is_init /valid /= => &m /> *. split; smt(List.all_cat). sp.
+    + auto. inline *. auto. rewrite /is_init /valid /= => &m /> *. split. move => *. split. smt(List.all_cat). smt(List.all_cat). smt(List.all_cat). sp.
     inline *. auto. 
   case(lEN = 7).
   +  auto. if.
-    + auto. inline *. auto. rewrite /is_init /valid /= => &m /> *. split. move => *. split.  smt(List.all_cat). move => *. smt(List.all_cat). move => *. split. smt(List.all_cat). smt(List.all_cat).
-    inline *. auto. 
+     + auto. inline *. auto. rewrite /is_init /valid /= => &m /> *.
+       split. move => *. split. move => *. split. move => * . split.  move => *.  split.  rewrite !List.all_cat /=. smt().  rewrite !List.all_cat /=. smt().  rewrite !List.all_cat /=. smt().   rewrite !List.all_cat /=. smt(). 
+       rewrite !List.all_cat /=.  smt().  rewrite !List.all_cat /=. smt(). 
+    inline *. by auto. 
   inline *. auto.
   smt(List.all_cat).
 qed .
@@ -18681,7 +18699,7 @@ auto .
 ecall (__a_ilen_read_upto8_at_proof param_7 b_param param_6 param_5 param_4 
        param_3 param_2 param_1).
 auto .
-  rewrite /is_init /valid /= => &m /> *. admit. (*JWord.W4u64.VPBROADCAST_4u64 (JWord.W2u64.truncateu64 t128)*)
+  rewrite /is_init /valid /= => &m /> *. admit. (*W4u64.VPBROADCAST_4u64 (W2u64.truncateu64 t128)*)
 qed .
 
 lemma __a_ilen_write_upto8_proof _buf _b_buf _offset _dELTA _lEN _w :
@@ -18706,7 +18724,7 @@ if .
      smt (List.all_cat).
    auto .
    ecall (__a_ilen_write_upto8_proof param_3 b_param param_2 param_1 param_0 param). 
-  if. auto. rewrite /is_init /valid /=. move => &m /> *  . admit.
+  if. auto. rewrite /is_init /valid /=. move => &m /> * .  admit. (*assert false - fix compiler*)
   auto. rewrite /is_init /valid /= => &m /> *. smt(List.all_cat).
   auto .
   rewrite /is_init /valid /= => &m /> *.
@@ -18739,8 +18757,23 @@ lemma __a_rlen_read_upto8_proof _a _b_a _off _len :
 proof.
 rewrite /__a_rlen_read_upto8_spec .
   proc; auto. rewrite /is_init /valid /= => &m /> *.
-  split. smt().  
- admit.
+  split. smt().
+  case(len{m} = 0). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0); by auto.
+  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+ smt().
 qed .
 
 lemma __a_rlen_read_upto8_noninline_proof _a _b_a _off_ _len_ :
@@ -18748,8 +18781,24 @@ lemma __a_rlen_read_upto8_noninline_proof _a _b_a _off_ _len_ :
 proof.
 rewrite /__a_rlen_read_upto8_noninline_spec .
 proc; auto .
-rewrite /is_init /valid /= .
-admit. 
+  rewrite /is_init /valid /= => &m /> *.
+  split. smt().
+  case(len_{m} = 0). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0); by auto.
+  case(len_{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len_{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len_{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len_{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len_{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len_{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len_{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+ smt().
 qed .
 
 lemma __a_rlen_write_upto8_proof _buf _b_buf _off _data _len :
@@ -18757,269 +18806,124 @@ lemma __a_rlen_write_upto8_proof _buf _b_buf _off _data _len :
 proof.
 rewrite /__a_rlen_write_upto8_spec .
 proc; auto .
-rewrite /is_init /valid /= .
-admit.
+rewrite /is_init /valid /= => &m /> *.
+  split. smt().
+  case(len{m} = 0). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0); by auto.
+  case(len{m} = 1). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 2). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 3). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 4). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 5). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 6). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+  case(len{m} = 7). move => len. rewrite !len /=.  rewrite (test_64_zf 2). by auto. rewrite (test_64_zf 1). by auto. rewrite  (test_64_zf 0). by auto.
+  + rewrite !W64.of_intE. rewrite /BitEncoding.BS2Int.int2bs /mkseq  -!iotaredE /=.  smt().
+ smt().
 qed .
 
-lemma __addstate_ref_proof _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB :
-      (__addstate_ref_spec _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB).
-proof.
-rewrite /__addstate_ref_spec .
-proc; auto . sp. (*
-if .
-auto . sp.
-if .
-auto .
-ecall (__a_ilen_read_upto8_at_proof param_12 (BArrayS.init_arr
-                                             (W8.of_int 255)) param_11 
-       param_10 param_9 param_8 param_7 param_6).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-while ((valid trace___addstate_ref) /\ ...).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-ecall (__a_ilen_read_upto8_at_proof param_5 (BArrayS.init_arr
-                                            (W8.of_int 255)) param_4 
-       param_3 param_2 param_1 param_0 param).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-if .
-auto .
-ecall (__a_ilen_read_upto8_at_proof param_12 (BArrayS.init_arr
-                                             (W8.of_int 255)) param_11 
-       param_10 param_9 param_8 param_7 param_6).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-while ((valid trace___addstate_ref) /\ ...).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-rewrite /is_init /valid /=.
-  smt (List.all_cat).*)
-admit.
-qed .
-
-lemma __absorb_ref_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :
-      (__absorb_ref_spec _st _b_st _aT _buf _b_buf __TRAILB __RATE8).
-proof.
-rewrite /__absorb_ref_spec .
-proc; auto . admit. (*
-if .
-auto .
-if .
-auto .
-ecall (__addratebit_ref_proof param_20 (BArray200.init_arr (W8.of_int 255)) 
-       param_19).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-ecall (__addstate_ref_proof param_18 (BArray200.init_arr (W8.of_int 255)) 
-       param_17 param_16 (BArrayS.init_arr (W8.of_int 255)) param_15 
-       param_14 param_13).
-auto .
-while ((valid trace___absorb_ref) /\ ...).
-auto .
-ecall (_keccakf1600_ref_proof param_12 (BArray200.init_arr (W8.of_int 255))).
-auto .
-ecall (__addstate_ref_proof param_11 (BArray200.init_arr (W8.of_int 255)) 
-       param_10 param_9 (BArrayS.init_arr (W8.of_int 255)) param_8 
-       param_7 param_6).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-ecall (_keccakf1600_ref_proof param_5 (BArray200.init_arr (W8.of_int 255))).
-auto .
-ecall (__addstate_ref_proof param_4 (BArray200.init_arr (W8.of_int 255)) 
-       param_3 param_2 (BArrayS.init_arr (W8.of_int 255)) param_1 param_0 
-       param).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-if .
-auto .
-ecall (__addratebit_ref_proof param_20 (BArray200.init_arr (W8.of_int 255)) 
-       param_19).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-ecall (__addstate_ref_proof param_18 (BArray200.init_arr (W8.of_int 255)) 
-       param_17 param_16 (BArrayS.init_arr (W8.of_int 255)) param_15 
-       param_14 param_13).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).*)
-qed .
-(*
-lemma __dumpstate_ref_proof _buf _b_buf _offset __LEN _st _b_st :
-      (__dumpstate_ref_spec _buf _b_buf _offset __LEN _st _b_st).
-proof.
-rewrite /__dumpstate_ref_spec .
-proc; auto .
-if .
-auto .
-ecall (__a_ilen_write_upto8_proof param_3 (BArrayS.init_arr (W8.of_int 255)
-                                          ) param_2 param_1 param_0 param).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-while ((valid trace___dumpstate_ref) /\ ...).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat).
-qed .
-
-lemma __squeeze_ref_proof _st _b_st _buf _b_buf __RATE8 :
-      (__squeeze_ref_spec _st _b_st _buf _b_buf __RATE8).
-proof.
-rewrite /__squeeze_ref_spec .
-proc; auto .
-if .
-auto .
-ecall (__dumpstate_ref_proof param_8 (BArrayS.init_arr (W8.of_int 255)) 
-       param_7 param_6 param_5 (BArray200.init_arr (W8.of_int 255))).
-auto .
-ecall (_keccakf1600_ref_proof param_4 (BArray200.init_arr (W8.of_int 255))).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-while ((valid trace___squeeze_ref) /\ ...).
-auto .
-ecall (__dumpstate_ref_proof param_3 (BArrayS.init_arr (W8.of_int 255)) 
-       param_2 param_1 param_0 (BArray200.init_arr (W8.of_int 255))).
-auto .
-ecall (_keccakf1600_ref_proof param (BArray200.init_arr (W8.of_int 255))).
-auto .
-rewrite /is_init /valid /=.
-smt (List.all_cat).
-auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat).
-qed .
-*)
 lemma __addstate_avx2_proof _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB :
       (__addstate_avx2_spec _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB).
 proof.
 rewrite /__addstate_avx2_spec .
   proc; have:= inbounds_size => /= ?.
   seq 29: (valid trace___addstate_avx2 /\ offset = _offset /\ BArrayS.is_init b_buf _offset __LEN /\
-          dELTA = (_aT < 8) ? (min __LEN (8 - _aT)) : 0 /\
+          dELTA = (_aT < 8) ? (( __LEN < (8 - _aT)) ? __LEN : (8-_aT)) : 0 /\
           _LEN = __LEN - dELTA /\ _TRAILB = ((8 <= _aT + __LEN) ? __TRAILB : 0) /\
           aT = _aT + dELTA +  (( 8 <= _aT  || (8 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
           _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
   + sp. if.  
-    + if . auto.  rewrite /valid /is_init /= => &m /> *. rewrite !JWord.W64.to_uintK_small /=; smt(List.all_cat).
+    + if . auto.  rewrite /valid /is_init /= => &m /> *. rewrite !W64.to_uintK_small /=. smt().  split. split. smt(). smt().  smt().
       auto. ecall (__a_ilen_read_upto8_at_proof param_5 b_param_8 param_4 param_3  param_2 param_1 param_0 param). auto. 
-      rewrite /valid /is_init /= => &m /> *. split.  smt(). move => /> *. admit. (*instruction invalid -  JWord.W4u64.VPBROADCAST_4u64 (JWord.W2u64.truncateu64 t128_0)    *)
+      rewrite /valid /is_init /= => &m /> *. split.  split. smt(). split. smt(). split. smt(). smt().  move => /> *. admit. (*instruction invalid -  W4u64.VPBROADCAST_4u64 (W2u64.truncateu64 t128_0)    *)
     auto. rewrite /valid /is_init /= => &m /> *. smt(List.all_cat).
   seq 1: (valid trace___addstate_avx2 /\ offset = _offset /\  BArrayS.is_init b_buf _offset __LEN /\
-          dELTA = (_aT < 40) ? (min  __LEN (40-_aT)) :  0   /\
+          dELTA = (_aT < 40) ? (( __LEN < (40 - _aT)) ? __LEN : (40-_aT)) : 0 /\
           _LEN = __LEN - dELTA /\ _TRAILB = ((40 <= _aT + __LEN) ? __TRAILB : 0) /\
           aT = _aT + dELTA +  (( 40 <= _aT  || (40 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
           _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
   + if.
     + auto. ecall (__a_ilen_read_upto32_at_proof param_12 b_param_7 param_11 param_10  param_9 param_8 param_7 param_6). auto.
-      rewrite /valid /is_init /= => &m /> *.  smt(List.all_cat). 
+  rewrite /valid /is_init /= => &m /> *.  split. split. smt(). split. smt(). split. smt().  split. smt(). split. smt(). split. smt(). split. smt().  smt(). move => 16? r *. 
+      split. rewrite !List.all_cat /=. smt(). split.  smt(). split. smt(). split. smt(). smt().
     auto. rewrite /valid /is_init => &m /> *. smt(List.all_cat).
   if. 
   + seq 18:(valid trace___addstate_avx2 /\ offset = _offset /\  BArrayS.is_init b_buf _offset __LEN /\
-          dELTA = (_aT < 48) ? (min  __LEN (48-_aT)) :  0 /\
+           dELTA = (_aT < 48) ? (( __LEN < (48 - _aT)) ? __LEN : (48-_aT)) : 0 /\
           _LEN = __LEN - dELTA /\ _TRAILB = ((48 <= _aT + __LEN) ? __TRAILB : 0) /\
           aT = _aT + dELTA +  (( 48 <= _aT  || (48 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
-          _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
+          _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256). 
     + auto.  ecall (__a_ilen_read_upto8_at_proof param_19 b_param_6 param_18 param_17 param_16 param_15 param_14 param_13).
-      auto . rewrite /valid /is_init /= => &m /> *. smt(List.all_cat).
+      auto . rewrite /valid /is_init /= => &m /> *. split. smt(List.all_cat). move => *. split. rewrite !List.all_cat /=. smt(). split. smt(). split. smt(). split. smt(). smt().
     if.
-    + auto. ecall (__addstate_r3456_avx2_proof param_73 (BArray224.init_arr (JWord.W8.of_int 255)) param_72 param_71 param_70 param_69).
+    + auto. ecall (__addstate_r3456_avx2_proof param_73 (BArray224.init_arr (W8.of_int 255)) param_72 param_71 param_70 param_69).
       auto .
-      ecall (__a_ilen_read_upto32_at_proof param_68 b_param param_67 param_66 
-       param_65 param_64 param_63 param_62).
-      auto .
-      ecall (__a_ilen_read_upto8_at_proof param_61 b_param_0 param_60 param_59 
-       param_58 param_57 param_56 param_55).
-      auto .
-      ecall (__a_ilen_read_upto32_at_proof param_54 b_param_1 param_53 param_52 
-       param_51 param_50 param_49 param_48).
-      auto .
-      ecall (__a_ilen_read_upto8_at_proof param_47 b_param_2 param_46 param_45 
-       param_44 param_43 param_42 param_41).
-      auto .
-      ecall (__a_ilen_read_upto32_at_proof param_40 b_param_3 param_39 param_38 
-       param_37 param_36 param_35 param_34).
-      auto .
-      ecall (__a_ilen_read_upto8_at_proof param_33 b_param_4 param_32 param_31 
-       param_30 param_29 param_28 param_27).
-      auto .
-      ecall (__a_ilen_read_upto32_at_proof param_26 b_param_5 param_25 param_24 
-       param_23 param_22 param_21 param_20).
-      auto .
-      rewrite /is_init /valid /= => &m /> *. split. smt(). 
-      move => *. split. smt().  move => *. split. smt(). move => *. split. smt(). move => *. split. smt(). move => *. split. smt().
-      move => *. split. smt().  move => *. split. smt(BArray224.init_arrP). move => *. split. smt(List.all_cat). move => *.  rewrite !List.all_cat /=. smt().
-    auto. rewrite /is_init /valid /= => &m /> *. smt(List.all_cat BArray224.init_arrP).
+      seq 33:(valid trace___addstate_avx2 /\ offset = _offset /\  BArrayS.is_init b_buf _offset __LEN /\
+           dELTA = (_aT < 88) ? (( __LEN < (88 - _aT)) ? __LEN : (88-_aT)) : 0 /\
+          _LEN = __LEN - dELTA /\ _TRAILB = ((88 <= _aT + __LEN) ? __TRAILB : 0) /\
+          aT = _aT + dELTA +  (( 88 <= _aT  || (88 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
+          _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
+      + auto.
+        ecall (__a_ilen_read_upto8_at_proof param_33 b_param_4 param_32 param_31  param_30 param_29 param_28 param_27).
+        auto .
+        ecall (__a_ilen_read_upto32_at_proof param_26 b_param_5 param_25 param_24 param_23 param_22 param_21 param_20). auto.
+        rewrite /is_init /valid /= => &m /> *.   split. smt(List.all_cat). move => *. split. smt(List.all_cat). move => *. split. rewrite !List.all_cat /=. smt(). split. smt(). split. smt(). split. smt(). smt().
+      seq 33:(valid trace___addstate_avx2 /\ offset = _offset /\  BArrayS.is_init b_buf _offset __LEN /\
+           dELTA = (_aT < 128) ? (( __LEN < (128 - _aT)) ? __LEN : (128-_aT)) : 0 /\
+          _LEN = __LEN - dELTA /\ _TRAILB = ((128 <= _aT + __LEN) ? __TRAILB : 0) /\
+          aT = _aT + dELTA +  (( 128 <= _aT  || (128 <= _aT + __LEN || __TRAILB=0)) ? 0 : 1) /\ 0 <= _offset /\ 0<=__LEN /\ 0<=_aT /\ offset = _offset /\
+          _offset + __LEN <= size /\ _aT + __LEN + (if __TRAILB <> 0 then 1 else 0) < 200 /\ 0<= __TRAILB /\ __TRAILB<256).
+      + auto.
+        ecall (__a_ilen_read_upto8_at_proof param_47 b_param_2 param_46 param_45 param_44 param_43 param_42 param_41). auto .
+        ecall (__a_ilen_read_upto32_at_proof param_40 b_param_3 param_39 param_38 param_37 param_36 param_35 param_34). auto.
+        rewrite /is_init /valid /= => &m /> *.   split. smt(List.all_cat). move => *. split. smt().  move => *. split. rewrite !List.all_cat /=. smt(). split. smt(). split. smt(). split. smt(). smt().
+      ecall (__a_ilen_read_upto32_at_proof param_68 b_param param_67 param_66 param_65 param_64 param_63 param_62). auto .
+      ecall (__a_ilen_read_upto8_at_proof param_61 b_param_0 param_60 param_59 param_58 param_57 param_56 param_55). auto.
+      ecall (__a_ilen_read_upto32_at_proof param_54 b_param_1 param_53 param_52 param_51 param_50 param_49 param_48). auto.
+      rewrite /is_init /valid /= => &m /> *. split. split. smt(). smt().
+      move => *. split. move => /> *. split. smt(). split. smt(). split. smt(). smt().  move => *. split. smt(). move => *. split. smt(BArray224.init_arrP). move => *.  rewrite !List.all_cat /=. split.  smt(). smt().
+    auto. rewrite /is_init /valid /= => &m /> *. rewrite !List.all_cat /=. smt(BArray224.init_arrP).
   auto .
-  rewrite /is_init /valid /=.
-  smt (List.all_cat BArray224.init_arrP). 
+  rewrite /is_init /valid /= => &m /> *. rewrite !List.all_cat /=. 
+  smt  (BArray224.init_arrP). 
 qed .
 
 lemma __absorb_avx2_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :
       (__absorb_avx2_spec _st _b_st _aT _buf _b_buf __TRAILB __RATE8).
 proof.
 rewrite /__absorb_avx2_spec .
-  proc; have:= inbounds_size => /= *; auto .
+  proc; have:= inbounds_size => /= ?. auto .
   seq 23: (#pre /\ valid  trace___absorb_avx2). auto.
   seq 19: (valid  trace___absorb_avx2).
-  + auto. ecall (__addstate_avx2_proof param_18 (BArray224.init_arr (JWord.W8.of_int 255)) 
-       param_17 param_16 (BArrayS.init_arr (JWord.W8.of_int 255)) param_15 
+  + auto. ecall (__addstate_avx2_proof param_18 (BArray224.init_arr (W8.of_int 255)) 
+       param_17 param_16 (BArrayS.init_arr (W8.of_int 255)) param_15 
        param_14 param_13).
     auto. sp.
     if.
     + wp.
       while( valid trace___absorb_avx2 /\ 0<=i /\ i<=iTERS /\ 0<= offset /\  0<=_LEN /\  _RATE8 < 200 /\ iTERS * _RATE8 <= _LEN /\
-             offset = i * _RATE8 + _RATE8 - _aT /\ _LEN <= size - (_RATE8-_aT) /\ 0<= _aT /\ iTERS <= _LEN /\ _aT < _RATE8
+             offset = i * _RATE8 + _RATE8 - _aT /\ _LEN - _aT + _RATE8 <= size /\ 0<= _aT /\ iTERS <= _LEN /\ _aT < _RATE8
           ). 
       + auto. 
-        ecall (_keccakf1600_avx2_proof param_12 (BArray224.init_arr (JWord.W8.of_int 255))). auto .
-        ecall (__addstate_avx2_proof param_11 (BArray224.init_arr (JWord.W8.of_int 255)) param_10 param_9 (BArrayS.init_arr (JWord.W8.of_int 255)) param_8 param_7 param_6). auto .
-        rewrite /is_init /valid /= => &m /> *. split. split. smt(). split. smt(). split. smt(). split. split. smt(). smt(). split.
-        have: 0 <=  i{m} * _RATE8{m} + _RATE8{m} - _aT + _RATE8{m} <= size; smt(BArrayS.init_arrP). smt(BArray224.init_arrP). smt(List.all_cat).
+        ecall (_keccakf1600_avx2_proof param_12 (BArray224.init_arr (W8.of_int 255))). auto .
+        ecall (__addstate_avx2_proof param_11 (BArray224.init_arr (W8.of_int 255)) param_10 param_9 (BArrayS.init_arr (W8.of_int 255)) param_8 param_7 param_6). auto .
+        rewrite /is_init /valid /= => &m /> *. split. split. smt(). split. smt(). split. split. smt().
+        have ?: (i{m} + 1) * _RATE8{m} <= _LEN{m}.  smt(). smt().
+        have ?: i{m} * _RATE8{m} + _RATE8{m} - _aT + _RATE8{m} <= size. smt().
+        split. smt(). split. split. smt(). smt(BArrayS.init_arrP). smt(BArray224.init_arrP). move => *. smt(List.all_cat).
       auto. 
-      ecall (_keccakf1600_avx2_proof param_5 (BArray224.init_arr (JWord.W8.of_int 255))).
+      ecall (_keccakf1600_avx2_proof param_5 (BArray224.init_arr (W8.of_int 255))).
       auto .
-      ecall (__addstate_avx2_proof param_4 (BArray224.init_arr (JWord.W8.of_int 255))  param_3 param_2 (BArrayS.init_arr (JWord.W8.of_int 255)) param_1 param_0 param).
+      ecall (__addstate_avx2_proof param_4 (BArray224.init_arr (W8.of_int 255))  param_3 param_2 (BArrayS.init_arr (W8.of_int 255)) param_1 param_0 param).
       auto .
-      rewrite /is_init /valid /= => &m /> *. smt(BArrayS.init_arrP BArray224.init_arrP List.all_cat).
-    auto. smt(BArrayS.init_arrP BArray224.init_arrP List.all_cat).
-  if. auto. ecall(__addratebit_avx2_proof param_20 (BArray224.init_arr (JWord.W8.of_int 255)) param_19). auto.     
+      rewrite /is_init /valid /= => &m /> *. split. smt(BArrayS.init_arrP BArray224.init_arrP). move => *. split. smt(List.all_cat). move => *.
+      split. smt(BArrayS.init_arrP).  move => *. smt(List.all_cat).
+    auto. move => /> *. split. smt(BArrayS.init_arrP BArray224.init_arrP). move => *. smt( List.all_cat).
+  if. auto. ecall(__addratebit_avx2_proof param_20 (BArray224.init_arr (W8.of_int 255)) param_19). auto.     
   +  smt (List.all_cat BArrayS.init_arrP BArray224.init_arrP).
   auto. smt(BArray224.init_arrP).        
 qed .
@@ -19028,7 +18932,7 @@ lemma __dumpstate_avx2_proof _buf _b_buf _offset __LEN _st _b_st :
       (__dumpstate_avx2_spec _buf _b_buf _offset __LEN _st _b_st).
 proof.
   rewrite /__dumpstate_avx2_spec .
-  proc . have:= inbounds_size => /= *.
+  proc . have:= inbounds_size => /= ?.
   seq 47: (#pre /\ valid trace___dumpstate_avx2). by auto.
   sp.
   seq 1: (valid trace___dumpstate_avx2 /\ __LEN <= 200 /\ BArrayS.is_init b_buf 0 (_offset + dELTA) /\ 0<=__LEN /\ _LEN = __LEN - dELTA /\
@@ -19091,19 +18995,19 @@ lemma __squeeze_avx2_proof _st _b_st _buf _b_buf __RATE8 :
       (__squeeze_avx2_spec _st _b_st _buf _b_buf __RATE8).
 proof.
   rewrite /__squeeze_avx2_spec.
-  proc. have:= inbounds_size => /= *.
+  proc. have:= inbounds_size => /= ?.
   seq 18: (#pre /\ valid trace___squeeze_avx2). by auto.
   sp.
   seq 1: (lO = size %% _RATE8/\ offset =  size - lO /\ 0<_RATE8 /\ _RATE8 < 200 /\
           BArrayS.is_init b_buf 0 (size-lO) /\ valid trace___squeeze_avx2).
   + while(valid trace___squeeze_avx2 /\ 0 <= i /\ i<= iTERS /\ offset = i*_RATE8 /\ 0<_RATE8 /\ _RATE8 < 200 /\ BArrayS.is_init b_buf 0 offset /\ iTERS*_RATE8 <= size).
-    + auto. ecall(__dumpstate_avx2_proof param_3 b_param_0 param_2 param_1 param_0 (BArray224.init_arr (JWord.W8.of_int 255))). auto.                            
-      ecall(_keccakf1600_avx2_proof param (BArray224.init_arr (JWord.W8.of_int 255))). auto. 
-      rewrite /valid /is_init /= => &m /> *.  split.  smt(BArray224.init_arrP). move => *. split.  smt(). move => *. split.  smt(List.all_cat).  smt().
+    + auto. ecall(__dumpstate_avx2_proof param_3 b_param_0 param_2 param_1 param_0 (BArray224.init_arr (W8.of_int 255))). auto.                            
+      ecall(_keccakf1600_avx2_proof param (BArray224.init_arr (W8.of_int 255))). auto. 
+      rewrite /valid /is_init /= => &m /> *.  split.  smt(BArray224.init_arrP). move => *. split. smt(). move => *.  split. rewrite !List.all_cat /=. smt(). smt().
     auto.  rewrite /valid /is_init /= => &m /> *. smt(List.all_cat).
   if.
-  + auto. ecall(__dumpstate_avx2_proof param_8 b_param param_7 param_6 param_5 (BArray224.init_arr (JWord.W8.of_int 255))). auto.
-    ecall(_keccakf1600_avx2_proof param_4 (BArray224.init_arr (JWord.W8.of_int 255))). auto. 
+  + auto. ecall(__dumpstate_avx2_proof param_8 b_param param_7 param_6 param_5 (BArray224.init_arr (W8.of_int 255))). auto.
+    ecall(_keccakf1600_avx2_proof param_4 (BArray224.init_arr (W8.of_int 255))). auto. 
     rewrite /valid /is_init /= => &m /> *.  smt(BArray224.init_arrP List.all_cat).
   auto. smt(BArray224.init_arrP).
 qed.
@@ -19113,73 +19017,232 @@ lemma __addstate_bcast_avx2x4_proof _st _b_st _aT _buf _b_buf _offset __LEN __TR
       __LEN __TRAILB).
 proof.
   rewrite /__addstate_bcast_avx2x4_spec .
-  proc; have:= inbounds_size => /= *. auto .
+  proc; have:= inbounds_size => /= ?. auto .
   seq 8: (#pre /\ valid  trace___addstate_bcast_avx2x4). by auto.
-  seq 13:(valid  trace___addstate_bcast_avx2x4 /\ BArrayS.is_init b_buf _offset __LEN /\ 0<= _TRAILB /\ _TRAILB < 256 /\ 0 <= _offset /\
-          aT = _aT + _aT%%8 + 8*((__LEN - _aT%%8)%/8) /\ offset = _offset + __LEN - _LEN /\ 0<= _LEN /\ _offset + __LEN <= size /\
-          _LEN = (__LEN + _aT)%%8 /\  _TRAILB = ((8 <= _aT%%8 + __LEN) ? _TRAILB : 0)).
+  seq 13:(valid  trace___addstate_bcast_avx2x4 /\ BArrayS.is_init b_buf _offset __LEN /\ 0<= _TRAILB /\ _TRAILB < 256 /\ 0 <= _offset /\ 0 <= __LEN /\ 0<=at <= 768 /\ (_TRAILB = (8 <= _aT%%8 + __LEN || _aT%%8 = 0) ? __TRAILB : 0) /\
+          offset = _offset + __LEN - _LEN  /\ _offset + __LEN <= size /\  _LEN = ((__LEN + _aT)%%8 <= __LEN) ? (__LEN + _aT)%%8 : 0 /\ aT = _aT + __LEN - _LEN +  ((8 <= _aT%%8 + __LEN || __TRAILB=0 || _aT%%8 = 0) ? 0 : 1)  ).
   + auto.
-    while (valid  trace___addstate_bcast_avx2x4 /\ BArrayS.is_init b_buf _offset __LEN /\ 0<= _TRAILB /\ _TRAILB < 256 /\ 0 <= _offset /\
-          aT = _aT + _aT%%8 + 8*((__LEN - _aT%%8)%/8) /\ 0<= _LEN /\ _offset + __LEN <= size /\ (_aT + __LEN + if __TRAILB <> 0 then 1 else 0) < 200 /\
-          _LEN = __LEN - _aT%%8 /\  _TRAILB = ((8 <= _aT%%8 + __LEN) ? _TRAILB : 0) /\ at <= 0  /\
-          at <= 32*(_aT%/8 + _LEN%/8) /\
-          offset = _offset + __LEN - (at - 32*(aT%/8))%/4). (*
-    + auto. rewrite /is_init /valid /= => &m /> *. split.  rewrite !List.all_cat /=. split. split. split. split. split. split. split. smt(). split. smt(). *)
-      admit.
+    while (valid  trace___addstate_bcast_avx2x4 /\ BArrayS.is_init b_buf _offset __LEN /\ 0<= _TRAILB /\ _TRAILB < 256 /\ 0 <= _offset /\ 0<= __LEN /\ 0<= at /\ 32 * (aT %/ 8) <=at<= 32 * (aT %/ 8 + _LEN %/ 8) /\ at%%32 = 0 /\
+  offset = _offset + (at - 32*(aT %/ 8))%/4 + dELTA  /\  _offset + __LEN <= size /\ 0<=dELTA /\ dELTA <= 8 /\ _LEN = __LEN - dELTA /\ aT = _aT + dELTA + ((8 <= _aT%%8 + __LEN || __TRAILB=0 || _aT%%8 = 0) ? 0 : 1)  /\
+  aT + _LEN  < 200).
+    + auto. rewrite /is_init /valid /= => &m /> *. smt(List.all_cat).
     auto. sp.
     if .
     +  auto . ecall (__a_ilen_read_bcast_upto8_at_proof param_5 b_param_0 param_4 param_3 param_2 param_1 param_0 param). auto. 
-       rewrite /is_init /valid /= => &m /> *. admit.
-    auto.  rewrite /is_init /valid /= => &m /> *. admit.
+       rewrite /is_init /valid /= => &m /> *. split. smt(). move => *. split. split. smt(List.all_cat). split. smt().  split. smt().  split.  smt(). split. smt(). split. smt(). split. smt(). split. smt(). split. smt(). split. smt(). smt().
+       move => *. smt().
+    auto.  rewrite /is_init /valid /= => &m /> *.  smt(List.all_cat).
   if.
   + auto.
     ecall (__a_ilen_read_bcast_upto8_at_proof param_12 b_param param_11 param_10 param_9 param_8 param_7 param_6). auto.
-    rewrite /is_init /valid /= => &m /> *.  admit.
-  auto. rewrite /is_init /valid /= => &m /> *.  admit.
+    rewrite /is_init /valid /= => &m /> *. split. split.  split.  smt(). smt().  smt().  move => /> 9? h *. split. split. smt(). split.  smt(). split. smt(). split. split. smt(BArray800.init_arrP). smt().  smt(). smt(List.all_cat).
+  auto. rewrite /is_init /valid /= => &m /> *. smt(BArray800.init_arrP).
 qed .
 
 lemma __absorb_bcast_avx2x4_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :
       (__absorb_bcast_avx2x4_spec _st _b_st _aT _buf _b_buf __TRAILB __RATE8).
 proof.
   rewrite /__absorb_bcast_avx2x4_spec .
-  proc; auto.
-  admit.
+  proc; have:= inbounds_size => /= ?. auto.
+  seq 23: (#pre /\ valid trace___absorb_bcast_avx2x4). by auto.
+  seq 19: (valid trace___absorb_bcast_avx2x4 /\ 0<_RATE8 /\ _RATE8 < 200 /\  aT = (_aT + size) %% __RATE8 + if __TRAILB <> 0 then 1 else 0). 
+  + auto. ecall (__addstate_bcast_avx2x4_proof param_18 (BArray800.init_arr (W8.of_int 255)) param_17 param_16 (BArrayS.init_arr (W8.of_int 255)) param_15 param_14 param_13).
+    auto. sp. 
+    if.
+    + auto. 
+      while (valid trace___absorb_bcast_avx2x4 /\ 0<_RATE8 /\ _RATE8 < 200 /\ aT = 0 /\ 0<= i /\ i<= iTERS /\ iTERS * _RATE8 + _RATE8 - _aT <= size /\ _aT < _RATE8 /\ 0<=_aT /\ 
+             offset = i*_RATE8 + _RATE8 - _aT).
+      + auto. ecall (_keccakf1600_avx2x4_proof param_12 (BArray800.init_arr (W8.of_int 255))).
+        auto . ecall (__addstate_bcast_avx2x4_proof param_11 (BArray800.init_arr (W8.of_int 255)) param_10 param_9 (BArrayS.init_arr (W8.of_int 255)) param_8 param_7 param_6).
+        auto .
+        rewrite /is_init /valid /= => &m /> *.
+        have ? : i{m} * _RATE8{m} + _RATE8{m} - _aT + _RATE8{m} <= size. smt(). split. smt(BArrayS.init_arrP BArray800.init_arrP). move => *. rewrite !List.all_cat /=. smt().
+      auto.  ecall (_keccakf1600_avx2x4_proof param_5 (BArray800.init_arr (W8.of_int 255))).
+      auto. ecall (__addstate_bcast_avx2x4_proof param_4 (BArray800.init_arr (W8.of_int 255)) param_3 param_2 (BArrayS.init_arr (W8.of_int 255)) param_1 param_0 param).
+      auto. rewrite /is_init /valid /= => &m /> *. split.  smt(BArray800.init_arrP BArrayS.init_arrP). move => /> *. split. rewrite !List.all_cat /=. smt(). move => *. split.  smt(BArrayS.init_arrP). move => *. split. smt(List.all_cat).
+      have /= ? := modzMDr (-1) (size + aT{m}) (_RATE8{m}). smt().
+    auto. rewrite /is_init /valid /= => &m /> *. smt(List.all_cat BArray800.init_arrP BArrayS.init_arrP).   
+  if.
+  + auto.
+    ecall (__addratebit_avx2x4_proof param_20 (BArray800.init_arr (W8.of_int 255)) param_19). auto.
+    rewrite /is_init /valid /= => &m /> *.
+    smt (List.all_cat BArray800.init_arrP).
+  auto . smt(BArray800.init_arrP).
 qed .
 
 lemma __addstate_avx2x4_proof _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN __TRAILB :
       (__addstate_avx2x4_spec _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 
       _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN __TRAILB).
 proof.
-rewrite /__addstate_avx2x4_spec .
-proc; auto .
-admit.
+  rewrite /__addstate_avx2x4_spec .
+  proc; have:= inbounds_size => /= ?. auto .
+  seq 20: (#pre /\ valid trace___addstate_avx2x4). by auto.
+  seq 13 : ( valid trace___addstate_avx2x4 /\ 0<=_offset /\ 0<=_LEN /\ 0<=at /\ _LEN < 8 /\
+           _LEN + offset = __LEN + _offset /\ __LEN + _offset <= size /\
+           at + 4 <= 100 /\ offset = _offset + __LEN - _LEN /\ 0 <= __TRAILB /\ __TRAILB < 256 /\
+           aT = _aT + __LEN - _LEN +  ((8 <= _aT%%8 + __LEN || __TRAILB=0 || _aT%%8 = 0) ? 0 : 1) /\ (_TRAILB = (8 <= _aT%%8 + __LEN || _aT%%8 = 0) ? __TRAILB : 0) /\
+           BArrayS.is_init b_buf0 offset _LEN /\ BArrayS.is_init b_buf1 offset _LEN /\ BArrayS.is_init b_buf2 offset _LEN /\
+           BArrayS.is_init b_buf3 offset _LEN /\ _offset <= offset /\ _LEN <= __LEN).
+  + wp.
+    while( valid trace___addstate_avx2x4 /\ 0<=_offset /\ 0<=_LEN /\ 0<=at /\
+           _LEN + offset - ((at - 4 * (aT %/ 8))*2)  = __LEN + _offset /\ __LEN + _offset <= size /\ _aT + __LEN  + ((__TRAILB <> 0) ? 1 : 0)  < 200 /\ 0<=_aT /\
+           at%%4 = 0 /\ at <=  4 * (aT %/ 8) + 4 * (_LEN %/ 8) /\
+           0 <= __TRAILB /\ __TRAILB < 256 /\ (_TRAILB = __TRAILB || _TRAILB = 0) /\
+           aT = _aT + __LEN - _LEN + ( (_LEN <= 0 /\ _TRAILB = 0 /\ __TRAILB <> 0) ? 1 : 0) /\
+           BArrayS.is_init b_buf0 offset (((4 * (aT %/ 8) + 4 * (_LEN %/ 8) - at)* 2 + _LEN%%8)) /\
+           BArrayS.is_init b_buf1 offset (((4 * (aT %/ 8) + 4 * (_LEN %/ 8) - at)* 2 + _LEN%%8)) /\
+           BArrayS.is_init b_buf2 offset (((4 * (aT %/ 8) + 4 * (_LEN %/ 8) - at)* 2 + _LEN%%8)) /\
+           BArrayS.is_init b_buf3 offset (((4 * (aT %/ 8) + 4 * (_LEN %/ 8) - at)* 2 + _LEN%%8)) /\ _offset <= offset /\ _LEN <= __LEN).
+    + auto. rewrite /is_init /valid /= => &m /> *. split. rewrite !List.all_cat /=. smt(). smt().
+    sp. if.
+    + auto. 
+      ecall (__a_ilen_read_upto8_at_proof param_26 b_param_3 param_25 param_24  param_23 param_22 param_21 param_20). auto.
+      ecall (__a_ilen_read_upto8_at_proof param_19 b_param_4 param_18 param_17 param_16 param_15 param_14 param_13). auto.
+      ecall (__a_ilen_read_upto8_at_proof param_12 b_param_5 param_11 param_10  param_9 param_8 param_7 param_6). auto.
+      ecall (__a_ilen_read_upto8_at_proof param_5 b_param_6 param_4 param_3 param_2 param_1 param_0 param). auto.
+      rewrite /is_init /valid /= => &m /> *. split. smt(). move => *. split.  smt(). move => *. split. smt(). move => *. split. smt(). move=> *. split. split. rewrite !List.all_cat /=. smt().
+      + move => *. split. smt(). split. smt(). split. smt().  split. smt(). split. smt(). smt().
+      move => /> *. smt().
+    auto. rewrite /is_init /valid /= => &m /> *. split.  smt(List.all_cat). smt().
+  if .
+  + auto .
+    ecall (__a_ilen_read_upto8_at_proof param_54 b_param param_53 param_52 
+       param_51 param_50 param_49 param_48). auto .
+    ecall (__a_ilen_read_upto8_at_proof param_47 b_param_0 param_46 param_45 
+       param_44 param_43 param_42 param_41). auto .
+    ecall (__a_ilen_read_upto8_at_proof param_40 b_param_1 param_39 param_38 
+       param_37 param_36 param_35 param_34). auto .
+    ecall (__a_ilen_read_upto8_at_proof param_33 b_param_2 param_32 param_31 
+       param_30 param_29 param_28 param_27). auto .
+    rewrite /is_init /valid /= => &m /> *. split.  smt(). move => /> *. split.  split. split. smt(). smt().  split.  smt(). split. smt(). split. split. smt(BArray800.init_arrP). smt().  smt().  rewrite !List.all_cat /=. smt().
+  auto. rewrite /is_init /valid /= => &m /> *. smt(BArray800.init_arrP). 
 qed .
 
 lemma __absorb_avx2x4_proof _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __TRAILB __RATE8 :
       (__absorb_avx2x4_spec _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 
       _buf2 _b_buf2 _buf3 _b_buf3 __TRAILB __RATE8).
 proof.
-rewrite /__absorb_avx2x4_spec .
-proc; auto.
-admit.
+  rewrite /__absorb_avx2x4_spec .
+  proc; have:= inbounds_size => /= ?. auto .
+  seq 54: (valid trace___absorb_avx2x4 /\ 0<_RATE8 /\ _RATE8 < 200 /\ aT = (_aT + size)%%__RATE8 + (if __TRAILB <> 0 then 1 else 0)).
+  + auto.
+    ecall (__addstate_avx2x4_proof param_27 (BArray800.init_arr (W8.of_int 255)) param_26 param_25 (BArrayS.init_arr (W8.of_int 255)) param_24 
+           (BArrayS.init_arr (W8.of_int 255)) param_23 (BArrayS.init_arr (W8.of_int 255)) param_22 (BArrayS.init_arr (W8.of_int 255)) param_21 param_20  param_19).
+    auto .
+    seq 32: (#pre /\ valid trace___absorb_avx2x4). by auto.
+    sp.
+    if.
+    + wp.
+      while ((valid trace___absorb_avx2x4) /\ aT = 0 /\ _LEN = size - (_RATE8 - _aT) /\ 0<=i /\ i<=iTERS /\ 0<_RATE8 /\ _RATE8 < 200 /\
+              offset = i * _RATE8 + _RATE8 - _aT /\ iTERS * _RATE8 <= _LEN /\  _aT < _RATE8).
+      + auto . 
+        ecall (_keccakf1600_avx2x4_proof param_18 (BArray800.init_arr (W8.of_int 255))). auto .
+        ecall (__addstate_avx2x4_proof param_17 (BArray800.init_arr (W8.of_int 255)) param_16 param_15 (BArrayS.init_arr (W8.of_int 255)) param_14 
+           (BArrayS.init_arr (W8.of_int 255)) param_13 (BArrayS.init_arr(W8.of_int 255)) param_12 (BArrayS.init_arr (W8.of_int 255)) param_11 param_10 param_9).
+        auto .
+        rewrite /is_init /valid /= => &m /> *. have ?:  i{m} * _RATE8{m} + _RATE8{m} - _aT + _RATE8{m} <= size.  smt().
+        split. smt(BArrayS.init_arrP BArray800.init_arrP). move => *.
+        rewrite !List.all_cat /=. smt().
+      auto .
+      ecall (_keccakf1600_avx2x4_proof param_8 (BArray800.init_arr (W8.of_int 255))).
+      auto .
+      ecall (__addstate_avx2x4_proof param_7 (BArray800.init_arr (W8.of_int 255)) param_6 param_5 (BArrayS.init_arr (W8.of_int 255)) param_4 (
+              BArrayS.init_arr(W8.of_int  255))  param_3 (BArrayS.init_arr (W8.of_int 255)) param_2 (BArrayS.init_arr (W8.of_int 255)) param_1 param_0 param).
+      auto .
+      rewrite /is_init /valid /= => &m /> *. split. smt(BArray800.init_arrP BArrayS.init_arrP). move => *.
+      split. rewrite !List.all_cat /=.  move => *. split. smt(BArrayS.init_arrP BArray800.init_arrP).  move => *. smt(List.all_cat).
+      move => *.  split. smt(BArrayS.init_arrP). move => *. rewrite !List.all_cat /=. have /= ? := modzMDr (-1) (size + aT{m}) (_RATE8{m}). smt().
+    auto. rewrite /is_init /valid /= => &m /> *. smt(BArrayS.init_arrP BArray800.init_arrP List.all_cat).
+  if .
+  + auto .
+    ecall (__addratebit_avx2x4_proof param_29 (BArray800.init_arr (W8.of_int 255)) param_28). auto .
+    rewrite /is_init /valid /= => &m /> *.
+    smt (List.all_cat BArray800.init_arrP).
+  auto. smt(BArray800.init_arrP).
 qed .
 
 lemma __dumpstate_avx2x4_proof _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN _st _b_st :
       (__dumpstate_avx2x4_spec _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2
       _buf3 _b_buf3 _offset __LEN _st _b_st).
 proof.
-rewrite /__dumpstate_avx2x4_spec .
-proc; auto .
-admit.
+  rewrite /__dumpstate_avx2x4_spec .
+  proc; have:= inbounds_size => /= ?. auto .
+  seq 18: (#pre /\ valid trace___dumpstate_avx2x4). by auto.
+  seq 6: (valid trace___dumpstate_avx2x4 /\ offset = _offset + __LEN - __LEN%%8 /\ __LEN = _LEN /\ 0 <= i /\ i = 8 * (_LEN %/ 8) /\ __LEN <= 200 /\
+          0<= _LEN /\ 0<= _offset  /\ BArrayS.is_init b_buf0 0 offset  /\ BArrayS.is_init b_buf1 0 offset /\ _offset + __LEN <= size /\
+          BArrayS.is_init b_buf2 0 offset  /\ BArrayS.is_init b_buf3 0 offset).
+  + while ((valid trace___dumpstate_avx2x4) /\  offset = _offset + i /\ __LEN = _LEN /\ 0 <= i /\ i<= 8 * (_LEN %/ 8) /\ __LEN <= 200 /\
+          0<= _LEN /\ 0<= _offset  /\ BArrayS.is_init b_buf0 0 offset  /\ BArrayS.is_init b_buf1 0 offset /\ _offset + __LEN <= size /\ i%%8 = 0 /\
+          BArrayS.is_init b_buf2 0 offset  /\ BArrayS.is_init b_buf3 0 offset).
+    + auto .
+      rewrite /is_init /valid /= => &m /> *. split. rewrite !List.all_cat /=. smt(). smt().
+    auto .
+    while ((valid trace___dumpstate_avx2x4)  /\  offset = _offset + i /\ __LEN = _LEN /\ 0 <= i /\ i<= 32 * (_LEN %/ 32) /\ __LEN <= 200 /\
+          0<= _LEN /\ 0<= _offset  /\ BArrayS.is_init b_buf0 0 offset  /\ BArrayS.is_init b_buf1 0 offset /\ _offset + __LEN <= size /\ i%%32 = 0 /\
+          BArrayS.is_init b_buf2 0 offset  /\ BArrayS.is_init b_buf3 0 offset).
+    + auto .
+      ecall (__4u64x4_u256x4_proof param_2 param_1 param_0 param).
+      auto .
+      rewrite /is_init /valid /= => &m /> *.
+      split. rewrite !List.all_cat /=.  smt(). smt().
+    auto .
+    rewrite /is_init /valid /= .
+    smt (List.all_cat).
+  if .
+  + auto .
+    ecall (__a_ilen_write_upto8_proof param_22 b_param param_21 param_20  param_19 param_18).
+    auto .
+    ecall (__a_ilen_write_upto8_proof param_17 b_param_0 param_16 param_15 param_14 param_13).
+    auto .
+    ecall (__a_ilen_write_upto8_proof param_12 b_param_1 param_11 param_10 param_9 param_8).
+    auto .
+    ecall (__a_ilen_write_upto8_proof param_7 b_param_2 param_6 param_5 param_4 param_3).
+    auto .
+    rewrite /is_init /valid /= => &m /> *. split. smt(). move => *. rewrite !List.all_cat /=. smt().
+  auto .
+  rewrite /is_init /valid /=. 
+  smt (List.all_cat).
 qed .
 
 lemma __squeeze_avx2x4_proof _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __RATE8 :
       (__squeeze_avx2x4_spec _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2
       _b_buf2 _buf3 _b_buf3 __RATE8).
 proof.
-rewrite /__squeeze_avx2x4_spec .
-proc; auto .
-admit.
+  rewrite /__squeeze_avx2x4_spec .
+  proc; have:= inbounds_size => /= ?. auto .
+  seq 42: (#pre /\ valid  trace___squeeze_avx2x4). by auto.
+  seq 5: (valid  trace___squeeze_avx2x4 /\ BArrayS.is_init b_buf0 0 offset /\ BArrayS.is_init b_buf1 0 offset /\ 
+          BArrayS.is_init b_buf2 0 offset /\ BArrayS.is_init b_buf3 0 offset /\0 <= lO /\ lO < 200 /\ offset = size - lO /\ lO <= size).
+  + sp.
+    if.  
+    + auto.
+      while (valid  trace___squeeze_avx2x4 /\ BArrayS.is_init b_buf0 0 offset /\ BArrayS.is_init b_buf1 0 offset /\ 0<= i /\ i<= iTERS /\ offset = i * _RATE8 /\ lO = size%%_RATE8 /\
+          BArrayS.is_init b_buf2 0 offset /\ BArrayS.is_init b_buf3 0 offset /\ 0 < _RATE8 /\ _RATE8 < 200 /\ iTERS * _RATE8 <= size ).
+      + auto .
+        ecall (__dumpstate_avx2x4_proof param_6 b_param_6 param_5 b_param_5 param_4 b_param_4 param_3 b_param_3 param_2 param_1 param_0 (BArray800.init_arr (W8.of_int 255))).
+        auto .
+        ecall (_keccakf1600_avx2x4_proof param (BArray800.init_arr (W8.of_int 255))).
+        auto .
+        rewrite /is_init /valid /= => &m /> *. split.  smt(BArray800.init_arrP). move => *. split.  split. smt(). smt().
+        smt (List.all_cat BArray800.init_arrP).
+      auto .
+      rewrite /is_init /valid /= => &m /> *.
+      split. rewrite !List.all_cat /=. smt(). move => *. smt().
+    auto.
+    rewrite /is_init /valid /=.
+    smt(List.all_cat).
+  if .
+  + auto .
+    ecall (__dumpstate_avx2x4_proof param_14 b_param_2 param_13 b_param_1  param_12 b_param_0 param_11 b_param param_10 param_9 param_8 (
+             BArray800.init_arr(W8.of_int 255))).
+    auto .
+    ecall (_keccakf1600_avx2x4_proof param_7 (BArray800.init_arr (W8.of_int 255))).
+    auto .
+    rewrite /is_init /valid /= => &m /> *. split. smt(BArray800.init_arrP). move => *. split.  smt().  move => *.
+    smt (List.all_cat BArray800.init_arrP).
+  auto .
+  rewrite /is_init /valid /=.
+  smt (List.all_cat BArray800.init_arrP).
 qed .
 
 end KECCAK_ARRAY_ASIZE.

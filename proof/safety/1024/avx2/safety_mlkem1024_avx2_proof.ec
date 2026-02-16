@@ -292,7 +292,7 @@ rewrite /__addratebit_avx2x4_spec .
 proc; auto . admit. (*assert false - fix compiler*)
 qed .
 
- require import Keccak_new_ASIZE.
+require import Keccak_new_ASIZE.
 
 clone KECCAK_ARRAY_ASIZE as KECCAK1 with
   op size <= 1, 
@@ -343,9 +343,9 @@ qed.
 lemma a1____a_ilen_read_upto8_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a1____a_ilen_read_upto8_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT .
 proof.
   rewrite /a1____a_ilen_read_upto8_at_spec.
-  admit. (*
-  conseq( a1____a_ilen_read_upto8_at_eq) (KECCAK1.__a_ilen_read_upto8_at_proof  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
-  smt().*)
+  have p := KECCAK1.__a_ilen_read_upto8_at_proof; rewrite /KECCAK1.__a_ilen_read_upto8_at_spec in p; 
+  conseq( a1____a_ilen_read_upto8_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
 qed.
 
 equiv a1____a_ilen_read_upto16_at_eq: M(Syscall).a1____a_ilen_read_upto16_at ~ KECCAK1.M.__a_ilen_read_upto16_at : ={arg}==> ={res}.
@@ -355,10 +355,13 @@ qed.
 
 
 lemma a1____a_ilen_read_upto16_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a1____a_ilen_read_upto16_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a1____a_ilen_read_upto16_at_eq) (KECCAK1.a1____a_ilen_read_upto16_at  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
-  smt().*)
-admitted.
+proof.
+  rewrite /a1____a_ilen_read_upto16_at_spec.
+  have p := KECCAK1.__a_ilen_read_upto16_at_proof; rewrite /KECCAK1.__a_ilen_read_upto16_at_spec in p; 
+  conseq( a1____a_ilen_read_upto16_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
+
 
 equiv a1____a_ilen_read_upto32_at_eq: M(Syscall).a1____a_ilen_read_upto32_at ~ KECCAK1.M.__a_ilen_read_upto32_at : ={arg}==> ={res}.
 proof.
@@ -367,10 +370,12 @@ qed.
 
 
 lemma a1____a_ilen_read_upto32_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a1____a_ilen_read_upto32_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a1____a_ilen_read_upto32_at_eq) (KECCAK1.a1____a_ilen_read_upto32_at  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1____a_ilen_read_upto32_at_spec.
+  have p:= KECCAK1.__a_ilen_read_upto32_at_proof; rewrite /KECCAK1.__a_ilen_read_upto32_at_spec in p;
+  conseq( a1____a_ilen_read_upto32_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a1____addstate_avx2_eq: M(Syscall).a1____addstate_avx2 ~ KECCAK1.M.__addstate_avx2 : ={arg}==> ={res}.
 proof.
@@ -379,11 +384,12 @@ qed.
 
 
 lemma a1____addstate_avx2_proof _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB :  a1____addstate_avx2_spec _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB. 
-proof. (*
-  conseq( a1____addstate_avx2_eq) (KECCAK1.a1____addstate_avx2)  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB => //.
-  smt().*)
-admitted.
-
+proof. 
+  rewrite /a1____addstate_avx2_spec.
+  have p:= KECCAK1.__addstate_avx2_proof; rewrite /KECCAK1.__addstate_avx2_spec in p;
+  conseq( a1____addstate_avx2_eq) (p _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB) => //.
+  smt().
+qed.
 
 
 equiv a1____absorb_avx2_eq: M(Syscall).a1____absorb_avx2 ~ KECCAK1.M.__absorb_avx2 : ={arg}==> ={res}.
@@ -391,12 +397,16 @@ proof.
     proc. inline *. sim.
 qed.
 
+   
+  
 
 lemma a1____absorb_avx2_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :  a1____absorb_avx2_spec _st _b_st _aT _buf _b_buf __TRAILB __RATE8. 
-proof. (*
-  conseq( a1____absorb_avx2_eq) (KECCAK1.a1____absorb_avx2)  _st _b_st _aT _buf _b_buf __TRAILB __RATE8 => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1____absorb_avx2_spec.
+  have p:= KECCAK1.__absorb_avx2_proof; rewrite /KECCAK1.__absorb_avx2_spec in p;
+  conseq( a1____absorb_avx2_eq) (p _st _b_st _aT _buf _b_buf __TRAILB __RATE8) => //.
+  smt().
+qed.
 
 equiv a1____addstate_avx2x4_eq: M(Syscall).a1____addstate_avx2x4 ~ KECCAK1.M.__addstate_avx2x4 : ={arg}==> ={res}.
 proof.
@@ -405,10 +415,12 @@ qed.
 
 
 lemma a1____addstate_avx2x4_proof _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN __TRAILB :  a1____addstate_avx2x4_spec _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN __TRAILB. 
-proof. (*
-  conseq( a1____addstate_avx2x4_eq) (KECCAK1.a1____addstate_avx2x4)  _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN __TRAILB => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1____addstate_avx2x4_spec.
+  have p:= KECCAK1.__addstate_avx2x4_proof; rewrite /KECCAK1.__addstate_avx2x4_spec in p;
+  conseq( a1____addstate_avx2x4_eq) (p _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN __TRAILB) => //.
+  smt().
+qed.
 
 equiv a1____absorb_avx2x4_eq: M(Syscall).a1____absorb_avx2x4 ~ KECCAK1.M.__absorb_avx2x4 : ={arg}==> ={res}.
 proof.
@@ -417,10 +429,11 @@ qed.
 
 
 lemma a1____absorb_avx2x4_proof _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __TRAILB __RATE8 :  a1____absorb_avx2x4_spec _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __TRAILB __RATE8. 
-proof. (*
-  conseq( a1____absorb_avx2x4_eq) (KECCAK1.a1____absorb_avx2x4)  _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __TRAILB __RATE8 => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1____absorb_avx2x4_spec.
+  have p:= KECCAK1.__absorb_avx2x4_proof; rewrite /KECCAK1.__absorb_avx2x4_spec in p;
+  conseq( a1____absorb_avx2x4_eq) (p _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __TRAILB __RATE8) => //. smt().
+qed.
 
 equiv a2____a_ilen_read_upto8_at_eq: M(Syscall).a2____a_ilen_read_upto8_at ~ KECCAK2.M.__a_ilen_read_upto8_at : ={arg}==> ={res}.
 proof.
@@ -429,10 +442,12 @@ qed.
 
 
 lemma a2____a_ilen_read_upto8_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a2____a_ilen_read_upto8_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a2____a_ilen_read_upto8_at_eq) (KECCAK2.a2____a_ilen_read_upto8_at)  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a2____a_ilen_read_upto8_at_spec.
+  have p:= KECCAK2.__a_ilen_read_upto8_at_proof; rewrite /KECCAK2.__a_ilen_read_upto8_at_spec in p;
+  conseq( a2____a_ilen_read_upto8_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a2____addstate_avx2x4_eq: M(Syscall).a2____addstate_avx2x4 ~ KECCAK2.M.__addstate_avx2x4 : ={arg}==> ={res}.
 proof.
@@ -441,10 +456,12 @@ qed.
 
 
 lemma a2____addstate_avx2x4_proof _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN __TRAILB :  a2____addstate_avx2x4_spec _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN __TRAILB. 
-proof. (*
-  conseq( a2____addstate_avx2x4_eq) (KECCAK2.a2____addstate_avx2x4)  _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN __TRAILB => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a2____addstate_avx2x4_spec.
+  have p:= KECCAK2.__addstate_avx2x4_proof; rewrite /KECCAK2.__addstate_avx2x4_spec in p;
+  conseq( a2____addstate_avx2x4_eq) (p  _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN __TRAILB) => //.
+  smt().
+qed.
 
 equiv a2____absorb_avx2x4_eq: M(Syscall).a2____absorb_avx2x4 ~ KECCAK2.M.__absorb_avx2x4 : ={arg}==> ={res}.
 proof.
@@ -453,10 +470,12 @@ qed.
 
 
 lemma a2____absorb_avx2x4_proof _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __TRAILB __RATE8 :  a2____absorb_avx2x4_spec _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __TRAILB __RATE8. 
-proof. (*
-  conseq( a2____absorb_avx2x4_eq) (KECCAK2.a2____absorb_avx2x4)  _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __TRAILB __RATE8 => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a2____absorb_avx2x4_spec.
+  have p:= KECCAK2.__absorb_avx2x4_proof; rewrite /KECCAK2.__absorb_avx2x4_spec in p;
+  conseq( a2____absorb_avx2x4_eq) (p  _st _b_st _aT _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __TRAILB __RATE8) => //.
+  smt(). 
+qed.
 
 equiv a32____a_ilen_read_upto8_at_eq: M(Syscall).a32____a_ilen_read_upto8_at ~ KECCAK32.M.__a_ilen_read_upto8_at : ={arg}==> ={res}.
 proof.
@@ -465,10 +484,12 @@ qed.
 
 
 lemma a32____a_ilen_read_upto8_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a32____a_ilen_read_upto8_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a32____a_ilen_read_upto8_at_eq) (KECCAK32.a32____a_ilen_read_upto8_at  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____a_ilen_read_upto8_at_spec.
+  have p:= KECCAK32.__a_ilen_read_upto8_at_proof; rewrite /KECCAK32.__a_ilen_read_upto8_at_spec in p;
+  conseq( a32____a_ilen_read_upto8_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a32____a_ilen_read_upto16_at_eq: M(Syscall).a32____a_ilen_read_upto16_at ~ KECCAK32.M.__a_ilen_read_upto16_at : ={arg}==> ={res}.
 proof.
@@ -477,10 +498,12 @@ qed.
 
 
 lemma a32____a_ilen_read_upto16_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a32____a_ilen_read_upto16_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a32____a_ilen_read_upto16_at_eq) (KECCAK32.a32____a_ilen_read_upto16_a  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aTt) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____a_ilen_read_upto16_at_spec.
+  have p:= KECCAK32.__a_ilen_read_upto16_at_proof; rewrite /KECCAK32.__a_ilen_read_upto16_at_spec in p;
+  conseq( a32____a_ilen_read_upto16_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a32____a_ilen_read_upto32_at_eq: M(Syscall).a32____a_ilen_read_upto32_at ~ KECCAK32.M.__a_ilen_read_upto32_at : ={arg}==> ={res}.
 proof.
@@ -489,10 +512,12 @@ qed.
 
 
 lemma a32____a_ilen_read_upto32_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a32____a_ilen_read_upto32_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a32____a_ilen_read_upto32_at_eq) (KECCAK32.a32____a_ilen_read_upto32_a  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aTt) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____a_ilen_read_upto32_at_spec.
+  have p:= KECCAK32.__a_ilen_read_upto32_at_proof; rewrite /KECCAK32.__a_ilen_read_upto32_at_spec in p;
+  conseq( a32____a_ilen_read_upto32_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a32____a_ilen_read_bcast_upto8_at_eq: M(Syscall).a32____a_ilen_read_bcast_upto8_at ~ KECCAK32.M.__a_ilen_read_bcast_upto8_at : ={arg}==> ={res}.
 proof.
@@ -501,10 +526,12 @@ qed.
 
 
 lemma a32____a_ilen_read_bcast_upto8_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a32____a_ilen_read_bcast_upto8_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a32____a_ilen_read_bcast_upto8_at_eq) (KECCAK32.a32____a_ilen_read_bcast_up  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aTto8_at) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____a_ilen_read_bcast_upto8_at_spec.
+  have p:= KECCAK32.__a_ilen_read_bcast_upto8_at_proof; rewrite /KECCAK32.__a_ilen_read_bcast_upto8_at_spec in p;
+  conseq( a32____a_ilen_read_bcast_upto8_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a32____a_ilen_write_upto8_eq: M(Syscall).a32____a_ilen_write_upto8 ~ KECCAK32.M.__a_ilen_write_upto8 : ={arg}==> ={res}.
 proof.
@@ -513,10 +540,12 @@ qed.
 
 
 lemma a32____a_ilen_write_upto8_proof _buf _b_buf _offset _dELTA _lEN _w :  a32____a_ilen_write_upto8_spec _buf _b_buf _offset _dELTA _lEN _w. 
-proof. (*
-  conseq( a32____a_ilen_write_upto8_eq) (KECCAK32.a32____a_ilen_  _buf _b_buf _offset _dELTA _lEN _wwrite_upto8) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____a_ilen_write_upto8_spec.
+  have p:= KECCAK32.__a_ilen_write_upto8_proof; rewrite /KECCAK32.__a_ilen_write_upto8_spec in p;
+  conseq( a32____a_ilen_write_upto8_eq) (p  _buf _b_buf _offset _dELTA _lEN _w) => //.
+  smt().
+qed.
 
 equiv a32____a_ilen_write_upto16_eq: M(Syscall).a32____a_ilen_write_upto16 ~ KECCAK32.M.__a_ilen_write_upto16 : ={arg}==> ={res}.
 proof.
@@ -525,10 +554,12 @@ qed.
 
 
 lemma a32____a_ilen_write_upto16_proof _buf _b_buf _offset _dELTA _lEN _w :  a32____a_ilen_write_upto16_spec _buf _b_buf _offset _dELTA _lEN _w. 
-proof. (*
-  conseq( a32____a_ilen_write_upto16_eq) (KECCAK32.a32____a_ilen_  _buf _b_buf _offset _dELTA _lEN _wwrite_upto16) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____a_ilen_write_upto16_spec.
+  have p:= KECCAK32.__a_ilen_write_upto16_proof; rewrite /KECCAK32.__a_ilen_write_upto16_spec in p;
+  conseq( a32____a_ilen_write_upto16_eq) (p  _buf _b_buf _offset _dELTA _lEN _w) => //.
+  smt().
+qed.
 
 equiv a32____a_ilen_write_upto32_eq: M(Syscall).a32____a_ilen_write_upto32 ~ KECCAK32.M.__a_ilen_write_upto32 : ={arg}==> ={res}.
 proof.
@@ -537,10 +568,12 @@ qed.
 
 
 lemma a32____a_ilen_write_upto32_proof _buf _b_buf _offset _dELTA _lEN _w :  a32____a_ilen_write_upto32_spec _buf _b_buf _offset _dELTA _lEN _w. 
-proof. (*
-  conseq( a32____a_ilen_write_upto32_eq) (KECCAK32.a32____a_ilen_  _buf _b_buf _offset _dELTA _lEN _wwrite_upto32) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____a_ilen_write_upto32_spec.
+  have p:= KECCAK32.__a_ilen_write_upto32_proof; rewrite /KECCAK32.__a_ilen_write_upto32_spec in p;
+  conseq( a32____a_ilen_write_upto32_eq) (p  _buf _b_buf _offset _dELTA _lEN _w) => //.
+  smt().
+qed.
 
 equiv a32____addstate_avx2_eq: M(Syscall).a32____addstate_avx2 ~ KECCAK32.M.__addstate_avx2 : ={arg}==> ={res}.
 proof.
@@ -549,10 +582,12 @@ qed.
 
 
 lemma a32____addstate_avx2_proof _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB :  a32____addstate_avx2_spec _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB. 
-proof. (*
-  conseq( a32____addstate_avx2_eq) (KECCAK32.a32____addstate_avx2)  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____addstate_avx2_spec.
+  have p:= KECCAK32.__addstate_avx2_proof; rewrite /KECCAK32.__addstate_avx2_spec in p;
+  conseq( a32____addstate_avx2_eq) (p  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB) => //.
+  smt().
+qed.
 
 equiv a32____absorb_avx2_eq: M(Syscall).a32____absorb_avx2 ~ KECCAK32.M.__absorb_avx2 : ={arg}==> ={res}.
 proof.
@@ -561,10 +596,12 @@ qed.
 
 
 lemma a32____absorb_avx2_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :  a32____absorb_avx2_spec _st _b_st _aT _buf _b_buf __TRAILB __RATE8. 
-proof. (*
-  conseq( a32____absorb_avx2_eq) (KECCAK32.a32____absorb_avx2)  _st _b_st _aT _buf _b_buf __TRAILB __RATE8 => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____absorb_avx2_spec.
+  have p:= KECCAK32.__absorb_avx2_proof; rewrite /KECCAK32.__absorb_avx2_spec in p;
+  conseq( a32____absorb_avx2_eq) (p  _st _b_st _aT _buf _b_buf __TRAILB __RATE8) => //.
+  smt().
+qed.
 
 equiv a32____dumpstate_avx2_eq: M(Syscall).a32____dumpstate_avx2 ~ KECCAK32.M.__dumpstate_avx2 : ={arg}==> ={res}.
 proof.
@@ -573,10 +610,12 @@ qed.
 
 
 lemma a32____dumpstate_avx2_proof _buf _b_buf _offset __LEN _st _b_st :  a32____dumpstate_avx2_spec _buf _b_buf _offset __LEN _st _b_st. 
-proof. (*
-  conseq( a32____dumpstate_avx2_eq) (KECCAK32.a32____dumpstat  _buf _b_buf _offset __LEN _st _b_ste_avx2) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____dumpstate_avx2_spec.
+  have p:= KECCAK32.__dumpstate_avx2_proof; rewrite /KECCAK32.__dumpstate_avx2_spec in p;
+  conseq( a32____dumpstate_avx2_eq) (p  _buf _b_buf _offset __LEN _st _b_st) => //.
+  smt().
+qed.
 
 equiv a32____squeeze_avx2_eq: M(Syscall).a32____squeeze_avx2 ~ KECCAK32.M.__squeeze_avx2 : ={arg}==> ={res}.
 proof.
@@ -585,10 +624,12 @@ qed.
 
 
 lemma a32____squeeze_avx2_proof _st _b_st _buf _b_buf __RATE8 :  a32____squeeze_avx2_spec _st _b_st _buf _b_buf __RATE8. 
-proof. (*
-  conseq( a32____squeeze_avx2_eq) (KECCAK32.a32____sq  _st _b_st _buf _b_buf __RATE8ueeze_avx2) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____squeeze_avx2_spec.
+  have p:= KECCAK32.__squeeze_avx2_proof; rewrite /KECCAK32.__squeeze_avx2_spec in p;
+  conseq( a32____squeeze_avx2_eq) (p  _st _b_st _buf _b_buf __RATE8) => //.
+  smt().
+qed.
 
 equiv a32____addstate_bcast_avx2x4_eq: M(Syscall).a32____addstate_bcast_avx2x4 ~ KECCAK32.M.__addstate_bcast_avx2x4 : ={arg}==> ={res}.
 proof.
@@ -597,10 +638,12 @@ qed.
 
 
 lemma a32____addstate_bcast_avx2x4_proof _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB :  a32____addstate_bcast_avx2x4_spec _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB. 
-proof. (*
-  conseq( a32____addstate_bcast_avx2x4_eq) (KECCAK32.a32____addstate_bcast_avx2x4  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____addstate_bcast_avx2x4_spec.
+  have p:= KECCAK32.__addstate_bcast_avx2x4_proof; rewrite /KECCAK32.__addstate_bcast_avx2x4_spec in p;
+  conseq( a32____addstate_bcast_avx2x4_eq) (p  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB) => //.
+  smt().
+qed.
 
 equiv a32____absorb_bcast_avx2x4_eq: M(Syscall).a32____absorb_bcast_avx2x4 ~ KECCAK32.M.__absorb_bcast_avx2x4 : ={arg}==> ={res}.
 proof.
@@ -609,10 +652,12 @@ qed.
 
 
 lemma a32____absorb_bcast_avx2x4_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :  a32____absorb_bcast_avx2x4_spec _st _b_st _aT _buf _b_buf __TRAILB __RATE8. 
-proof. (*
-  conseq( a32____absorb_bcast_avx2x4_eq) (KECCAK32.a32____absorb_bcast_av  _st _b_st _aT _buf _b_buf __TRAILB __RATE8x2x4) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a32____absorb_bcast_avx2x4_spec.
+  have p:= KECCAK32.__absorb_bcast_avx2x4_proof; rewrite /KECCAK32.__absorb_bcast_avx2x4_spec in p;
+  conseq( a32____absorb_bcast_avx2x4_eq) (p  _st _b_st _aT _buf _b_buf __TRAILB __RATE8) => //.
+  smt().
+qed.
 
 equiv a33____a_ilen_read_upto8_at_eq: M(Syscall).a33____a_ilen_read_upto8_at ~ KECCAK33.M.__a_ilen_read_upto8_at : ={arg}==> ={res}.
 proof.
@@ -621,10 +666,12 @@ qed.
 
 
 lemma a33____a_ilen_read_upto8_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a33____a_ilen_read_upto8_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a33____a_ilen_read_upto8_at_eq) (KECCAK33.a33____a_ilen_read_upto8_at  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a33____a_ilen_read_upto8_at_spec.
+  have p:= KECCAK33.__a_ilen_read_upto8_at_proof; rewrite /KECCAK33.__a_ilen_read_upto8_at_spec in p;
+  conseq( a33____a_ilen_read_upto8_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a33____a_ilen_read_upto16_at_eq: M(Syscall).a33____a_ilen_read_upto16_at ~ KECCAK33.M.__a_ilen_read_upto16_at : ={arg}==> ={res}.
 proof.
@@ -633,10 +680,12 @@ qed.
 
 
 lemma a33____a_ilen_read_upto16_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a33____a_ilen_read_upto16_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a33____a_ilen_read_upto16_at_eq) (KECCAK33.a33____a_ilen_read_upto16_a  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aTt) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a33____a_ilen_read_upto16_at_spec.
+  have p:= KECCAK33.__a_ilen_read_upto16_at_proof; rewrite /KECCAK33.__a_ilen_read_upto16_at_spec in p;
+  conseq( a33____a_ilen_read_upto16_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a33____a_ilen_read_upto32_at_eq: M(Syscall).a33____a_ilen_read_upto32_at ~ KECCAK33.M.__a_ilen_read_upto32_at : ={arg}==> ={res}.
 proof.
@@ -645,10 +694,12 @@ qed.
 
 
 lemma a33____a_ilen_read_upto32_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a33____a_ilen_read_upto32_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a33____a_ilen_read_upto32_at_eq) (KECCAK33.a33____a_ilen_read_upto32_a  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aTt) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a33____a_ilen_read_upto32_at_spec.
+  have p:= KECCAK33.__a_ilen_read_upto32_at_proof; rewrite /KECCAK33.__a_ilen_read_upto32_at_spec in p;
+  conseq( a33____a_ilen_read_upto32_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a33____addstate_avx2_eq: M(Syscall).a33____addstate_avx2 ~ KECCAK33.M.__addstate_avx2 : ={arg}==> ={res}.
 proof.
@@ -657,10 +708,12 @@ qed.
 
 
 lemma a33____addstate_avx2_proof _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB :  a33____addstate_avx2_spec _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB. 
-proof. (*
-  conseq( a33____addstate_avx2_eq) (KECCAK33.a33____addstate_avx2)  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a33____addstate_avx2_spec.
+  have p:= KECCAK33.__addstate_avx2_proof; rewrite /KECCAK33.__addstate_avx2_spec in p;
+  conseq( a33____addstate_avx2_eq) (p  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB) => //.
+  smt().
+qed.
 
 equiv a33____absorb_avx2_eq: M(Syscall).a33____absorb_avx2 ~ KECCAK33.M.__absorb_avx2 : ={arg}==> ={res}.
 proof.
@@ -669,10 +722,12 @@ qed.
 
 
 lemma a33____absorb_avx2_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :  a33____absorb_avx2_spec _st _b_st _aT _buf _b_buf __TRAILB __RATE8. 
-proof. (*
-  conseq( a33____absorb_avx2_eq) (KECCAK33.a33____absorb_avx2)  _st _b_st _aT _buf _b_buf __TRAILB __RATE8 => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a33____absorb_avx2_spec.
+  have p:= KECCAK33.__absorb_avx2_proof; rewrite /KECCAK33.__absorb_avx2_spec in p;
+  conseq( a33____absorb_avx2_eq) (p  _st _b_st _aT _buf _b_buf __TRAILB __RATE8) => //.
+  smt().
+qed.
 
 equiv a64____a_ilen_read_upto8_at_eq: M(Syscall).a64____a_ilen_read_upto8_at ~ KECCAK64.M.__a_ilen_read_upto8_at : ={arg}==> ={res}.
 proof.
@@ -681,10 +736,12 @@ qed.
 
 
 lemma a64____a_ilen_read_upto8_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a64____a_ilen_read_upto8_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a64____a_ilen_read_upto8_at_eq) (KECCAK64.a64____a_ilen_read_upto8_at  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a64____a_ilen_read_upto8_at_spec.
+  have p:= KECCAK64.__a_ilen_read_upto8_at_proof; rewrite /KECCAK64.__a_ilen_read_upto8_at_spec in p;
+  conseq( a64____a_ilen_read_upto8_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a64____a_ilen_read_upto16_at_eq: M(Syscall).a64____a_ilen_read_upto16_at ~ KECCAK64.M.__a_ilen_read_upto16_at : ={arg}==> ={res}.
 proof.
@@ -693,10 +750,12 @@ qed.
 
 
 lemma a64____a_ilen_read_upto16_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a64____a_ilen_read_upto16_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a64____a_ilen_read_upto16_at_eq) (KECCAK64.a64____a_ilen_read_upto16_a  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aTt) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a64____a_ilen_read_upto16_at_spec.
+  have p:= KECCAK64.__a_ilen_read_upto16_at_proof; rewrite /KECCAK64.__a_ilen_read_upto16_at_spec in p;
+  conseq( a64____a_ilen_read_upto16_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a64____a_ilen_read_upto32_at_eq: M(Syscall).a64____a_ilen_read_upto32_at ~ KECCAK64.M.__a_ilen_read_upto32_at : ={arg}==> ={res}.
 proof.
@@ -705,10 +764,12 @@ qed.
 
 
 lemma a64____a_ilen_read_upto32_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a64____a_ilen_read_upto32_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a64____a_ilen_read_upto32_at_eq) (KECCAK64.a64____a_ilen_read_upto32_a  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aTt) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a64____a_ilen_read_upto32_at_spec.
+  have p:= KECCAK64.__a_ilen_read_upto32_at_proof; rewrite /KECCAK64.__a_ilen_read_upto32_at_spec in p;
+  conseq( a64____a_ilen_read_upto32_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a64____a_ilen_write_upto8_eq: M(Syscall).a64____a_ilen_write_upto8 ~ KECCAK64.M.__a_ilen_write_upto8 : ={arg}==> ={res}.
 proof.
@@ -717,10 +778,12 @@ qed.
 
 
 lemma a64____a_ilen_write_upto8_proof _buf _b_buf _offset _dELTA _lEN _w :  a64____a_ilen_write_upto8_spec _buf _b_buf _offset _dELTA _lEN _w. 
-proof. (*
-  conseq( a64____a_ilen_write_upto8_eq) (KECCAK64.a64____a_ilen_  _buf _b_buf _offset _dELTA _lEN _wwrite_upto8) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a64____a_ilen_write_upto8_spec.
+  have p:= KECCAK64.__a_ilen_write_upto8_proof; rewrite /KECCAK64.__a_ilen_write_upto8_spec in p;
+  conseq( a64____a_ilen_write_upto8_eq) (p  _buf _b_buf _offset _dELTA _lEN _w) => //.
+  smt().
+qed.
 
 equiv a64____a_ilen_write_upto16_eq: M(Syscall).a64____a_ilen_write_upto16 ~ KECCAK64.M.__a_ilen_write_upto16 : ={arg}==> ={res}.
 proof.
@@ -729,10 +792,12 @@ qed.
 
 
 lemma a64____a_ilen_write_upto16_proof _buf _b_buf _offset _dELTA _lEN _w :  a64____a_ilen_write_upto16_spec _buf _b_buf _offset _dELTA _lEN _w. 
-proof. (*
-  conseq( a64____a_ilen_write_upto16_eq) (KECCAK64.a64____a_ilen_  _buf _b_buf _offset _dELTA _lEN _wwrite_upto16) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a64____a_ilen_write_upto16_spec.
+  have p:= KECCAK64.__a_ilen_write_upto16_proof; rewrite /KECCAK64.__a_ilen_write_upto16_spec in p;
+  conseq( a64____a_ilen_write_upto16_eq) (p  _buf _b_buf _offset _dELTA _lEN _w) => //.
+  smt().
+qed.
 
 equiv a64____a_ilen_write_upto32_eq: M(Syscall).a64____a_ilen_write_upto32 ~ KECCAK64.M.__a_ilen_write_upto32 : ={arg}==> ={res}.
 proof.
@@ -741,10 +806,12 @@ qed.
 
 
 lemma a64____a_ilen_write_upto32_proof _buf _b_buf _offset _dELTA _lEN _w :  a64____a_ilen_write_upto32_spec _buf _b_buf _offset _dELTA _lEN _w. 
-proof. (*
-  conseq( a64____a_ilen_write_upto32_eq) (KECCAK64.a64____a_ilen_  _buf _b_buf _offset _dELTA _lEN _wwrite_upto32) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a64____a_ilen_write_upto32_spec.
+  have p:= KECCAK64.__a_ilen_write_upto32_proof; rewrite /KECCAK64.__a_ilen_write_upto32_spec in p;
+  conseq( a64____a_ilen_write_upto32_eq) (p  _buf _b_buf _offset _dELTA _lEN _w) => //.
+  smt().
+qed.
 
 equiv a64____addstate_avx2_eq: M(Syscall).a64____addstate_avx2 ~ KECCAK64.M.__addstate_avx2 : ={arg}==> ={res}.
 proof.
@@ -753,10 +820,12 @@ qed.
 
 
 lemma a64____addstate_avx2_proof _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB :  a64____addstate_avx2_spec _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB. 
-proof. (*
-  conseq( a64____addstate_avx2_eq) (KECCAK64.a64____addstate_avx2)  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a64____addstate_avx2_spec.
+  have p:= KECCAK64.__addstate_avx2_proof; rewrite /KECCAK64.__addstate_avx2_spec in p;
+  conseq( a64____addstate_avx2_eq) (p  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB) => //.
+  smt().
+qed.
 
 equiv a64____absorb_avx2_eq: M(Syscall).a64____absorb_avx2 ~ KECCAK64.M.__absorb_avx2 : ={arg}==> ={res}.
 proof.
@@ -765,10 +834,12 @@ qed.
 
 
 lemma a64____absorb_avx2_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :  a64____absorb_avx2_spec _st _b_st _aT _buf _b_buf __TRAILB __RATE8. 
-proof. (*
-  conseq( a64____absorb_avx2_eq) (KECCAK64.a64____absorb_avx2)  _st _b_st _aT _buf _b_buf __TRAILB __RATE8 => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a64____absorb_avx2_spec.
+  have p:= KECCAK64.__absorb_avx2_proof; rewrite /KECCAK64.__absorb_avx2_spec in p;
+  conseq( a64____absorb_avx2_eq) (p  _st _b_st _aT _buf _b_buf __TRAILB __RATE8) => //.
+  smt().
+qed.
 
 equiv a64____dumpstate_avx2_eq: M(Syscall).a64____dumpstate_avx2 ~ KECCAK64.M.__dumpstate_avx2 : ={arg}==> ={res}.
 proof.
@@ -777,10 +848,12 @@ qed.
 
 
 lemma a64____dumpstate_avx2_proof _buf _b_buf _offset __LEN _st _b_st :  a64____dumpstate_avx2_spec _buf _b_buf _offset __LEN _st _b_st. 
-proof. (*
-  conseq( a64____dumpstate_avx2_eq) (KECCAK64.a64____dumpstat  _buf _b_buf _offset __LEN _st _b_ste_avx2) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a64____dumpstate_avx2_spec.
+  have p:= KECCAK64.__dumpstate_avx2_proof; rewrite /KECCAK64.__dumpstate_avx2_spec in p;
+  conseq( a64____dumpstate_avx2_eq) (p  _buf _b_buf _offset __LEN _st _b_st) => //.
+  smt().
+qed.
 
 equiv a64____squeeze_avx2_eq: M(Syscall).a64____squeeze_avx2 ~ KECCAK64.M.__squeeze_avx2 : ={arg}==> ={res}.
 proof.
@@ -789,10 +862,12 @@ qed.
 
 
 lemma a64____squeeze_avx2_proof _st _b_st _buf _b_buf __RATE8 :  a64____squeeze_avx2_spec _st _b_st _buf _b_buf __RATE8. 
-proof. (*
-  conseq( a64____squeeze_avx2_eq) (KECCAK64.a64____sq  _st _b_st _buf _b_buf __RATE8ueeze_avx2) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a64____squeeze_avx2_spec.
+  have p:= KECCAK64.__squeeze_avx2_proof; rewrite /KECCAK64.__squeeze_avx2_spec in p;
+  conseq( a64____squeeze_avx2_eq) (p  _st _b_st _buf _b_buf __RATE8) => //.
+  smt().
+qed.
 
 equiv a128____a_ilen_write_upto8_eq: M(Syscall).a128____a_ilen_write_upto8 ~ KECCAK128.M.__a_ilen_write_upto8 : ={arg}==> ={res}.
 proof.
@@ -801,10 +876,12 @@ qed.
 
 
 lemma a128____a_ilen_write_upto8_proof _buf _b_buf _offset _dELTA _lEN _w :  a128____a_ilen_write_upto8_spec _buf _b_buf _offset _dELTA _lEN _w. 
-proof. (*
-  conseq( a128____a_ilen_write_upto8_eq) (KECCAK128.a128____a_ilen  _buf _b_buf _offset _dELTA _lEN _w_write_upto8) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a128____a_ilen_write_upto8_spec.
+  have p:= KECCAK128.__a_ilen_write_upto8_proof; rewrite /KECCAK128.__a_ilen_write_upto8_spec in p;
+  conseq( a128____a_ilen_write_upto8_eq) (p  _buf _b_buf _offset _dELTA _lEN _w) => //.
+  smt().
+qed.
 
 equiv a128____a_ilen_write_upto16_eq: M(Syscall).a128____a_ilen_write_upto16 ~ KECCAK128.M.__a_ilen_write_upto16 : ={arg}==> ={res}.
 proof.
@@ -813,10 +890,12 @@ qed.
 
 
 lemma a128____a_ilen_write_upto16_proof _buf _b_buf _offset _dELTA _lEN _w :  a128____a_ilen_write_upto16_spec _buf _b_buf _offset _dELTA _lEN _w. 
-proof. (*
-  conseq( a128____a_ilen_write_upto16_eq) (KECCAK128.a128____a_ilen  _buf _b_buf _offset _dELTA _lEN _w_write_upto16) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a128____a_ilen_write_upto16_spec.
+  have p:= KECCAK128.__a_ilen_write_upto16_proof; rewrite /KECCAK128.__a_ilen_write_upto16_spec in p;
+  conseq( a128____a_ilen_write_upto16_eq) (p  _buf _b_buf _offset _dELTA _lEN _w) => //.
+  smt().
+qed.
 
 equiv a128____a_ilen_write_upto32_eq: M(Syscall).a128____a_ilen_write_upto32 ~ KECCAK128.M.__a_ilen_write_upto32 : ={arg}==> ={res}.
 proof.
@@ -825,10 +904,12 @@ qed.
 
 
 lemma a128____a_ilen_write_upto32_proof _buf _b_buf _offset _dELTA _lEN _w :  a128____a_ilen_write_upto32_spec _buf _b_buf _offset _dELTA _lEN _w. 
-proof. (*
-  conseq( a128____a_ilen_write_upto32_eq) (KECCAK128.a128____a_ilen  _buf _b_buf _offset _dELTA _lEN _w_write_upto32) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a128____a_ilen_write_upto32_spec.
+  have p:= KECCAK128.__a_ilen_write_upto32_proof; rewrite /KECCAK128.__a_ilen_write_upto32_spec in p;
+  conseq( a128____a_ilen_write_upto32_eq) (p  _buf _b_buf _offset _dELTA _lEN _w) => //.
+  smt().
+qed.
 
 equiv a128____dumpstate_avx2_eq: M(Syscall).a128____dumpstate_avx2 ~ KECCAK128.M.__dumpstate_avx2 : ={arg}==> ={res}.
 proof.
@@ -837,10 +918,12 @@ qed.
 
 
 lemma a128____dumpstate_avx2_proof _buf _b_buf _offset __LEN _st _b_st :  a128____dumpstate_avx2_spec _buf _b_buf _offset __LEN _st _b_st. 
-proof. (*
-  conseq( a128____dumpstate_avx2_eq) (KECCAK128.a128____dumpsta  _buf _b_buf _offset __LEN _st _b_stte_avx2) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a128____dumpstate_avx2_spec.
+  have p:= KECCAK128.__dumpstate_avx2_proof; rewrite /KECCAK128.__dumpstate_avx2_spec in p;
+  conseq( a128____dumpstate_avx2_eq) (p  _buf _b_buf _offset __LEN _st _b_st) => //.
+  smt().
+qed.
 
 equiv a128____squeeze_avx2_eq: M(Syscall).a128____squeeze_avx2 ~ KECCAK128.M.__squeeze_avx2 : ={arg}==> ={res}.
 proof.
@@ -849,10 +932,12 @@ qed.
 
 
 lemma a128____squeeze_avx2_proof _st _b_st _buf _b_buf __RATE8 :  a128____squeeze_avx2_spec _st _b_st _buf _b_buf __RATE8. 
-proof. (*
-  conseq( a128____squeeze_avx2_eq) (KECCAK128.a128____s  _st _b_st _buf _b_buf __RATE8queeze_avx2) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a128____squeeze_avx2_spec.
+  have p:= KECCAK128.__squeeze_avx2_proof; rewrite /KECCAK128.__squeeze_avx2_spec in p;
+  conseq( a128____squeeze_avx2_eq) (p  _st _b_st _buf _b_buf __RATE8) => //.
+  smt().
+qed.
 
 equiv a128____dumpstate_avx2x4_eq: M(Syscall).a128____dumpstate_avx2x4 ~ KECCAK128.M.__dumpstate_avx2x4 : ={arg}==> ={res}.
 proof.
@@ -861,10 +946,12 @@ qed.
 
 
 lemma a128____dumpstate_avx2x4_proof _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN _st _b_st :  a128____dumpstate_avx2x4_spec _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN _st _b_st. 
-proof. (*
-  conseq( a128____dumpstate_avx2x4_eq) (KECCAK128.a128____dumpstate_avx2x4)  _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN _st _b_st => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a128____dumpstate_avx2x4_spec.
+  have p:= KECCAK128.__dumpstate_avx2x4_proof; rewrite /KECCAK128.__dumpstate_avx2x4_spec in p;
+  conseq( a128____dumpstate_avx2x4_eq) (p  _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN _st _b_st) => //.
+  smt().
+qed.
 
 equiv a128____squeeze_avx2x4_eq: M(Syscall).a128____squeeze_avx2x4 ~ KECCAK128.M.__squeeze_avx2x4 : ={arg}==> ={res}.
 proof.
@@ -873,10 +960,12 @@ qed.
 
 
 lemma a128____squeeze_avx2x4_proof _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __RATE8 :  a128____squeeze_avx2x4_spec _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __RATE8. 
-proof. (*
-  conseq( a128____squeeze_avx2x4_eq) (KECCAK128.a128____squeeze_avx2x4)  _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __RATE8 => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a128____squeeze_avx2x4_spec.
+  have p:= KECCAK128.__squeeze_avx2x4_proof; rewrite /KECCAK128.__squeeze_avx2x4_spec in p;
+  conseq( a128____squeeze_avx2x4_eq) (p  _st _b_st _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 __RATE8) => //.
+  smt().
+qed.
 
 equiv a1568____a_ilen_read_upto8_at_eq: M(Syscall).a1568____a_ilen_read_upto8_at ~ KECCAK1568.M.__a_ilen_read_upto8_at : ={arg}==> ={res}.
 proof.
@@ -885,10 +974,12 @@ qed.
 
 
 lemma a1568____a_ilen_read_upto8_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a1568____a_ilen_read_upto8_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a1568____a_ilen_read_upto8_at_eq) (KECCAK1568.a1568____a_ilen_read_upto8_  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aTat) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1568____a_ilen_read_upto8_at_spec.
+  have p:= KECCAK1568.__a_ilen_read_upto8_at_proof; rewrite /KECCAK1568.__a_ilen_read_upto8_at_spec in p;
+  conseq( a1568____a_ilen_read_upto8_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a1568____a_ilen_read_upto16_at_eq: M(Syscall).a1568____a_ilen_read_upto16_at ~ KECCAK1568.M.__a_ilen_read_upto16_at : ={arg}==> ={res}.
 proof.
@@ -897,10 +988,12 @@ qed.
 
 
 lemma a1568____a_ilen_read_upto16_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a1568____a_ilen_read_upto16_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a1568____a_ilen_read_upto16_at_eq) (KECCAK1568.a1568____a_ilen_read_upto16  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT_at) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1568____a_ilen_read_upto16_at_spec.
+  have p:= KECCAK1568.__a_ilen_read_upto16_at_proof; rewrite /KECCAK1568.__a_ilen_read_upto16_at_spec in p;
+  conseq( a1568____a_ilen_read_upto16_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a1568____a_ilen_read_upto32_at_eq: M(Syscall).a1568____a_ilen_read_upto32_at ~ KECCAK1568.M.__a_ilen_read_upto32_at : ={arg}==> ={res}.
 proof.
@@ -909,10 +1002,12 @@ qed.
 
 
 lemma a1568____a_ilen_read_upto32_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a1568____a_ilen_read_upto32_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a1568____a_ilen_read_upto32_at_eq) (KECCAK1568.a1568____a_ilen_read_upto32  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT_at) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1568____a_ilen_read_upto32_at_spec.
+  have p:= KECCAK1568.__a_ilen_read_upto32_at_proof; rewrite /KECCAK1568.__a_ilen_read_upto32_at_spec in p;
+  conseq( a1568____a_ilen_read_upto32_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a1568____addstate_avx2_eq: M(Syscall).a1568____addstate_avx2 ~ KECCAK1568.M.__addstate_avx2 : ={arg}==> ={res}.
 proof.
@@ -921,10 +1016,12 @@ qed.
 
 
 lemma a1568____addstate_avx2_proof _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB :  a1568____addstate_avx2_spec _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB. 
-proof. (*
-  conseq( a1568____addstate_avx2_eq) (KECCAK1568.a1568____addstate_avx2)  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1568____addstate_avx2_spec.
+  have p:= KECCAK1568.__addstate_avx2_proof; rewrite /KECCAK1568.__addstate_avx2_spec in p;
+  conseq( a1568____addstate_avx2_eq) (p  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB) => //.
+  smt().
+qed.
 
 equiv a1568____absorb_avx2_eq: M(Syscall).a1568____absorb_avx2 ~ KECCAK1568.M.__absorb_avx2 : ={arg}==> ={res}.
 proof.
@@ -933,10 +1030,12 @@ qed.
 
 
 lemma a1568____absorb_avx2_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :  a1568____absorb_avx2_spec _st _b_st _aT _buf _b_buf __TRAILB __RATE8. 
-proof. (*
-  conseq( a1568____absorb_avx2_eq) (KECCAK1568.a1568____absorb_avx2)  _st _b_st _aT _buf _b_buf __TRAILB __RATE8 => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1568____absorb_avx2_spec.
+  have p:= KECCAK1568.__absorb_avx2_proof; rewrite /KECCAK1568.__absorb_avx2_spec in p;
+  conseq( a1568____absorb_avx2_eq) (p  _st _b_st _aT _buf _b_buf __TRAILB __RATE8) => //.
+  smt().
+qed.
 
 equiv a1600____a_ilen_read_upto8_at_eq: M(Syscall).a1600____a_ilen_read_upto8_at ~ KECCAK1600.M.__a_ilen_read_upto8_at : ={arg}==> ={res}.
 proof.
@@ -945,10 +1044,12 @@ qed.
 
 
 lemma a1600____a_ilen_read_upto8_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a1600____a_ilen_read_upto8_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a1600____a_ilen_read_upto8_at_eq) (KECCAK1600.a1600____a_ilen_read_upto8_  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aTat) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1600____a_ilen_read_upto8_at_spec.
+  have p:= KECCAK1600.__a_ilen_read_upto8_at_proof; rewrite /KECCAK1600.__a_ilen_read_upto8_at_spec in p;
+  conseq( a1600____a_ilen_read_upto8_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a1600____a_ilen_read_upto16_at_eq: M(Syscall).a1600____a_ilen_read_upto16_at ~ KECCAK1600.M.__a_ilen_read_upto16_at : ={arg}==> ={res}.
 proof.
@@ -957,10 +1058,12 @@ qed.
 
 
 lemma a1600____a_ilen_read_upto16_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a1600____a_ilen_read_upto16_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a1600____a_ilen_read_upto16_at_eq) (KECCAK1600.a1600____a_ilen_read_upto16  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT_at) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1600____a_ilen_read_upto16_at_spec.
+  have p:= KECCAK1600.__a_ilen_read_upto16_at_proof; rewrite /KECCAK1600.__a_ilen_read_upto16_at_spec in p;
+  conseq( a1600____a_ilen_read_upto16_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a1600____a_ilen_read_upto32_at_eq: M(Syscall).a1600____a_ilen_read_upto32_at ~ KECCAK1600.M.__a_ilen_read_upto32_at : ={arg}==> ={res}.
 proof.
@@ -969,10 +1072,12 @@ qed.
 
 
 lemma a1600____a_ilen_read_upto32_at_proof _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT :  a1600____a_ilen_read_upto32_at_spec _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT. 
-proof. (*
-  conseq( a1600____a_ilen_read_upto32_at_eq) (KECCAK1600.a1600____a_ilen_read_upto32  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT_at) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1600____a_ilen_read_upto32_at_spec.
+  have p:= KECCAK1600.__a_ilen_read_upto32_at_proof; rewrite /KECCAK1600.__a_ilen_read_upto32_at_spec in p;
+  conseq( a1600____a_ilen_read_upto32_at_eq) (p  _buf _b_buf _offset _dELTA _lEN _tRAIL _cUR _aT) => //.
+  smt().
+qed.
 
 equiv a1600____addstate_avx2_eq: M(Syscall).a1600____addstate_avx2 ~ KECCAK1600.M.__addstate_avx2 : ={arg}==> ={res}.
 proof.
@@ -981,10 +1086,12 @@ qed.
 
 
 lemma a1600____addstate_avx2_proof _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB :  a1600____addstate_avx2_spec _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB. 
-proof. (*
-  conseq( a1600____addstate_avx2_eq) (KECCAK1600.a1600____addstate_avx2)  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1600____addstate_avx2_spec.
+  have p:= KECCAK1600.__addstate_avx2_proof; rewrite /KECCAK1600.__addstate_avx2_spec in p;
+  conseq( a1600____addstate_avx2_eq) (p  _st _b_st _aT _buf _b_buf _offset __LEN __TRAILB) => //.
+  smt().
+qed.
 
 equiv a1600____absorb_avx2_eq: M(Syscall).a1600____absorb_avx2 ~ KECCAK1600.M.__absorb_avx2 : ={arg}==> ={res}.
 proof.
@@ -993,10 +1100,12 @@ qed.
 
 
 lemma a1600____absorb_avx2_proof _st _b_st _aT _buf _b_buf __TRAILB __RATE8 :  a1600____absorb_avx2_spec _st _b_st _aT _buf _b_buf __TRAILB __RATE8. 
-proof. (*
-  conseq( a1600____absorb_avx2_eq) (KECCAK1600.a1600____absorb_avx2)  _st _b_st _aT _buf _b_buf __TRAILB __RATE8 => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /a1600____absorb_avx2_spec.
+  have p:= KECCAK1600.__absorb_avx2_proof; rewrite /KECCAK1600.__absorb_avx2_spec in p;
+  conseq( a1600____absorb_avx2_eq) (p _st _b_st _aT _buf _b_buf __TRAILB __RATE8) => //.
+  smt().
+qed.
 
 equiv aBUFLEN____a_ilen_write_upto8_eq: M(Syscall).aBUFLEN____a_ilen_write_upto8 ~ KECCAK536.M.__a_ilen_write_upto8 : ={arg}==> ={res}.
 proof.
@@ -1005,10 +1114,12 @@ qed.
 
 
 lemma aBUFLEN____a_ilen_write_upto8_proof _buf _b_buf _offset _dELTA _lEN _w :  aBUFLEN____a_ilen_write_upto8_spec _buf _b_buf _offset _dELTA _lEN _w. 
-proof. (*
-  conseq( aBUFLEN____a_ilen_write_upto8_eq) (KECCAK536.aBUFLEN____a_i  _buf _b_buf _offset _dELTA _lEN _wlen_write_upto8) => //.
-  smt().*)
-admitted.
+proof. 
+  rewrite /aBUFLEN____a_ilen_write_upto8_spec.
+  have p:= KECCAK536.__a_ilen_write_upto8_proof; rewrite /KECCAK536.__a_ilen_write_upto8_spec in p;
+  conseq( aBUFLEN____a_ilen_write_upto8_eq) (p  _buf _b_buf _offset _dELTA _lEN _w) => //.
+  smt().
+qed.
 
 equiv aBUFLEN____dumpstate_avx2x4_eq: M(Syscall).aBUFLEN____dumpstate_avx2x4 ~ KECCAK536.M.__dumpstate_avx2x4 : ={arg}==> ={res}.
 proof.
@@ -1017,12 +1128,12 @@ qed.
 
 
 lemma aBUFLEN____dumpstate_avx2x4_proof _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN _st _b_st :  aBUFLEN____dumpstate_avx2x4_spec _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN _st _b_st. 
-proof. (*
-  conseq( aBUFLEN____dumpstate_avx2x4_eq) (KECCAK536.aBUFLEN____dumpstate_avx2x4)  _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN _st _b_st => //.
-  smt().*)
-admitted.
-
- 
+proof. 
+  rewrite /aBUFLEN____dumpstate_avx2x4_spec.
+  have p:= KECCAK536.__dumpstate_avx2x4_proof; rewrite /KECCAK536.__dumpstate_avx2x4_spec in p;
+  conseq( aBUFLEN____dumpstate_avx2x4_eq) (p _buf0 _b_buf0 _buf1 _b_buf1 _buf2 _b_buf2 _buf3 _b_buf3 _offset __LEN _st _b_st) => //.
+  smt().
+qed.
 
 lemma _sha3_512A_A33_proof _out _b_out _in _b_in :
       (_sha3_512A_A33_spec _out _b_out _in _b_in).
@@ -1161,8 +1272,12 @@ ecall (aBUFLEN____dumpstate_avx2x4_proof param_6 b_param_10 param_5 b_param_9
 auto .
 ecall (_keccakf1600_avx2x4_proof param (BArray800.init_arr (JWord.W8.of_int 255))).
 auto .
-rewrite /is_init /valid /= => &m /> *.
-smt(List.all_cat SBArray2144_536.SBArray2144_536.is_init_cell_set  SBArray2144_536.SBArray2144_536.is_init_cell_get BArray800.init_arrP).
+rewrite /is_init /valid /= => &m /> *. split.  smt(BArray800.init_arrP).
+move => *. split. smt( SBArray2144_536.SBArray2144_536.is_init_cell_get).
+move => *. split.  smt().
+move => *. split. smt().
+move => *. split. smt( SBArray2144_536.SBArray2144_536.is_init_cell_set SBArray2144_536.SBArray2144_536.is_init_cell_get).
+move => *. rewrite !List.all_cat /=. smt().
 qed.
 
 lemma _sha3_256A_A1568_proof _out _b_out _in _b_in :
@@ -1488,8 +1603,8 @@ auto .
 ecall (__invntt___butterfly64x_proof param_145 param_144 param_143 param_142 
        param_141 param_140 param_139 param_138 param_137 param_136 param_135 
        param_134 param_133).
-auto .
-rewrite /is_init /valid /= => &m /> *. split; smt(List.all_cat).
+auto .  have h: forall k, (0<=k < 2 /\ k<>0) =>  k = 1. smt().
+rewrite /is_init /valid /= => &m /> ? . move => i0 _ _ _ _ i2. split; move => *;rewrite !List.all_cat /=. smt(). rewrite( h (i{m})); by auto. 
 auto .
 while ((valid trace__poly_invntt) /\ 0<= i /\ ((2<=i) ? ((b_r6 /\ b_r4) /\ b_r2 /\ b_r0) : true)).
 auto .
@@ -1565,11 +1680,10 @@ ecall (__invntt___butterfly64x_proof param_11 param_10 param_9 param_8
        param_7 param_6 param_5 param_4 param_3 param_2 param_1 param_0 
        param).
 auto .
-rewrite /is_init /valid /= => &m /> *.
-smt (List.all_cat).
+rewrite /is_init /valid /= => &m /> *. split; move => *; rewrite !List.all_cat /=. smt(). smt().
 auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat BArray512.init_arrP).
+rewrite /is_init /valid /= => &m /> *. split. smt(). 
+smt (BArray512.init_arrP).
 qed .
 
 lemma __butterfly64x_proof _rl0 _rl1 _rl2 _rl3 _rh0 _rh1 _rh2 _rh3 _zl0 _zl1 _zh0 _zh1 _qx16 :
@@ -1658,8 +1772,8 @@ ecall (__butterfly64x_proof param_37 param_36 param_35 param_34 param_33
        param_32 param_31 param_30 param_29 param_28 param_27 param_26 
        param_25).
 auto .
-rewrite /is_init /valid /= => &m /> *. split. smt(List.all_cat).
-smt (List.all_cat).
+rewrite /is_init /valid /= => &m /> *. split. move => *.  rewrite !List.all_cat /=. smt().
+move => *. rewrite !List.all_cat /=. have -> :i{m} = 1. smt(). rewrite /=. smt().
 auto .
 ecall (__butterfly64x_proof param_24 param_23 param_22 param_21 param_20 
        param_19 param_18 param_17 param_16 param_15 param_14 param_13 
@@ -1764,7 +1878,7 @@ rewrite /_i_poly_compress_spec .
 proc; auto .
 while ((valid trace__i_poly_compress) /\ 0<=i <=8 /\ BArray160.is_init b_rp 0 (i*20)).
 auto .
-rewrite /is_init /valid /= => &m /> *. split. admit.
+rewrite /is_init /valid /= => &m /> *. split. admit. (*assert false - fix  compiler*)
 smt (List.all_cat).
 auto .
 ecall (_poly_csubq_proof param (BArray512.init_arr (JWord.W8.of_int 255))).
@@ -1944,7 +2058,7 @@ rewrite /__i_polyvec_compress_spec .
 proc; auto .
 while ((valid trace___i_polyvec_compress) /\  0<=i /\ i<=64 /\ (i<> 0 => BArray1410.is_init b_rp 0 (i*22 + 2))).
 auto .
-rewrite /is_init /valid /= => &m /> *. split. admit.
+rewrite /is_init /valid /= => &m /> *. split. admit. (*assert false - compiler fix *)
 smt (List.all_cat).
 auto .
 ecall (__polyvec_csubq_proof param (BArray2048.init_arr (JWord.W8.of_int 255))).
@@ -1953,6 +2067,8 @@ rewrite /is_init /valid /= .
 smt (List.all_cat BArray2048.init_arrP).
 qed .
 
+import JWord JUtils.
+
 lemma __gen_matrix_buf_rejection_filter48_proof _pol _b_pol _counter _buf _b_buf _buf_offset _load_shuffle _mask _bounds _sst _b_sst _ones _ms :
       (__gen_matrix_buf_rejection_filter48_spec _pol _b_pol _counter 
       _buf _b_buf _buf_offset _load_shuffle _mask _bounds _sst _b_sst 
@@ -1960,9 +2076,9 @@ lemma __gen_matrix_buf_rejection_filter48_proof _pol _b_pol _counter _buf _b_buf
 proof.
 rewrite /__gen_matrix_buf_rejection_filter48_spec .
 proc. 
-auto => /> *. admitted. (*
-have H : forall w,0<= count idfun (JWord.W64.w2bits (JWord.W64.of_int (JWord.W64.to_uint w %% 256))) <= 8.
-+ move => w; rewrite count_ge0 /=. 
+auto => /> *.
+have H : forall w,0<= count idfun (W64.w2bits (W64.of_int (W64.to_uint w %% 256))) <= 8.
++ move => w; rewrite count_ge0 /=.
   rewrite w2bitsE (: 64 = 8 + 56) 1://  mkseq_add // count_cat /=.
   have  ->/= : count idfun (mkseq (fun (i : int) => (W64.of_int (to_uint w %% 256)).[8 + i]) 56) = 0 ; last  by smt(size_mkseq count_ge0 count_size).
   rewrite /mkseq count_map /preim /idfun /=;apply count_pred0_eq_in => x; rewrite mem_iota  /= => *.
@@ -1973,37 +2089,32 @@ have H : forall w,0<= count idfun (JWord.W64.w2bits (JWord.W64.of_int (JWord.W64
   move => ?. 
   by have  := StdOrder.IntOrder.ler_weexpn2l 2 _ (8+x) 64 _;  smt(). 
 
-pose w := ((protect_64 _)).
+pose w := ((Jslh.SLH64.protect_64 _)).
 have H255 : 255 = 2^8 - 1 by auto.
 rewrite H255 !and_mod //=.
-rewrite / POPCNT_64 /rflags_of_popcnt /flags_w /=. 
+rewrite / POPCNT_64 /rflags_of_popcnt /flags_w /=.  
+pose c1 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 8) %% 256))))).
+pose c2 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 16) %% 256))))).
+pose c3 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 24) %% 256))))).
+pose c4 := to_uint(W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms) %% 256))))).
+have h : forall w, 0 <=to_uint(W64.of_int (count idfun (w2bits (W64.of_int (W64.to_uint (w) %% 256))))) <=8. move => ?. rewrite !to_uintK_small; smt().
+(*
 rewrite !to_uintM_small => /=;1..4:smt(W64.of_uintK pow2_64 modz_small).
 rewrite !W64.to_uintD_small /=;1..15:
  smt(W64.of_uintK pow2_64 modz_small).
 do split; 1,2,4..20:smt(W64.of_uintK pow2_64 modz_small);
   last by  smt(W64.of_uintK pow2_64 modz_small).
-rewrite and_iota => k kb /=. 
-pose c1 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 8) %% 256))))).
-pose c2 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 16) %% 256))))).
-pose c3 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 24) %% 256))))).
-  pose c4 := to_uint(W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms) %% 256))))).
-  have h : forall w, 0 <=to_uint(W64.of_int (count idfun (w2bits (W64.of_int (W64.to_uint (w) %% 256))))) <=8. move => ?. rewrite !to_uintK_small; smt().
-  smt().
-qed.*)
-
+rewrite and_iota => k kb /=. *) admit.
+qed.
 
 lemma __write_u128_boundchk_proof _pol _b_pol _ctr _data _ms :
       (__write_u128_boundchk_spec _pol _b_pol _ctr _data _ms).
 proof.
 rewrite /__write_u128_boundchk_spec .
-proc. auto. rewrite /is_init /valid /= => &m /> *.  admitted. (*
-  rewrite !uleE /=. move => *. smt(W64.to_uint_cmp).
-  rewrite !uleE /=. move => *.
-  split. move => *.
-  + split; rewrite !to_uintD_small /=; smt(and_iota W64.to_uint_cmp).
-  move => *. split.  move => *. rewrite !to_uintD_small /=; smt(and_iota W64.to_uint_cmp).
-  smt(and_iota W64.to_uint_cmp).
-qed .*)
+  proc. sp 3.
+  if. auto.  move => &m /> ?. rewrite  W64.uleE /=. rewrite /is_init /= => *. smt(W64.to_uint_cmp).
+  admit. (* assert false - fix compiler *)
+qed .
 
 lemma __gen_matrix_buf_rejection_filter24_proof _pol _b_pol _counter _buf _b_buf _buf_offset _load_shuffle _mask _bounds _sst _b_sst _ones _ms :
       (__gen_matrix_buf_rejection_filter24_spec _pol _b_pol _counter 
@@ -2011,8 +2122,6 @@ lemma __gen_matrix_buf_rejection_filter24_proof _pol _b_pol _counter _buf _b_buf
       _ones _ms).
 proof.
 rewrite /__gen_matrix_buf_rejection_filter24_spec .
-  proc; auto . admitted.
-  (*
   proc. auto. ecall (__write_u128_boundchk_proof param_2 b_param param_1 param_0 param). auto.
   ecall (__write_u128_boundchk_proof param_6 b_param_0 param_5 param_4 param_3). auto. rewrite /valid  => /> . 
   have H : forall w,0<= count idfun (W64.w2bits (W64.of_int (W64.to_uint w %% 256))) <= 8.
@@ -2033,14 +2142,14 @@ rewrite /__gen_matrix_buf_rejection_filter24_spec .
   have /= ? : 2^8 <=  2 ^ (8 + x) <= 2^64; last by smt().
   split; 1: by  apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
   move => ?.  by have  := StdOrder.IntOrder.ler_weexpn2l 2 _ (8+x) 64 _;  smt(). 
-  pose w := ((protect_64 _)). 
+  pose w := ((Jslh.SLH64.protect_64 _)). 
   have H255 : 255 = 2^8 - 1 by auto.
   rewrite H255 !and_mod //=.
-  rewrite / POPCNT_64 /rflags_of_popcnt /flags_w /=.  rewrite uleE /=.  have h: W32.modulus < 18446744073709551616. by auto.
+  rewrite / POPCNT_64 /rflags_of_popcnt /flags_w /=. (*  rewrite uleE /=.*)  have h: W32.modulus < 18446744073709551616. by auto.
   pose c1 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms) %% 256))))).
-  move => 7? i1 2?.
+  move => 5? i1 2?.
   have h2 : forall w, 0 <=to_uint(W64.of_int (count idfun (w2bits (W64.of_int (W64.to_uint (w) %% 256))))) <=8. move => ?. rewrite !to_uintK_small; smt().
-  rewrite !to_uintD_small !to_uintK_small /=;1..23: smt(W32.to_uint_cmp).
+  admit. (*rewrite !to_uintD_small !to_uintK_small /=;1..23: smt(W32.to_uint_cmp).
   pose c2 := count idfun
             (w2bits
                (W64.of_int
@@ -2065,8 +2174,8 @@ rewrite /__gen_matrix_buf_rejection_filter24_spec .
   split. split. smt().
   + move: i1 i2. rewrite !and_iota /=.
   move => i1 i2 k ?. have := i1 k _. by auto. have := i2 k _. by auto. smt(). 
-  smt(W32.to_uint_cmp all_cat). 
-qed.*)
+  smt(W32.to_uint_cmp all_cat). *)
+qed.
 
 lemma _gen_matrix_buf_rejection_proof _pol _b_pol _counter _buf _b_buf _buf_offset :
       (_gen_matrix_buf_rejection_spec _pol _b_pol _counter _buf _b_buf
@@ -2131,13 +2240,13 @@ proof.
     auto .
     rewrite /is_init /valid /= => &m /> . rewrite !JWord.W64.ultE !JWord.W64.to_uintK_small /=. smt(). move => *.
     split.  smt(BArray536.init_arrP JWord.W64.to_uint_cmp). move => *. split. smt(). move => 4? .
-    rewrite !JWord.W64.uleE /= =>? h *. admit.  (*FIX ME - mistake in contract*)
+    rewrite !JWord.W64.uleE /= =>? h *. rewrite !List.all_cat /=. smt(). 
   auto .
   ecall (_gen_matrix_buf_rejection_proof param_2 b_param_0 param_1 param_0 
        (BArray536.init_arr (JWord.W8.of_int 255)) param).
   auto .
   rewrite /is_init /valid /= => &m /> *. split. smt(BArray536.init_arrP). move => 3?.
-  rewrite JWord.W64.uleE /= => *. split.  admit. (*same thing - smt(List.all_cat)*) move => 3?. rewrite JWord.W64.ultE /=. smt ().
+  rewrite JWord.W64.uleE /= => *. split. smt(List.all_cat).  move => 3?. rewrite JWord.W64.ultE /=. smt ().
 qed .
 
 lemma _gen_matrix_sample_four_polynomials_proof _polx4 _b_polx4 _buf _b_buf _rho _b_rho _pos_entry _transposed :
@@ -2267,7 +2376,15 @@ rewrite /is_init /valid /=.
 smt (List.all_cat). 
 auto .
 rewrite /is_init /valid /= => &m /> *.
-smt(List.all_cat SBArray2048_512.SBArray2048_512.is_init_cell_set BArray2048.init_arrP BArray512.init_arrP BArray8192.init_arrP SBArray1568_1536.SBArray1568_1536.is_init_cell_set BArray1536.init_arrP).
+split. smt(BArray33.init_arrP).
+move => *. split.  smt().
+move => *. split. rewrite !List.all_cat /=. smt().
+move => *. split. smt().
+move => *. split. smt().
+move => *. split. move => 3?. rewrite !SBArray2048_512.SBArray2048_512.is_init_cell_set /=. smt(BArray512.init_arrP).
+move =>* . split. rewrite !List.all_cat /=. smt(BArray8192.init_arrP).
+move => *. split. smt(BArray2048.init_arrP).
+move => *. rewrite !List.all_cat /=. smt(BArray1536.init_arrP SBArray1568_1536.SBArray1568_1536.is_init_cell_set).
 qed .
 
 lemma __indcpa_enc_proof _ct _b_ct _msgp _b_msgp _pk _b_pk _noiseseed _b_noiseseed :
@@ -2345,8 +2462,19 @@ smt (List.all_cat).
 auto .
 ecall (__i_polyvec_frombytes_proof param b_param_19).
 auto .
-rewrite /is_init /valid /= .
-smt (List.all_cat SBArray1568_1536.SBArray1568_1536.is_init_cell_get BArray32.init_arrP SBArray2048_512.SBArray2048_512.is_init_cell_set BArray512.init_arrP BArray8192.init_arrP BArray2048.init_arrP SBArray1568_160.SBArray1568_160.is_init_cell_set BArray1410.init_arrP BArray160.init_arrP SBArray1568_1410.SBArray1568_1410.is_init_cell_set).
+rewrite /is_init /valid /= => &m /> *.
+split. smt( SBArray1568_1536.SBArray1568_1536.is_init_cell_get).
+move => *. split. smt(List.all_cat).
+move => * . split. smt(BArray32.init_arrP).
+move => *. split. smt().
+move => *. split. move =>  3?. rewrite !SBArray2048_512.SBArray2048_512.is_init_cell_set /=. split. smt(BArray512.init_arrP ). 
++ move => *. split. smt(BArray512.init_arrP ). move => *. split. smt(BArray512.init_arrP ). move => *. split. smt(BArray512.init_arrP ). move => *. smt(BArray512.init_arrP).
+move => *. split. rewrite !List.all_cat /=. smt(BArray8192.init_arrP).
+move => *. split. smt(BArray2048.init_arrP).
+move => *. split.  smt().
+move => *. split. smt(BArray512.init_arrP).
+move => *. split. move => 3?. rewrite !SBArray1568_160.SBArray1568_160.is_init_cell_set SBArray1568_1410.SBArray1568_1410.is_init_cell_set /=. smt(BArray1410.init_arrP BArray160.init_arrP ).
+move =>*. rewrite !List.all_cat /=. smt().
 qed .
 
 lemma __indcpa_dec_proof _msgp _b_msgp _ct _b_ct _sk _b_sk :
@@ -2529,7 +2657,8 @@ ecall (__crypto_kem_enc_jazz_proof param_2 b_param_0 param_1 b_param
                                                            (JWord.W8.of_int 255))).
 auto .
 rewrite /is_init /valid /= . inline. auto.
-smt (List.all_cat BArray32.init_arrP BArray1568.init_arrP).
+move => &m /> *. split. smt (BArray32.init_arrP BArray1568.init_arrP).
+move => /> *. smt(List.all_cat).
 qed .
 
 lemma jade_kem_mlkem_mlkem1024_amd64_avx2_dec_proof _shared_secret _b_shared_secret _ciphertext _b_ciphertext _secret_key _b_secret_key :
@@ -2543,6 +2672,6 @@ ecall (__crypto_kem_dec_jazz_proof param_1 b_param param_0 (
                                                            (JWord.W8.of_int 255)) 
        param (BArray3168.init_arr (JWord.W8.of_int 255))).
 auto .
-rewrite /is_init /valid /= .
+rewrite /is_init /valid /= => &m /> *.
 smt (List.all_cat BArray32.init_arrP BArray1568.init_arrP BArray3168.init_arrP).
 qed .

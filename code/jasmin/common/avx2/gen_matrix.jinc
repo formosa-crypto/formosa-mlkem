@@ -21,7 +21,7 @@ inline fn __gen_matrix_buf_rejection_filter48
 , reg u256 bounds
 , reg ptr u8[2048] sst
 , reg u256 ones
-, #msf reg u64 ms
+, #[msf]reg u64 ms
 ) -> reg ptr u16[MLKEM_N], reg u64
 {
   reg u256 f0 f1 g0 g1;
@@ -170,15 +170,15 @@ inline fn __gen_matrix_buf_rejection_filter48
 // safe-write (ensured to write inside the array...)
 #[safety =
    { requires = is_arr_init(pol,0,2* (uint)ctr)
-   , ensures = is_arr_init(result.0,0,2*(uint) ctr + max(0,min(16,2 * (MLKEM_N - (uint) ctr))))
+   , ensures = is_arr_init(result.0,0,2*(uint) ctr + 16) 
    }
  ]
 inline fn __write_u128_boundchk
 ( reg mut ptr u16[MLKEM_N] pol
 , reg u64 ctr
 , reg u128 data
-, #msf reg u64 ms
-) -> reg ptr u16[MLKEM_N], #msf reg u64
+, #[msf]reg u64 ms
+) -> reg ptr u16[MLKEM_N], #[msf]reg u64
 {
   reg u64 data_u64;
   reg bool condition_8 condition_4 condition_2 condition_1;
@@ -244,8 +244,8 @@ inline fn __gen_matrix_buf_rejection_filter24
 , reg u256 load_shuffle mask bounds
 , reg ptr u8[2048] sst
 , reg u256 ones
-, #msf reg u64 ms
-) -> reg ptr u16[MLKEM_N], reg u64, #msf reg u64
+, #[msf]reg u64 ms
+) -> reg ptr u16[MLKEM_N], reg u64, #[msf]reg u64
 {
   reg u256 f0 g0 g1;
   reg u256 shuffle_0 shuffle_t;
@@ -314,7 +314,7 @@ fn _gen_matrix_buf_rejection
   reg bool condition_loop;
   reg ptr u8[2048] sst;
   reg u256 load_shuffle mask bounds ones;
-  #msf reg u64 ms;
+  #[msf]reg u64 ms;
   stack u64 saved_buf_offset;
 
   ms = #init_msf();

@@ -88,8 +88,8 @@ fn __indcpa_enc(
   stack u16[MLKEM_K*MLKEM_VECN] aat;
   stack u16[MLKEM_N] k epp v;
   stack u8[MLKEM_SYMBYTES] publicseed;
-  #mmx reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] s_ct;
-  #mmx reg ptr u8[MLKEM_SYMBYTES] s_noiseseed;
+  #[mmx] reg ptr u8[MLKEM_INDCPA_CIPHERTEXTBYTES] s_ct;
+  #[mmx] reg ptr u8[MLKEM_SYMBYTES] s_noiseseed;
   reg ptr u8[MLKEM_SYMBYTES] lnoiseseed;
   reg u64 t64;
   reg u8 nonce;

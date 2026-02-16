@@ -9,7 +9,7 @@ require "../../common/avx2/gen_matrix.jinc"
 fn _gen_matrix_avx2
 ( reg mut ptr u16[MLKEM_K * MLKEM_K * MLKEM_N] matrix
 , reg const ptr u8[32] rho
-, #spill_to_mmx reg u64 transposed
+, #[spill_to_mmx] reg u64 transposed
 ) -> reg ptr u16[MLKEM_K * MLKEM_K * MLKEM_N]
 {
   // local variables
