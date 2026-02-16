@@ -18,7 +18,7 @@ ec:
 
 ec_safety: 
 	$(JASMIN2EC) ../jkem.jazz -m safety -o jkem1024_avx2_safety.ec \
-	  --output-proof jkem1024_avx2_safety_proof.ec \	
+	  --output-proof jkem1024_avx2_safety_proof.ec \
 	  -f jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand \
 	  -f jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand \
 	  -f jade_kem_mlkem_mlkem1024_amd64_avx2_dec
