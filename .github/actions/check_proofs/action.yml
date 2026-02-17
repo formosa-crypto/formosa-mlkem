@@ -1,0 +1,43 @@
+name: Check Proofs
+description: Check proofs for MLKEM implementations
+
+inputs:
+  type:
+    description: 'Type of proofs to check (safety or correctness)'
+    required: true
+  size:
+    description: 'Size of the implementation (768 or 1024)'
+    required: true
+  dir:
+    description: 'Directory of the implementation (ref or avx2)'
+    required: true
+
+runs:
+  using: composite
+  steps:
+        - name: Install Nix
+          uses: cachix/install-nix-action@v31
+          with:
+            nix_path: nixpkgs=channel:nixos-unstable
+        - name: Check Dependencies
+          shell: bash
+          run: nix-shell --run "echo Dependencies OK…"
+        - name: Configure provers
+          shell: bash
+          run: nix-shell --run 'easycrypt why3config'
+        - name: Run ${{inputs.type}} Proofs MLKEM${{inputs.size}}(${{inputs.dir}})
+          shell: bash
+          id: ec_proofs 
+          run: |
+            set -o pipefail
+            nix-shell --run "easycrypt runtest config/tests.config mlkem_${{inputs.type}}_${{inputs.size}}_${{inputs.dir}}"  2>&1 | tee proof_output.log
+        - name: Generate Detailed Job Summary
+          shell: bash
+          if: always() 
+          run: |
+            export PROOF_JOB_OUTCOME=${{ steps.ec_proofs.outcome }}
+            python scripts/report_proofs_result.py \
+              proof_output.log \
+              "${{ inputs.type }}" \
+              "${{ inputs.size }}" \
+              "${{ inputs.dir }}"

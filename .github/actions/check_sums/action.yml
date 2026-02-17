@@ -1,0 +1,19 @@
+name: Check Sums Test
+description: Run checksum tests for MLKEM implementation
+
+runs:
+  using: composite
+  steps:
+        - uses: cachix/install-nix-action@v31
+          with:
+            nix_path: nixpkgs=channel:nixos-unstable
+        - name: Check Dependencies
+          shell: bash
+          run: nix-shell --arg full false --run "echo Dependencies OK…"
+        - name: Run Checksum Tests
+          shell: bash
+          run: nix-shell --arg full false --run "make -C bench run-tests"
+        - name: Generate Checksum Summary
+          if: always()
+          shell: bash
+          run: nix-shell --arg full false --run "./scripts/check_checksums.sh"

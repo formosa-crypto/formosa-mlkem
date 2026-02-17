@@ -1,4 +1,5 @@
-name: EasyCrypt
+
+name: Implementation Verification
 permissions:
   contents: read
 on:
@@ -7,43 +8,47 @@ on:
 
 env:
   NIXPKGS_ALLOW_UNFREE: 1
-  ECRJOBS: 8
 
 jobs:
-    test_extraction:
-        name: Extract MLKEM to EC
+    correctness_check:
+        name: Correctness check
         runs-on: ubuntu-latest
         strategy:
           fail-fast: false
           matrix:
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
-            type: [ 'ec', 'ec_safety' ]
         steps:
          - uses: actions/checkout@v4
            with:
             submodules: recursive
-         - uses: ./.github/actions/ec_extraction
+         - uses: ./.github/actions/correctness
            with:
-            type: ${{matrix.type}}
             size: ${{matrix.size}}
             dir: ${{matrix.dir}}
-    test_proofs:
+         - uses: ./.github/actions/check_sums
+
+    safety_check:
+        name: Safety check
+        runs-on: ubuntu-latest
+        steps:
+        - uses: ./.github/actions/safety
+    ct_check:
         name: Check Proofs
         runs-on: ubuntu-latest
         strategy:
           fail-fast: false
           matrix:
-            type: [ 'safety' , 'correctness' ]
+            target: [ 'ct' , 'sct' ]
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
         steps:
-         - uses: actions/checkout@v4
-           with:
+        - uses: actions/checkout@v4
+          with:
             submodules: recursive
-         - uses: ./.github/actions/check_proofs
-           with:
-            type: ${{matrix.type}}
+        - uses: ./.github/actions/CT
+          with:
+            target: ${{matrix.target}}
             size: ${{matrix.size}}
             dir: ${{matrix.dir}}
 

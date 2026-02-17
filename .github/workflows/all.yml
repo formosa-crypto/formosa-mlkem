@@ -1,5 +1,5 @@
 
-name: CI
+name: MLKEM CI
 permissions:
   contents: read
 on:
@@ -12,14 +12,13 @@ on:
 env:
   NIXPKGS_ALLOW_UNFREE: 1
 
-
 jobs:
-  ci:
-    name: MLKEM implementation
+  verification:
+    name: Implementation Verification
     permissions:
       contents: read
       id-token: write
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/implementation-checks.yml
     secrets: inherit 
   ec:
     name: EasyCrypt
@@ -30,9 +29,13 @@ jobs:
     secrets: inherit 
   bench:
     name: Benchmarks
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
-    uses: ./.github/workflows/bench.yml
-    secrets: inherit 
+    steps:
+      - uses: actions/checkout@v4
+        with:
+            submodules: recursive
+      - uses: ./.github/actions/bench.yml
 

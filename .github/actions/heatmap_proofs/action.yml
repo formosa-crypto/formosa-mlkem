@@ -1,0 +1,55 @@
+name: Proofs Heatmap
+description: Generate a heatmap of proofs
+
+inputs:
+  type:
+    description: 'Type of proofs (safety or correctness)'
+    required: true
+  size:
+    description: 'Size of the implementation (768 or 1024)'
+    required: true
+  dir:
+    description: 'Directory of the implementation (ref or avx2)'
+    required: true
+
+runs:
+  using: composite
+  steps:
+        - name: Install Nix
+          uses: cachix/install-nix-action@v31
+          with:
+            nix_path: nixpkgs=channel:nixos-unstable
+        - name: Check Dependencies
+          shell: bash
+          run: nix-shell --run "echo Dependencies OK…"
+        - name: Configure provers
+          shell: bash
+          run: nix-shell --run 'easycrypt why3config'
+        - name: Run ${{inputs.type}} Proofs MLKEM${{inputs.size}}(${{inputs.dir}})
+          shell: bash
+          run: |
+           if [ ${{inputs.type}} == "correctness" ] && [ ${{inputs.dir}} == "ref" ]; then
+              TARGET_DIR="proof/${{inputs.type}}/${{inputs.size}}"
+           else
+              TARGET_DIR="proof/${{inputs.type}}/${{inputs.size}}/${{inputs.dir}}"
+           fi
+           HTML_REPORT_DIR="reports/${{inputs.type}}/${{inputs.size}}/${{inputs.dir}}"
+           mkdir -p ${HTML_REPORT_DIR}
+           TSTATS_DIR=".tstats"
+           mkdir -p ${TSTATS_DIR}
+           for EC_FILE in ${TARGET_DIR}/*.ec; do
+              if [ -e "$EC_FILE" ]; then
+                TSTATS_FILE="${TSTATS_DIR}/$(basename "${EC_FILE%.ec}.tstats")"
+                FILENAME_BASE="$(basename "${EC_FILE%.ec}")"
+                HTML_REPORT_PATH="${HTML_REPORT_DIR}/${FILENAME_BASE}.html"
+                nix-shell --run "easycrypt -tstats ${TSTATS_FILE} ${EC_FILE}"
+                python scripts/generate_heatmap.py ${EC_FILE} ${TSTATS_FILE} > ${HTML_REPORT_PATH}                
+              fi
+           done
+        - name: Upload Heatmap Artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: easycrypt-heatmap-reports-${{inputs.type}}-${{inputs.size}}-${{inputs.dir}}
+            path: reports/${{inputs.type}}/${{inputs.size}}/${{inputs.dir}}
+            retention-days: 7
+

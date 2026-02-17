@@ -13,8 +13,8 @@ let jasmin =
     src = fetchFromGitLab {
       owner = "jasmin-lang";
       repo = "jasmin-compiler";
-      rev = "2f646cbdeafdb82d5bb80c8c856a3bc458c94d81";
-      hash = "sha256-JZW3nrJeYSIu2FEiWZJhCzBHusu52Fvj+omLInsL8Hw=";
+      rev = "dd9ff9f8b6994991ee5749a4128ec0df48fa1e2f";
+      hash = "sha256-GjqqeckmjYAGImr1Bs2PNLN7T5mw9ASTvnGLmwfKGm4=";
     };
   })
 ; in
