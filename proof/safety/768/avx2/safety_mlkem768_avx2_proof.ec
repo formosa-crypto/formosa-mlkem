@@ -2138,19 +2138,28 @@ have H : forall w,0<= count idfun (W64.w2bits (W64.of_int (W64.to_uint w %% 256)
 pose w := ((Jslh.SLH64.protect_64 _)).
 have H255 : 255 = 2^8 - 1 by auto.
 rewrite H255 !and_mod //=.
-rewrite / POPCNT_64 /rflags_of_popcnt /flags_w /=.  
-pose c1 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 8) %% 256))))).
-pose c2 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 16) %% 256))))).
-pose c3 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 24) %% 256))))).
-pose c4 := to_uint(W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms) %% 256))))).
-have h : forall w, 0 <=to_uint(W64.of_int (count idfun (w2bits (W64.of_int (W64.to_uint (w) %% 256))))) <=8. move => ?. rewrite !to_uintK_small; smt().
-(*
-rewrite !to_uintM_small => /=;1..4:smt(W64.of_uintK pow2_64 modz_small).
-rewrite !W64.to_uintD_small /=;1..15:
+  rewrite / POPCNT_64 /rflags_of_popcnt /flags_w /=.
+
+have h : forall w, 0 <=to_uint(W64.of_int (count idfun (w2bits (W64.of_int (W64.to_uint (w) %% 256))))) <=8. move => ?. rewrite !to_uintK_small; smt(). 
+rewrite !to_uintM_small => /=. smt(pow2_64). rewrite !to_uintD_small /=; 1..2: smt(to_uintK). rewrite !to_uintD_small /=;1..4:smt(to_uintK). rewrite !to_uintD_small /=;1..8:smt(to_uintK).
+rewrite !W64.to_uintD_small /=;1..26:
  smt(W64.of_uintK pow2_64 modz_small).
-do split; 1,2,4..20:smt(W64.of_uintK pow2_64 modz_small);
-  last by  smt(W64.of_uintK pow2_64 modz_small).
-rewrite and_iota => k kb /=. *) admit.
+
+pose c1 := W64.to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 8) %% 256))))).
+pose c2 := W64.to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 16) %% 256))))).
+pose c3 := W64.to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 24) %% 256))))).
+pose c4 := W64.to_uint(W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms) %% 256))))).
+rewrite /is_init /=. split. split. split. smt(). smt(). smt().
+split.  smt().
+move => *. split. smt().
+move => *. split. rewrite to_uintK_small /=; smt().  
+move => *. split.  rewrite to_uintK_small /=; smt().  
+move => *. split.  rewrite to_uintK_small /=; smt().  
+move => *. split.  rewrite to_uintK_small /=; smt().  
+move => *. split. smt(). 
+move => *. split. split; smt().
+move => *. split. split; smt().
+split; smt(). 
 qed.
 
 lemma __write_u128_boundchk_proof _pol _b_pol _ctr _data _ms :
@@ -2168,59 +2177,44 @@ lemma __gen_matrix_buf_rejection_filter24_proof _pol _b_pol _counter _buf _b_buf
       _ones _ms).
 proof.
 rewrite /__gen_matrix_buf_rejection_filter24_spec .
-  proc. auto. ecall (__write_u128_boundchk_proof param_2 b_param param_1 param_0 param). auto.
-  ecall (__write_u128_boundchk_proof param_6 b_param_0 param_5 param_4 param_3). auto. rewrite /valid  => /> . 
+  proc. auto. ecall (__write_u128_boundchk_proof param_6 b_param param_5 param_4 param_3). auto.
+  ecall (__write_u128_boundchk_proof param_2 b_param_0 param_1 param_0 param). auto. rewrite /valid  => /> . 
   have H : forall w,0<= count idfun (W64.w2bits (W64.of_int (W64.to_uint w %% 256))) <= 8.
-+ move => w; rewrite count_ge0 /=. 
-  rewrite w2bitsE (: 64 = 8 + 56) 1://  mkseq_add // count_cat /=.
-  have  ->/= : count idfun (mkseq (fun (i : int) => (W64.of_int (to_uint w %% 256)).[8 + i]) 56) = 0 ; last  by smt(size_mkseq count_ge0 count_size).
-  rewrite /mkseq count_map /preim /idfun /=;apply count_pred0_eq_in => x; rewrite mem_iota  /= => *.
-  rewrite get_to_uint /= (: (0 <= 8 + x < 64)) 1:/# /=.
-  rewrite of_uintK /= (modz_small _ 18446744073709551616); 1:smt().
-  have /= ? : 2^8 <=  2 ^ (8 + x) <= 2^64; last by smt().
-  split; 1: by  apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
-  move => ?.  by have  := StdOrder.IntOrder.ler_weexpn2l 2 _ (8+x) 64 _;  smt(). 
+  + move => w; rewrite count_ge0 /=. 
+    rewrite w2bitsE (: 64 = 8 + 56) 1://  mkseq_add // count_cat /=.
+    have  ->/= : count idfun (mkseq (fun (i : int) => (W64.of_int (to_uint w %% 256)).[8 + i]) 56) = 0 ; last  by smt(size_mkseq count_ge0 count_size).
+    rewrite /mkseq count_map /preim /idfun /=;apply count_pred0_eq_in => x; rewrite mem_iota  /= => *.
+    rewrite get_to_uint /= (: (0 <= 8 + x < 64)) 1:/# /=.
+    rewrite of_uintK /= (modz_small _ 18446744073709551616); 1:smt().
+    have /= ? : 2^8 <=  2 ^ (8 + x) <= 2^64; last by smt(). 
+    split; 1: by  apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
+    move => ?.  by have  := StdOrder.IntOrder.ler_weexpn2l 2 _ (8+x) 64 _;  smt(). 
   have H' : forall w',0<= count idfun (W64.w2bits (W64.of_int (W32.to_uint w' %% 256))) <= 8.
-  + move => w'; rewrite count_ge0 /=.   rewrite w2bitsE (: 64 = 8 + 56) 1://  mkseq_add // count_cat /=.    have  ->/= : count idfun (mkseq (fun (i : int) => (W64.of_int (to_uint w' %% 256)).[8 + i]) 56) = 0 ; last  by smt(size_mkseq count_ge0 count_size).
-  rewrite /mkseq count_map /preim /idfun /=;apply count_pred0_eq_in => x; rewrite mem_iota  /= => *.
-  rewrite get_to_uint /= (: (0 <= 8 + x < 64)) 1:/# /=.
-  rewrite of_uintK /= (modz_small _ 18446744073709551616); 1:smt().
-  have /= ? : 2^8 <=  2 ^ (8 + x) <= 2^64; last by smt().
-  split; 1: by  apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
-  move => ?.  by have  := StdOrder.IntOrder.ler_weexpn2l 2 _ (8+x) 64 _;  smt(). 
+  + move => w'; rewrite count_ge0 /=.   rewrite w2bitsE (: 64 = 8 + 56) 1://  mkseq_add // count_cat /=.
+    have  ->/= : count idfun (mkseq (fun (i : int) => (W64.of_int (to_uint w' %% 256)).[8 + i]) 56) = 0 ; last  by smt(size_mkseq count_ge0 count_size).
+    rewrite /mkseq count_map /preim /idfun /=;apply count_pred0_eq_in => x; rewrite mem_iota  /= => *.
+    rewrite get_to_uint /= (: (0 <= 8 + x < 64)) 1:/# /=.
+    rewrite of_uintK /= (modz_small _ 18446744073709551616); 1:smt().
+    have /= ? : 2^8 <=  2 ^ (8 + x) <= 2^64; last by smt().
+    split; 1: by  apply StdOrder.IntOrder.ler_weexpn2l; smt(). 
+    move => ?.  by have  := StdOrder.IntOrder.ler_weexpn2l 2 _ (8+x) 64 _;  smt(). 
   pose w := ((Jslh.SLH64.protect_64 _)). 
   have H255 : 255 = 2^8 - 1 by auto.
   rewrite H255 !and_mod //=.
-  rewrite / POPCNT_64 /rflags_of_popcnt /flags_w /=. (*  rewrite uleE /=.*)  have h: W32.modulus < 18446744073709551616. by auto.
-  pose c1 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms) %% 256))))).
-  move => 5? i1 2?.
+  rewrite / POPCNT_64 /rflags_of_popcnt /flags_w /=. rewrite uleE /=. have h: W32.modulus < 18446744073709551616. by auto.
+  move => *.
   have h2 : forall w, 0 <=to_uint(W64.of_int (count idfun (w2bits (W64.of_int (W64.to_uint (w) %% 256))))) <=8. move => ?. rewrite !to_uintK_small; smt().
-  admit. (*rewrite !to_uintD_small !to_uintK_small /=;1..23: smt(W32.to_uint_cmp).
-  pose c2 := count idfun
-            (w2bits
-               (W64.of_int
-                  (to_uint
-                     (MOVEMASK_32u8
-                        (VPACKSS_16u16
-                           (VPCMPGT_16u16 _bounds
-                              (VPBLENDW_256
-                                 (VPSHUFB_256
-                                    (VPERMQ
-                                       (get256d _buf (to_uint _buf_offset))
-                                       (W8.of_int 148)) _load_shuffle)
-                                 (VPSRL_16u16
-                                    (VPSHUFB_256
-                                       (VPERMQ
-                                          (get256d _buf (to_uint _buf_offset))
-                                          (W8.of_int 148)) _load_shuffle)
-                                    (W128.of_int 4)) (W8.of_int 170) `&`
-                               _mask)) W256.zero)) %%
-                   256))).
-  pose c3 := count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 16) %% 256))). move => i2 *.
-  split. split. smt().
-  + move: i1 i2. rewrite !and_iota /=.
-  move => i1 i2 k ?. have := i1 k _. by auto. have := i2 k _. by auto. smt(). 
-  smt(W32.to_uint_cmp all_cat). *)
+  rewrite !to_uintD_small /=;1..4: smt(to_uintK).
+  pose c1 := to_uint
+        (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms) %% 256))))).  
+  pose c2 := to_uint (W64.of_int (count idfun (w2bits (W64.of_int (to_uint (w _ms `>>` W8.of_int 16) %% 256))))).
+  split.  smt(). rewrite /is_init /=.
+  move => *.  split. smt().
+  move => *. split. split; smt().
+  split. smt().
+  split. rewrite W64.to_uintK_small /=; smt(). 
+  split. rewrite W64.to_uintK_small /=; smt(). 
+  rewrite !List.all_cat /=. by auto.
 qed.
 
 lemma _gen_matrix_buf_rejection_proof _pol _b_pol _counter _buf _b_buf _buf_offset :
@@ -2510,8 +2504,8 @@ split. smt(BArray1536.init_arrP SBArray4608_1536.SBArray4608_1536.is_init_cell_g
 auto .
 ecall (__polyvec_ntt_proof param_17 b_param_6).
 auto .
-ecall (_poly_getnoise_eta1_4x_proof param_16 b_param_11 param_15 b_param_10 
-       param_14 b_param_9 param_13 b_param_8 param_12 (BArray32.init_arr
+ecall (_poly_getnoise_eta1_4x_proof param_16 b_param_10 param_15 b_param_9
+       param_14 b_param_8 param_13 b_param_7 param_12 (BArray32.init_arr
                                                       (JWord.W8.of_int 255)) 
        param_11).
 auto .
@@ -2537,8 +2531,7 @@ split. smt( SBArray1184_1152.SBArray1184_1152.is_init_cell_get).
 move => *. split. smt(List.all_cat).
 move => * . split. smt(BArray32.init_arrP).
 move => *. split. smt().
-move => *. split. admit. (*smt(SBArray1536_512.SBArray1536_512.is_init_cell_get SBArray1536_512.SBArray1536_512.is_init_cell_set  BArray512.init_arrP).*)
-move => *. split. smt(BArray512.init_arrP SBArray1536_512.SBArray1536_512.is_init_cell_set ).
+move => *. split. smt(SBArray1536_512.SBArray1536_512.is_init_cell_get SBArray1536_512.SBArray1536_512.is_init_cell_set  BArray512.init_arrP).
 move => *. split. rewrite !List.all_cat /=.  smt(BArray4608.init_arrP BArray512.init_arrP SBArray1536_512.SBArray1536_512.is_init_cell_set ).
 move => *. split. smt(BArray1536.init_arrP).
 move => *. split. smt().
