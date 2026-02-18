@@ -25,9 +25,7 @@ MTARGETS ?= \
 $(BIN)/memory_jasmin_768_ref \
 $(BIN)/memory_jasmin_768_avx2 \
 $(BIN)/memory_jasmin_1024_ref \
-$(BIN)/memory_jasmin_1024_avx2 \
-$(BIN)/memory_mlkem_native_768 \
-$(BIN)/memory_mlkem_native_1024
+$(BIN)/memory_jasmin_1024_avx2
 
 
 # --------------------------------------------------------------------
@@ -93,12 +91,6 @@ $(BIN)/memory_jasmin_1024_ref: libj_1024_ref | $(BIN)
 $(BIN)/memory_jasmin_1024_avx2: libj_1024_avx2 | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./memory/ -I./src/jasmin/1024/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_avx2 ./memory/memory.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/1024/avx2/libkyber1024_avx2.a
 
-#--
-$(BIN)/memory_mlkem_native_768: libmn | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./memory/ -I./src/bindings/mlkem-native-768 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM768 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM768 ./memory/memory.c test/notrandombytes.c test/notrandombytes1.c ./src/mlkem-native/test/build/libmlkem768.a
-
-$(BIN)/memory_mlkem_native_1024: libmn | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./memory/ -I./src/bindings/mlkem-native-1024 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM1024 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM1024 ./memory/memory.c test/notrandombytes.c test/notrandombytes1.c ./src/mlkem-native/test/build/libmlkem1024.a
 
 # --------------------------------------------------------------------
 

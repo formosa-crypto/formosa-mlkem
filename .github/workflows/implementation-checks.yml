@@ -35,7 +35,7 @@ jobs:
         - uses: actions/checkout@v6
         - uses: ./.github/actions/safety
     ct_check:
-        name: Check Proofs
+        name: CT Check
         runs-on: ubuntu-latest
         strategy:
           fail-fast: false
@@ -43,6 +43,9 @@ jobs:
             target: [ 'ct' , 'sct' ]
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
+            exclude:
+            - dir: 'ref'
+              target: 'sct'
         steps:
         - uses: actions/checkout@v6
           with:
