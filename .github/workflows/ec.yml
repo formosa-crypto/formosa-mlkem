@@ -20,7 +20,7 @@ jobs:
             dir: [ 'ref', 'avx2' ]
             type: [ 'ec', 'ec_safety' ]
         steps:
-         - uses: actions/checkout@v4
+         - uses: actions/checkout@v6
            with:
             submodules: recursive
          - uses: ./.github/actions/ec_extraction
@@ -38,7 +38,7 @@ jobs:
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
         steps:
-         - uses: actions/checkout@v4
+         - uses: actions/checkout@v6
            with:
             submodules: recursive
          - uses: ./.github/actions/check_proofs

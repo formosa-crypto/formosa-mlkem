@@ -19,7 +19,7 @@ jobs:
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
         steps:
-         - uses: actions/checkout@v4
+         - uses: actions/checkout@v6
            with:
             submodules: recursive
          - uses: ./.github/actions/correctness
@@ -32,6 +32,7 @@ jobs:
         name: Safety check
         runs-on: ubuntu-latest
         steps:
+        - uses: actions/checkout@v6
         - uses: ./.github/actions/safety
     ct_check:
         name: Check Proofs
@@ -43,7 +44,7 @@ jobs:
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
         steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v6
           with:
             submodules: recursive
         - uses: ./.github/actions/CT
