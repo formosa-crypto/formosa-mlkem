@@ -623,17 +623,17 @@ abbrev  pvd_shufbidx_s =
 
 abbrev  pd_shift_s =
 (BArray32.of_list16
-[(W16.of_int 0); (W16.of_int 32); (W16.of_int 0); (W16.of_int 8);
-(W16.of_int 64); (W16.of_int 0); (W16.of_int 16); (W16.of_int 128);
-(W16.of_int 0); (W16.of_int 32); (W16.of_int 0); (W16.of_int 8);
-(W16.of_int 64); (W16.of_int 0); (W16.of_int 16); (W16.of_int 128)]).
+[(W16.of_int 1024); (W16.of_int 32); (W16.of_int 256); (W16.of_int 8);
+(W16.of_int 64); (W16.of_int 512); (W16.of_int 16); (W16.of_int 128);
+(W16.of_int 1024); (W16.of_int 32); (W16.of_int 256); (W16.of_int 8);
+(W16.of_int 64); (W16.of_int 512); (W16.of_int 16); (W16.of_int 128)]).
 
 abbrev  pd_mask_s =
 (BArray32.of_list16
-[(W16.of_int 31); (W16.of_int 224); (W16.of_int 124); (W16.of_int 128);
-(W16.of_int 240); (W16.of_int 62); (W16.of_int 192); (W16.of_int 248);
-(W16.of_int 31); (W16.of_int 224); (W16.of_int 124); (W16.of_int 128);
-(W16.of_int 240); (W16.of_int 62); (W16.of_int 192); (W16.of_int 248)]).
+[(W16.of_int 31); (W16.of_int 992); (W16.of_int 124); (W16.of_int 3968);
+(W16.of_int 496); (W16.of_int 62); (W16.of_int 1984); (W16.of_int 248);
+(W16.of_int 31); (W16.of_int 992); (W16.of_int 124); (W16.of_int 3968);
+(W16.of_int 496); (W16.of_int 62); (W16.of_int 1984); (W16.of_int 248)]).
 
 abbrev  pd_jshufbidx =
 (BArray32.of_list8
@@ -721,357 +721,398 @@ abbrev  kECCAK1600_RC =
 
 abbrev  jdmontx16 =
 (BArray32.of_list16
-[(W16.of_int 73); (W16.of_int 73); (W16.of_int 73); (W16.of_int 73);
-(W16.of_int 73); (W16.of_int 73); (W16.of_int 73); (W16.of_int 73);
-(W16.of_int 73); (W16.of_int 73); (W16.of_int 73); (W16.of_int 73);
-(W16.of_int 73); (W16.of_int 73); (W16.of_int 73); (W16.of_int 73)]).
+[(W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353);
+(W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353);
+(W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353);
+(W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353); (W16.of_int 1353)]).
 
 abbrev  mqinvx16 =
 (BArray32.of_list16
-[(W16.of_int 251); (W16.of_int 251); (W16.of_int 251); (W16.of_int 251);
-(W16.of_int 251); (W16.of_int 251); (W16.of_int 251); (W16.of_int 251);
-(W16.of_int 251); (W16.of_int 251); (W16.of_int 251); (W16.of_int 251);
-(W16.of_int 251); (W16.of_int 251); (W16.of_int 251); (W16.of_int 251)]).
+[(W16.of_int 15099); (W16.of_int 15099); (W16.of_int 15099);
+(W16.of_int 15099); (W16.of_int 15099); (W16.of_int 15099);
+(W16.of_int 15099); (W16.of_int 15099); (W16.of_int 15099);
+(W16.of_int 15099); (W16.of_int 15099); (W16.of_int 15099);
+(W16.of_int 15099); (W16.of_int 15099); (W16.of_int 15099);
+(W16.of_int 15099)]).
 
 abbrev  hhqx16 =
 (BArray32.of_list16
-[(W16.of_int 64); (W16.of_int 64); (W16.of_int 64); (W16.of_int 64);
-(W16.of_int 64); (W16.of_int 64); (W16.of_int 64); (W16.of_int 64);
-(W16.of_int 64); (W16.of_int 64); (W16.of_int 64); (W16.of_int 64);
-(W16.of_int 64); (W16.of_int 64); (W16.of_int 64); (W16.of_int 64)]).
-
+[(W16.of_int 832); (W16.of_int 832); (W16.of_int 832); (W16.of_int 832);
+(W16.of_int 832); (W16.of_int 832); (W16.of_int 832); (W16.of_int 832);
+(W16.of_int 832); (W16.of_int 832); (W16.of_int 832); (W16.of_int 832);
+(W16.of_int 832); (W16.of_int 832); (W16.of_int 832); (W16.of_int 832)]).
 
 abbrev  hqx16_m1 =
 (BArray32.of_list16
-[(W16.of_int 128); (W16.of_int 128); (W16.of_int 128); (W16.of_int 128);
-(W16.of_int 128); (W16.of_int 128); (W16.of_int 128); (W16.of_int 128);
-(W16.of_int 128); (W16.of_int 128); (W16.of_int 128); (W16.of_int 128);
-(W16.of_int 128); (W16.of_int 128); (W16.of_int 128); (W16.of_int 128)]).
+[(W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664);
+(W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664);
+(W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664);
+(W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664); (W16.of_int 1664)]).
 
 abbrev  hqx16_p1 =
 (BArray32.of_list16
-[(W16.of_int 129); (W16.of_int 129); (W16.of_int 129); (W16.of_int 129);
-(W16.of_int 129); (W16.of_int 129); (W16.of_int 129); (W16.of_int 129);
-(W16.of_int 129); (W16.of_int 129); (W16.of_int 129); (W16.of_int 129);
-(W16.of_int 129); (W16.of_int 129); (W16.of_int 129); (W16.of_int 129)]).
+[(W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665);
+(W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665);
+(W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665);
+(W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665); (W16.of_int 1665)]).
 
 abbrev  maskx16 =
 (BArray32.of_list16
-[(W16.of_int 255); (W16.of_int 255); (W16.of_int 255); (W16.of_int 255);
-(W16.of_int 255); (W16.of_int 255); (W16.of_int 255); (W16.of_int 255);
-(W16.of_int 255); (W16.of_int 255); (W16.of_int 255); (W16.of_int 255);
-(W16.of_int 255); (W16.of_int 255); (W16.of_int 255); (W16.of_int 255)]).
+[(W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095);
+(W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095);
+(W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095);
+(W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095); (W16.of_int 4095)]).
 
 abbrev  jflox16 =
 (BArray32.of_list16
-[(W16.of_int 161); (W16.of_int 161); (W16.of_int 161); (W16.of_int 161);
-(W16.of_int 161); (W16.of_int 161); (W16.of_int 161); (W16.of_int 161);
-(W16.of_int 161); (W16.of_int 161); (W16.of_int 161); (W16.of_int 161);
-(W16.of_int 161); (W16.of_int 161); (W16.of_int 161); (W16.of_int 161)]).
+[(W16.of_int (-10079)); (W16.of_int (-10079)); (W16.of_int (-10079));
+(W16.of_int (-10079)); (W16.of_int (-10079)); (W16.of_int (-10079));
+(W16.of_int (-10079)); (W16.of_int (-10079)); (W16.of_int (-10079));
+(W16.of_int (-10079)); (W16.of_int (-10079)); (W16.of_int (-10079));
+(W16.of_int (-10079)); (W16.of_int (-10079)); (W16.of_int (-10079));
+(W16.of_int (-10079))]).
 
 abbrev  jfhix16 =
 (BArray32.of_list16
-[(W16.of_int 161); (W16.of_int 161); (W16.of_int 161); (W16.of_int 161);
-(W16.of_int 161); (W16.of_int 161); (W16.of_int 161); (W16.of_int 161);
-(W16.of_int 161); (W16.of_int 161); (W16.of_int 161); (W16.of_int 161);
-(W16.of_int 161); (W16.of_int 161); (W16.of_int 161); (W16.of_int 161)]).
+[(W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441);
+(W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441);
+(W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441);
+(W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441); (W16.of_int 1441)]).
 
 abbrev  jvx16 =
 (BArray32.of_list16
-[(W16.of_int 191); (W16.of_int 191); (W16.of_int 191); (W16.of_int 191);
-(W16.of_int 191); (W16.of_int 191); (W16.of_int 191); (W16.of_int 191);
-(W16.of_int 191); (W16.of_int 191); (W16.of_int 191); (W16.of_int 191);
-(W16.of_int 191); (W16.of_int 191); (W16.of_int 191); (W16.of_int 191)]).
+[(W16.of_int 20159); (W16.of_int 20159); (W16.of_int 20159);
+(W16.of_int 20159); (W16.of_int 20159); (W16.of_int 20159);
+(W16.of_int 20159); (W16.of_int 20159); (W16.of_int 20159);
+(W16.of_int 20159); (W16.of_int 20159); (W16.of_int 20159);
+(W16.of_int 20159); (W16.of_int 20159); (W16.of_int 20159);
+(W16.of_int 20159)]).
 
 abbrev  jqinvx16 =
 (BArray32.of_list16
-[(W16.of_int 1); (W16.of_int 1); (W16.of_int 1); (W16.of_int 1);
-(W16.of_int 1); (W16.of_int 1); (W16.of_int 1); (W16.of_int 1);
-(W16.of_int 1); (W16.of_int 1); (W16.of_int 1); (W16.of_int 1);
-(W16.of_int 1); (W16.of_int 1); (W16.of_int 1); (W16.of_int 1)]).
+[(W16.of_int (-3327)); (W16.of_int (-3327)); (W16.of_int (-3327));
+(W16.of_int (-3327)); (W16.of_int (-3327)); (W16.of_int (-3327));
+(W16.of_int (-3327)); (W16.of_int (-3327)); (W16.of_int (-3327));
+(W16.of_int (-3327)); (W16.of_int (-3327)); (W16.of_int (-3327));
+(W16.of_int (-3327)); (W16.of_int (-3327)); (W16.of_int (-3327));
+(W16.of_int (-3327))]).
 
 abbrev  jqx16 =
 (BArray32.of_list16
-[(W16.of_int 1); (W16.of_int 1); (W16.of_int 1); (W16.of_int 1);
-(W16.of_int 1); (W16.of_int 1); (W16.of_int 1); (W16.of_int 1);
-(W16.of_int 1); (W16.of_int 1); (W16.of_int 1); (W16.of_int 1);
-(W16.of_int 1); (W16.of_int 1); (W16.of_int 1); (W16.of_int 1)]).
+[(W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329);
+(W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329);
+(W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329);
+(W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329); (W16.of_int 3329)]).
 
 abbrev  jzetas_inv_exp =
 (BArray800.of_list16
-[(W16.of_int 165); (W16.of_int 180); (W16.of_int 34); (W16.of_int 52);
-(W16.of_int 35); (W16.of_int 86); (W16.of_int 231); (W16.of_int 250);
-(W16.of_int 123); (W16.of_int 37); (W16.of_int 55); (W16.of_int 136);
-(W16.of_int 129); (W16.of_int 5); (W16.of_int 159); (W16.of_int 184);
-(W16.of_int 165); (W16.of_int 180); (W16.of_int 34); (W16.of_int 52);
-(W16.of_int 35); (W16.of_int 86); (W16.of_int 231); (W16.of_int 250);
-(W16.of_int 123); (W16.of_int 37); (W16.of_int 55); (W16.of_int 136);
-(W16.of_int 129); (W16.of_int 5); (W16.of_int 159); (W16.of_int 184);
-(W16.of_int 15); (W16.of_int 67); (W16.of_int 29); (W16.of_int 108);
-(W16.of_int 102); (W16.of_int 230); (W16.of_int 254); (W16.of_int 161);
-(W16.of_int 163); (W16.of_int 106); (W16.of_int 63); (W16.of_int 191);
-(W16.of_int 185); (W16.of_int 215); (W16.of_int 166); (W16.of_int 208);
-(W16.of_int 15); (W16.of_int 67); (W16.of_int 29); (W16.of_int 108);
-(W16.of_int 102); (W16.of_int 230); (W16.of_int 254); (W16.of_int 161);
-(W16.of_int 163); (W16.of_int 106); (W16.of_int 63); (W16.of_int 191);
-(W16.of_int 185); (W16.of_int 215); (W16.of_int 166); (W16.of_int 208);
-(W16.of_int 251); (W16.of_int 92); (W16.of_int 41); (W16.of_int 65);
-(W16.of_int 213); (W16.of_int 228); (W16.of_int 64); (W16.of_int 142);
-(W16.of_int 183); (W16.of_int 247); (W16.of_int 141); (W16.of_int 150);
-(W16.of_int 195); (W16.of_int 15); (W16.of_int 90); (W16.of_int 85);
-(W16.of_int 251); (W16.of_int 92); (W16.of_int 41); (W16.of_int 65);
-(W16.of_int 213); (W16.of_int 228); (W16.of_int 64); (W16.of_int 142);
-(W16.of_int 183); (W16.of_int 247); (W16.of_int 141); (W16.of_int 150);
-(W16.of_int 195); (W16.of_int 15); (W16.of_int 90); (W16.of_int 85);
-(W16.of_int 35); (W16.of_int 35); (W16.of_int 205); (W16.of_int 205);
-(W16.of_int 102); (W16.of_int 102); (W16.of_int 6); (W16.of_int 6);
-(W16.of_int 161); (W16.of_int 161); (W16.of_int 37); (W16.of_int 37);
-(W16.of_int 8); (W16.of_int 8); (W16.of_int 169); (W16.of_int 169);
-(W16.of_int 35); (W16.of_int 35); (W16.of_int 205); (W16.of_int 205);
-(W16.of_int 102); (W16.of_int 102); (W16.of_int 6); (W16.of_int 6);
-(W16.of_int 161); (W16.of_int 161); (W16.of_int 37); (W16.of_int 37);
-(W16.of_int 8); (W16.of_int 8); (W16.of_int 169); (W16.of_int 169);
-(W16.of_int 69); (W16.of_int 69); (W16.of_int 69); (W16.of_int 69);
-(W16.of_int 194); (W16.of_int 194); (W16.of_int 194); (W16.of_int 194);
-(W16.of_int 178); (W16.of_int 178); (W16.of_int 178); (W16.of_int 178);
-(W16.of_int 63); (W16.of_int 63); (W16.of_int 63); (W16.of_int 63);
-(W16.of_int 69); (W16.of_int 69); (W16.of_int 69); (W16.of_int 69);
-(W16.of_int 194); (W16.of_int 194); (W16.of_int 194); (W16.of_int 194);
-(W16.of_int 178); (W16.of_int 178); (W16.of_int 178); (W16.of_int 178);
-(W16.of_int 63); (W16.of_int 63); (W16.of_int 63); (W16.of_int 63);
-(W16.of_int 55); (W16.of_int 55); (W16.of_int 55); (W16.of_int 55);
-(W16.of_int 55); (W16.of_int 55); (W16.of_int 55); (W16.of_int 55);
-(W16.of_int 226); (W16.of_int 226); (W16.of_int 226); (W16.of_int 226);
-(W16.of_int 226); (W16.of_int 226); (W16.of_int 226); (W16.of_int 226);
-(W16.of_int 55); (W16.of_int 55); (W16.of_int 55); (W16.of_int 55);
-(W16.of_int 55); (W16.of_int 55); (W16.of_int 55); (W16.of_int 55);
-(W16.of_int 226); (W16.of_int 226); (W16.of_int 226); (W16.of_int 226);
-(W16.of_int 226); (W16.of_int 226); (W16.of_int 226); (W16.of_int 226);
-(W16.of_int 237); (W16.of_int 237); (W16.of_int 237); (W16.of_int 237);
-(W16.of_int 75); (W16.of_int 184); (W16.of_int 164); (W16.of_int 125);
-(W16.of_int 162); (W16.of_int 54); (W16.of_int 147); (W16.of_int 247);
-(W16.of_int 140); (W16.of_int 204); (W16.of_int 235); (W16.of_int 182);
-(W16.of_int 152); (W16.of_int 154); (W16.of_int 182); (W16.of_int 83);
-(W16.of_int 75); (W16.of_int 184); (W16.of_int 164); (W16.of_int 125);
-(W16.of_int 162); (W16.of_int 54); (W16.of_int 147); (W16.of_int 247);
-(W16.of_int 140); (W16.of_int 204); (W16.of_int 235); (W16.of_int 182);
-(W16.of_int 152); (W16.of_int 154); (W16.of_int 182); (W16.of_int 83);
-(W16.of_int 156); (W16.of_int 95); (W16.of_int 104); (W16.of_int 54);
-(W16.of_int 90); (W16.of_int 9); (W16.of_int 122); (W16.of_int 246);
-(W16.of_int 219); (W16.of_int 35); (W16.of_int 80); (W16.of_int 91);
-(W16.of_int 243); (W16.of_int 227); (W16.of_int 214); (W16.of_int 79);
-(W16.of_int 156); (W16.of_int 95); (W16.of_int 104); (W16.of_int 54);
-(W16.of_int 90); (W16.of_int 9); (W16.of_int 122); (W16.of_int 246);
-(W16.of_int 219); (W16.of_int 35); (W16.of_int 80); (W16.of_int 91);
-(W16.of_int 243); (W16.of_int 227); (W16.of_int 214); (W16.of_int 79);
-(W16.of_int 68); (W16.of_int 131); (W16.of_int 138); (W16.of_int 82);
-(W16.of_int 154); (W16.of_int 64); (W16.of_int 8); (W16.of_int 253);
-(W16.of_int 8); (W16.of_int 26); (W16.of_int 46); (W16.of_int 13);
-(W16.of_int 10); (W16.of_int 40); (W16.of_int 117); (W16.of_int 58);
-(W16.of_int 68); (W16.of_int 131); (W16.of_int 138); (W16.of_int 82);
-(W16.of_int 154); (W16.of_int 64); (W16.of_int 8); (W16.of_int 253);
-(W16.of_int 8); (W16.of_int 26); (W16.of_int 46); (W16.of_int 13);
-(W16.of_int 10); (W16.of_int 40); (W16.of_int 117); (W16.of_int 58);
-(W16.of_int 130); (W16.of_int 130); (W16.of_int 66); (W16.of_int 66);
-(W16.of_int 79); (W16.of_int 79); (W16.of_int 61); (W16.of_int 61);
-(W16.of_int 130); (W16.of_int 130); (W16.of_int 249); (W16.of_int 249);
-(W16.of_int 45); (W16.of_int 45); (W16.of_int 196); (W16.of_int 196);
-(W16.of_int 130); (W16.of_int 130); (W16.of_int 66); (W16.of_int 66);
-(W16.of_int 79); (W16.of_int 79); (W16.of_int 61); (W16.of_int 61);
-(W16.of_int 130); (W16.of_int 130); (W16.of_int 249); (W16.of_int 249);
-(W16.of_int 45); (W16.of_int 45); (W16.of_int 196); (W16.of_int 196);
-(W16.of_int 75); (W16.of_int 75); (W16.of_int 75); (W16.of_int 75);
-(W16.of_int 216); (W16.of_int 216); (W16.of_int 216); (W16.of_int 216);
-(W16.of_int 147); (W16.of_int 147); (W16.of_int 147); (W16.of_int 147);
-(W16.of_int 171); (W16.of_int 171); (W16.of_int 171); (W16.of_int 171);
-(W16.of_int 75); (W16.of_int 75); (W16.of_int 75); (W16.of_int 75);
-(W16.of_int 216); (W16.of_int 216); (W16.of_int 216); (W16.of_int 216);
-(W16.of_int 147); (W16.of_int 147); (W16.of_int 147); (W16.of_int 147);
-(W16.of_int 171); (W16.of_int 171); (W16.of_int 171); (W16.of_int 171);
-(W16.of_int 115); (W16.of_int 115); (W16.of_int 115); (W16.of_int 115);
-(W16.of_int 115); (W16.of_int 115); (W16.of_int 115); (W16.of_int 115);
-(W16.of_int 44); (W16.of_int 44); (W16.of_int 44); (W16.of_int 44);
-(W16.of_int 44); (W16.of_int 44); (W16.of_int 44); (W16.of_int 44);
-(W16.of_int 115); (W16.of_int 115); (W16.of_int 115); (W16.of_int 115);
-(W16.of_int 115); (W16.of_int 115); (W16.of_int 115); (W16.of_int 115);
-(W16.of_int 44); (W16.of_int 44); (W16.of_int 44); (W16.of_int 44);
-(W16.of_int 44); (W16.of_int 44); (W16.of_int 44); (W16.of_int 44);
-(W16.of_int 103); (W16.of_int 103); (W16.of_int 103); (W16.of_int 103);
-(W16.of_int 140); (W16.of_int 140); (W16.of_int 140); (W16.of_int 140);
-(W16.of_int 0); (W16.of_int 0); (W16.of_int 0); (W16.of_int 0)]).
+[(W16.of_int (-23131)); (W16.of_int (-7756)); (W16.of_int 20258);
+(W16.of_int 23860); (W16.of_int 17443); (W16.of_int (-23210));
+(W16.of_int 20199); (W16.of_int 21498); (W16.of_int (-14469));
+(W16.of_int 11045); (W16.of_int 14903); (W16.of_int 6280);
+(W16.of_int 32385); (W16.of_int (-15355)); (W16.of_int (-2145));
+(W16.of_int (-20296)); (W16.of_int 1701); (W16.of_int 1460);
+(W16.of_int 2338); (W16.of_int 308); (W16.of_int 2851); (W16.of_int 854);
+(W16.of_int 2535); (W16.of_int 1530); (W16.of_int 1659); (W16.of_int 3109);
+(W16.of_int 1335); (W16.of_int 136); (W16.of_int 2945); (W16.of_int 1285);
+(W16.of_int 2719); (W16.of_int 2232); (W16.of_int 17423);
+(W16.of_int (-23997)); (W16.of_int (-28643)); (W16.of_int (-31636));
+(W16.of_int (-10906)); (W16.of_int 22502); (W16.of_int 7934);
+(W16.of_int (-10335)); (W16.of_int (-16989)); (W16.of_int (-24214));
+(W16.of_int (-10945)); (W16.of_int 20927); (W16.of_int (-24391));
+(W16.of_int 7383); (W16.of_int (-25434)); (W16.of_int 31184);
+(W16.of_int 1807); (W16.of_int 2371); (W16.of_int 2333); (W16.of_int 108);
+(W16.of_int 870); (W16.of_int 1510); (W16.of_int 1278); (W16.of_int 1185);
+(W16.of_int 1187); (W16.of_int 874); (W16.of_int 2111); (W16.of_int 1215);
+(W16.of_int 1465); (W16.of_int 2007); (W16.of_int 2726); (W16.of_int 2512);
+(W16.of_int 17915); (W16.of_int 24156); (W16.of_int (-4311));
+(W16.of_int (-16831)); (W16.of_int 12757); (W16.of_int 29156);
+(W16.of_int (-14016)); (W16.of_int (-13426)); (W16.of_int (-18249));
+(W16.of_int 30199); (W16.of_int (-9075)); (W16.of_int 28310);
+(W16.of_int 8899); (W16.of_int 15887); (W16.of_int 28250);
+(W16.of_int (-19883)); (W16.of_int 1275); (W16.of_int 2652);
+(W16.of_int 1065); (W16.of_int 2881); (W16.of_int 725); (W16.of_int 1508);
+(W16.of_int 2368); (W16.of_int 398); (W16.of_int 951); (W16.of_int 247);
+(W16.of_int 1421); (W16.of_int 3222); (W16.of_int 2499); (W16.of_int 271);
+(W16.of_int 90); (W16.of_int 853); (W16.of_int 16163); (W16.of_int 16163);
+(W16.of_int (-26675)); (W16.of_int (-26675)); (W16.of_int (-8858));
+(W16.of_int (-8858)); (W16.of_int (-18426)); (W16.of_int (-18426));
+(W16.of_int (-8799)); (W16.of_int (-8799)); (W16.of_int 10533);
+(W16.of_int 10533); (W16.of_int (-24312)); (W16.of_int (-24312));
+(W16.of_int 28073); (W16.of_int 28073); (W16.of_int 1571); (W16.of_int 1571);
+(W16.of_int 205); (W16.of_int 205); (W16.of_int 2918); (W16.of_int 2918);
+(W16.of_int 1542); (W16.of_int 1542); (W16.of_int 2721); (W16.of_int 2721);
+(W16.of_int 2597); (W16.of_int 2597); (W16.of_int 2312); (W16.of_int 2312);
+(W16.of_int 681); (W16.of_int 681); (W16.of_int (-31163));
+(W16.of_int (-31163)); (W16.of_int (-31163)); (W16.of_int (-31163));
+(W16.of_int 11202); (W16.of_int 11202); (W16.of_int 11202);
+(W16.of_int 11202); (W16.of_int (-1358)); (W16.of_int (-1358));
+(W16.of_int (-1358)); (W16.of_int (-1358)); (W16.of_int (-10689));
+(W16.of_int (-10689)); (W16.of_int (-10689)); (W16.of_int (-10689));
+(W16.of_int 1861); (W16.of_int 1861); (W16.of_int 1861); (W16.of_int 1861);
+(W16.of_int 1474); (W16.of_int 1474); (W16.of_int 1474); (W16.of_int 1474);
+(W16.of_int 1202); (W16.of_int 1202); (W16.of_int 1202); (W16.of_int 1202);
+(W16.of_int 2367); (W16.of_int 2367); (W16.of_int 2367); (W16.of_int 2367);
+(W16.of_int 16695); (W16.of_int 16695); (W16.of_int 16695);
+(W16.of_int 16695); (W16.of_int 16695); (W16.of_int 16695);
+(W16.of_int 16695); (W16.of_int 16695); (W16.of_int (-28190));
+(W16.of_int (-28190)); (W16.of_int (-28190)); (W16.of_int (-28190));
+(W16.of_int (-28190)); (W16.of_int (-28190)); (W16.of_int (-28190));
+(W16.of_int (-28190)); (W16.of_int 3127); (W16.of_int 3127);
+(W16.of_int 3127); (W16.of_int 3127); (W16.of_int 3127); (W16.of_int 3127);
+(W16.of_int 3127); (W16.of_int 3127); (W16.of_int 3042); (W16.of_int 3042);
+(W16.of_int 3042); (W16.of_int 3042); (W16.of_int 3042); (W16.of_int 3042);
+(W16.of_int 3042); (W16.of_int 3042); (W16.of_int (-787));
+(W16.of_int (-787)); (W16.of_int 1517); (W16.of_int 1517);
+(W16.of_int 12619); (W16.of_int (-19528)); (W16.of_int (-18524));
+(W16.of_int (-20099)); (W16.of_int (-12638)); (W16.of_int 18742);
+(W16.of_int (-30317)); (W16.of_int 32503); (W16.of_int (-5492));
+(W16.of_int (-23092)); (W16.of_int 4587); (W16.of_int (-13130));
+(W16.of_int 21656); (W16.of_int 14234); (W16.of_int (-13386));
+(W16.of_int (-11181)); (W16.of_int 75); (W16.of_int 3000); (W16.of_int 2980);
+(W16.of_int 2685); (W16.of_int 2210); (W16.of_int 1846); (W16.of_int 147);
+(W16.of_int 2551); (W16.of_int 1676); (W16.of_int 460); (W16.of_int 235);
+(W16.of_int 2742); (W16.of_int 3224); (W16.of_int 2458); (W16.of_int 2486);
+(W16.of_int 2899); (W16.of_int 5276); (W16.of_int 14431);
+(W16.of_int (-17560)); (W16.of_int 18486); (W16.of_int 28762);
+(W16.of_int (-29175)); (W16.of_int (-10630)); (W16.of_int (-32010));
+(W16.of_int (-6181)); (W16.of_int 14883); (W16.of_int (-944));
+(W16.of_int 27739); (W16.of_int (-20493)); (W16.of_int 32227);
+(W16.of_int 11478); (W16.of_int 335); (W16.of_int 156); (W16.of_int 2911);
+(W16.of_int 872); (W16.of_int 1590); (W16.of_int 602); (W16.of_int 777);
+(W16.of_int 2170); (W16.of_int 246); (W16.of_int 1755); (W16.of_int 291);
+(W16.of_int 3152); (W16.of_int 2907); (W16.of_int 1779); (W16.of_int 1251);
+(W16.of_int 2774); (W16.of_int 1103); (W16.of_int (-27836));
+(W16.of_int 25987); (W16.of_int 650); (W16.of_int (-9134));
+(W16.of_int 12442); (W16.of_int (-16064)); (W16.of_int (-26616));
+(W16.of_int 12797); (W16.of_int (-25080)); (W16.of_int (-20710));
+(W16.of_int (-20178)); (W16.of_int 23565); (W16.of_int (-30966));
+(W16.of_int (-1496)); (W16.of_int 6517); (W16.of_int 5690);
+(W16.of_int 1860); (W16.of_int 3203); (W16.of_int 1162); (W16.of_int 1618);
+(W16.of_int 666); (W16.of_int 320); (W16.of_int 8); (W16.of_int 2813);
+(W16.of_int 1544); (W16.of_int 282); (W16.of_int 1838); (W16.of_int 1293);
+(W16.of_int 2314); (W16.of_int 552); (W16.of_int 2677); (W16.of_int 2106);
+(W16.of_int 26242); (W16.of_int 26242); (W16.of_int (-21438));
+(W16.of_int (-21438)); (W16.of_int 1103); (W16.of_int 1103);
+(W16.of_int (-5571)); (W16.of_int (-5571)); (W16.of_int 29058);
+(W16.of_int 29058); (W16.of_int 26361); (W16.of_int 26361);
+(W16.of_int (-17363)); (W16.of_int (-17363)); (W16.of_int 5828);
+(W16.of_int 5828); (W16.of_int 130); (W16.of_int 130); (W16.of_int 1602);
+(W16.of_int 1602); (W16.of_int 1871); (W16.of_int 1871); (W16.of_int 829);
+(W16.of_int 829); (W16.of_int 2946); (W16.of_int 2946); (W16.of_int 3065);
+(W16.of_int 3065); (W16.of_int 1325); (W16.of_int 1325); (W16.of_int 2756);
+(W16.of_int 2756); (W16.of_int 15691); (W16.of_int 15691);
+(W16.of_int 15691); (W16.of_int 15691); (W16.of_int 3800); (W16.of_int 3800);
+(W16.of_int 3800); (W16.of_int 3800); (W16.of_int (-27757));
+(W16.of_int (-27757)); (W16.of_int (-27757)); (W16.of_int (-27757));
+(W16.of_int 20907); (W16.of_int 20907); (W16.of_int 20907);
+(W16.of_int 20907); (W16.of_int 3147); (W16.of_int 3147); (W16.of_int 3147);
+(W16.of_int 3147); (W16.of_int 1752); (W16.of_int 1752); (W16.of_int 1752);
+(W16.of_int 1752); (W16.of_int 2707); (W16.of_int 2707); (W16.of_int 2707);
+(W16.of_int 2707); (W16.of_int 171); (W16.of_int 171); (W16.of_int 171);
+(W16.of_int 171); (W16.of_int 12403); (W16.of_int 12403); (W16.of_int 12403);
+(W16.of_int 12403); (W16.of_int 12403); (W16.of_int 12403);
+(W16.of_int 12403); (W16.of_int 12403); (W16.of_int (-13524));
+(W16.of_int (-13524)); (W16.of_int (-13524)); (W16.of_int (-13524));
+(W16.of_int (-13524)); (W16.of_int (-13524)); (W16.of_int (-13524));
+(W16.of_int (-13524)); (W16.of_int 1907); (W16.of_int 1907);
+(W16.of_int 1907); (W16.of_int 1907); (W16.of_int 1907); (W16.of_int 1907);
+(W16.of_int 1907); (W16.of_int 1907); (W16.of_int 1836); (W16.of_int 1836);
+(W16.of_int 1836); (W16.of_int 1836); (W16.of_int 1836); (W16.of_int 1836);
+(W16.of_int 1836); (W16.of_int 1836); (W16.of_int (-14745));
+(W16.of_int (-14745)); (W16.of_int 359); (W16.of_int 359);
+(W16.of_int (-5236)); (W16.of_int (-5236)); (W16.of_int 1932);
+(W16.of_int 1932); (W16.of_int 0); (W16.of_int 0); (W16.of_int 0);
+(W16.of_int 0)]).
 
 abbrev  jzetas_exp =
 (BArray800.of_list16
-[(W16.of_int 11); (W16.of_int 11); (W16.of_int 11); (W16.of_int 11);
-(W16.of_int 154); (W16.of_int 154); (W16.of_int 154); (W16.of_int 154);
-(W16.of_int 213); (W16.of_int 213); (W16.of_int 213); (W16.of_int 213);
-(W16.of_int 213); (W16.of_int 213); (W16.of_int 213); (W16.of_int 213);
-(W16.of_int 142); (W16.of_int 142); (W16.of_int 142); (W16.of_int 142);
-(W16.of_int 142); (W16.of_int 142); (W16.of_int 142); (W16.of_int 142);
-(W16.of_int 213); (W16.of_int 213); (W16.of_int 213); (W16.of_int 213);
-(W16.of_int 213); (W16.of_int 213); (W16.of_int 213); (W16.of_int 213);
-(W16.of_int 142); (W16.of_int 142); (W16.of_int 142); (W16.of_int 142);
-(W16.of_int 142); (W16.of_int 142); (W16.of_int 142); (W16.of_int 142);
-(W16.of_int 86); (W16.of_int 86); (W16.of_int 86); (W16.of_int 86);
-(W16.of_int 110); (W16.of_int 110); (W16.of_int 110); (W16.of_int 110);
-(W16.of_int 41); (W16.of_int 41); (W16.of_int 41); (W16.of_int 41);
-(W16.of_int 182); (W16.of_int 182); (W16.of_int 182); (W16.of_int 182);
-(W16.of_int 86); (W16.of_int 86); (W16.of_int 86); (W16.of_int 86);
-(W16.of_int 110); (W16.of_int 110); (W16.of_int 110); (W16.of_int 110);
-(W16.of_int 41); (W16.of_int 41); (W16.of_int 41); (W16.of_int 41);
-(W16.of_int 182); (W16.of_int 182); (W16.of_int 182); (W16.of_int 182);
-(W16.of_int 61); (W16.of_int 61); (W16.of_int 212); (W16.of_int 212);
-(W16.of_int 8); (W16.of_int 8); (W16.of_int 127); (W16.of_int 127);
-(W16.of_int 196); (W16.of_int 196); (W16.of_int 178); (W16.of_int 178);
-(W16.of_int 191); (W16.of_int 191); (W16.of_int 127); (W16.of_int 127);
-(W16.of_int 61); (W16.of_int 61); (W16.of_int 212); (W16.of_int 212);
-(W16.of_int 8); (W16.of_int 8); (W16.of_int 127); (W16.of_int 127);
-(W16.of_int 196); (W16.of_int 196); (W16.of_int 178); (W16.of_int 178);
-(W16.of_int 191); (W16.of_int 191); (W16.of_int 127); (W16.of_int 127);
-(W16.of_int 199); (W16.of_int 140); (W16.of_int 217); (W16.of_int 247);
-(W16.of_int 244); (W16.of_int 211); (W16.of_int 231); (W16.of_int 249);
-(W16.of_int 4); (W16.of_int 249); (W16.of_int 193); (W16.of_int 103);
-(W16.of_int 175); (W16.of_int 119); (W16.of_int 126); (W16.of_int 189);
-(W16.of_int 199); (W16.of_int 140); (W16.of_int 217); (W16.of_int 247);
-(W16.of_int 244); (W16.of_int 211); (W16.of_int 231); (W16.of_int 249);
-(W16.of_int 4); (W16.of_int 249); (W16.of_int 193); (W16.of_int 103);
-(W16.of_int 175); (W16.of_int 119); (W16.of_int 126); (W16.of_int 189);
-(W16.of_int 178); (W16.of_int 43); (W16.of_int 30); (W16.of_int 14);
-(W16.of_int 166); (W16.of_int 177); (W16.of_int 222); (W16.of_int 38);
-(W16.of_int 11); (W16.of_int 135); (W16.of_int 248); (W16.of_int 167);
-(W16.of_int 203); (W16.of_int 153); (W16.of_int 162); (W16.of_int 101);
-(W16.of_int 178); (W16.of_int 43); (W16.of_int 30); (W16.of_int 14);
-(W16.of_int 166); (W16.of_int 177); (W16.of_int 222); (W16.of_int 38);
-(W16.of_int 11); (W16.of_int 135); (W16.of_int 248); (W16.of_int 167);
-(W16.of_int 203); (W16.of_int 153); (W16.of_int 162); (W16.of_int 101);
-(W16.of_int 174); (W16.of_int 75); (W16.of_int 103); (W16.of_int 105);
-(W16.of_int 75); (W16.of_int 22); (W16.of_int 53); (W16.of_int 117);
-(W16.of_int 10); (W16.of_int 110); (W16.of_int 203); (W16.of_int 95);
-(W16.of_int 132); (W16.of_int 93); (W16.of_int 73); (W16.of_int 182);
-(W16.of_int 174); (W16.of_int 75); (W16.of_int 103); (W16.of_int 105);
-(W16.of_int 75); (W16.of_int 22); (W16.of_int 53); (W16.of_int 117);
-(W16.of_int 10); (W16.of_int 110); (W16.of_int 203); (W16.of_int 95);
-(W16.of_int 132); (W16.of_int 93); (W16.of_int 73); (W16.of_int 182);
-(W16.of_int 20); (W16.of_int 20); (W16.of_int 20); (W16.of_int 20);
-(W16.of_int 31); (W16.of_int 31); (W16.of_int 31); (W16.of_int 31);
-(W16.of_int 31); (W16.of_int 31); (W16.of_int 31); (W16.of_int 31);
+[(W16.of_int 31499); (W16.of_int 31499); (W16.of_int 2571);
+(W16.of_int 2571); (W16.of_int 14746); (W16.of_int 14746); (W16.of_int 2970);
+(W16.of_int 2970); (W16.of_int 13525); (W16.of_int 13525);
+(W16.of_int 13525); (W16.of_int 13525); (W16.of_int 13525);
+(W16.of_int 13525); (W16.of_int 13525); (W16.of_int 13525);
+(W16.of_int (-12402)); (W16.of_int (-12402)); (W16.of_int (-12402));
+(W16.of_int (-12402)); (W16.of_int (-12402)); (W16.of_int (-12402));
+(W16.of_int (-12402)); (W16.of_int (-12402)); (W16.of_int 1493);
+(W16.of_int 1493); (W16.of_int 1493); (W16.of_int 1493); (W16.of_int 1493);
+(W16.of_int 1493); (W16.of_int 1493); (W16.of_int 1493); (W16.of_int 1422);
+(W16.of_int 1422); (W16.of_int 1422); (W16.of_int 1422); (W16.of_int 1422);
+(W16.of_int 1422); (W16.of_int 1422); (W16.of_int 1422);
+(W16.of_int (-20906)); (W16.of_int (-20906)); (W16.of_int (-20906));
+(W16.of_int (-20906)); (W16.of_int 27758); (W16.of_int 27758);
+(W16.of_int 27758); (W16.of_int 27758); (W16.of_int (-3799));
+(W16.of_int (-3799)); (W16.of_int (-3799)); (W16.of_int (-3799));
+(W16.of_int (-15690)); (W16.of_int (-15690)); (W16.of_int (-15690));
+(W16.of_int (-15690)); (W16.of_int 3158); (W16.of_int 3158);
+(W16.of_int 3158); (W16.of_int 3158); (W16.of_int 622); (W16.of_int 622);
+(W16.of_int 622); (W16.of_int 622); (W16.of_int 1577); (W16.of_int 1577);
+(W16.of_int 1577); (W16.of_int 1577); (W16.of_int 182); (W16.of_int 182);
+(W16.of_int 182); (W16.of_int 182); (W16.of_int (-5827));
+(W16.of_int (-5827)); (W16.of_int 17364); (W16.of_int 17364);
+(W16.of_int (-26360)); (W16.of_int (-26360)); (W16.of_int (-29057));
+(W16.of_int (-29057)); (W16.of_int 5572); (W16.of_int 5572);
+(W16.of_int (-1102)); (W16.of_int (-1102)); (W16.of_int 21439);
+(W16.of_int 21439); (W16.of_int (-26241)); (W16.of_int (-26241));
+(W16.of_int 573); (W16.of_int 573); (W16.of_int 2004); (W16.of_int 2004);
+(W16.of_int 264); (W16.of_int 264); (W16.of_int 383); (W16.of_int 383);
+(W16.of_int 2500); (W16.of_int 2500); (W16.of_int 1458); (W16.of_int 1458);
+(W16.of_int 1727); (W16.of_int 1727); (W16.of_int 3199); (W16.of_int 3199);
+(W16.of_int (-5689)); (W16.of_int (-6516)); (W16.of_int 1497);
+(W16.of_int 30967); (W16.of_int (-23564)); (W16.of_int 20179);
+(W16.of_int 20711); (W16.of_int 25081); (W16.of_int (-12796));
+(W16.of_int 26617); (W16.of_int 16065); (W16.of_int (-12441));
+(W16.of_int 9135); (W16.of_int (-649)); (W16.of_int (-25986));
+(W16.of_int 27837); (W16.of_int 1223); (W16.of_int 652); (W16.of_int 2777);
+(W16.of_int 1015); (W16.of_int 2036); (W16.of_int 1491); (W16.of_int 3047);
+(W16.of_int 1785); (W16.of_int 516); (W16.of_int 3321); (W16.of_int 3009);
+(W16.of_int 2663); (W16.of_int 1711); (W16.of_int 2167); (W16.of_int 126);
+(W16.of_int 1469); (W16.of_int (-334)); (W16.of_int (-11477));
+(W16.of_int (-32226)); (W16.of_int 20494); (W16.of_int (-27738));
+(W16.of_int 945); (W16.of_int (-14882)); (W16.of_int 6182);
+(W16.of_int 32011); (W16.of_int 10631); (W16.of_int 29176);
+(W16.of_int (-28761)); (W16.of_int (-18485)); (W16.of_int 17561);
+(W16.of_int (-14430)); (W16.of_int (-5275)); (W16.of_int 2226);
+(W16.of_int 555); (W16.of_int 2078); (W16.of_int 1550); (W16.of_int 422);
+(W16.of_int 177); (W16.of_int 3038); (W16.of_int 1574); (W16.of_int 3083);
+(W16.of_int 1159); (W16.of_int 2552); (W16.of_int 2727); (W16.of_int 1739);
+(W16.of_int 2457); (W16.of_int 418); (W16.of_int 3173); (W16.of_int 11182);
+(W16.of_int 13387); (W16.of_int (-14233)); (W16.of_int (-21655));
+(W16.of_int 13131); (W16.of_int (-4586)); (W16.of_int 23093);
+(W16.of_int 5493); (W16.of_int (-32502)); (W16.of_int 30318);
+(W16.of_int (-18741)); (W16.of_int 12639); (W16.of_int 20100);
+(W16.of_int 18525); (W16.of_int 19529); (W16.of_int (-12618));
+(W16.of_int 430); (W16.of_int 843); (W16.of_int 871); (W16.of_int 105);
+(W16.of_int 587); (W16.of_int 3094); (W16.of_int 2869); (W16.of_int 1653);
+(W16.of_int 778); (W16.of_int 3182); (W16.of_int 1483); (W16.of_int 1119);
+(W16.of_int 644); (W16.of_int 349); (W16.of_int 329); (W16.of_int 3254);
+(W16.of_int 788); (W16.of_int 788); (W16.of_int 1812); (W16.of_int 1812);
+(W16.of_int 28191); (W16.of_int 28191); (W16.of_int 28191);
+(W16.of_int 28191); (W16.of_int 28191); (W16.of_int 28191);
+(W16.of_int 28191); (W16.of_int 28191); (W16.of_int (-16694));
+(W16.of_int (-16694)); (W16.of_int (-16694)); (W16.of_int (-16694));
+(W16.of_int (-16694)); (W16.of_int (-16694)); (W16.of_int (-16694));
+(W16.of_int (-16694)); (W16.of_int 287); (W16.of_int 287); (W16.of_int 287);
+(W16.of_int 287); (W16.of_int 287); (W16.of_int 287); (W16.of_int 287);
+(W16.of_int 287); (W16.of_int 202); (W16.of_int 202); (W16.of_int 202);
 (W16.of_int 202); (W16.of_int 202); (W16.of_int 202); (W16.of_int 202);
-(W16.of_int 202); (W16.of_int 202); (W16.of_int 202); (W16.of_int 202);
-(W16.of_int 31); (W16.of_int 31); (W16.of_int 31); (W16.of_int 31);
-(W16.of_int 31); (W16.of_int 31); (W16.of_int 31); (W16.of_int 31);
-(W16.of_int 202); (W16.of_int 202); (W16.of_int 202); (W16.of_int 202);
-(W16.of_int 202); (W16.of_int 202); (W16.of_int 202); (W16.of_int 202);
-(W16.of_int 194); (W16.of_int 194); (W16.of_int 194); (W16.of_int 194);
-(W16.of_int 79); (W16.of_int 79); (W16.of_int 79); (W16.of_int 79);
-(W16.of_int 63); (W16.of_int 63); (W16.of_int 63); (W16.of_int 63);
-(W16.of_int 188); (W16.of_int 188); (W16.of_int 188); (W16.of_int 188);
-(W16.of_int 194); (W16.of_int 194); (W16.of_int 194); (W16.of_int 194);
-(W16.of_int 79); (W16.of_int 79); (W16.of_int 79); (W16.of_int 79);
-(W16.of_int 63); (W16.of_int 63); (W16.of_int 63); (W16.of_int 63);
-(W16.of_int 188); (W16.of_int 188); (W16.of_int 188); (W16.of_int 188);
-(W16.of_int 88); (W16.of_int 88); (W16.of_int 249); (W16.of_int 249);
-(W16.of_int 220); (W16.of_int 220); (W16.of_int 96); (W16.of_int 96);
-(W16.of_int 251); (W16.of_int 251); (W16.of_int 155); (W16.of_int 155);
-(W16.of_int 52); (W16.of_int 52); (W16.of_int 222); (W16.of_int 222);
-(W16.of_int 88); (W16.of_int 88); (W16.of_int 249); (W16.of_int 249);
-(W16.of_int 220); (W16.of_int 220); (W16.of_int 96); (W16.of_int 96);
-(W16.of_int 251); (W16.of_int 251); (W16.of_int 155); (W16.of_int 155);
-(W16.of_int 52); (W16.of_int 52); (W16.of_int 222); (W16.of_int 222);
-(W16.of_int 172); (W16.of_int 167); (W16.of_int 242); (W16.of_int 62);
-(W16.of_int 107); (W16.of_int 116); (W16.of_int 10); (W16.of_int 74);
-(W16.of_int 115); (W16.of_int 193); (W16.of_int 29); (W16.of_int 44);
-(W16.of_int 192); (W16.of_int 216); (W16.of_int 165); (W16.of_int 6);
-(W16.of_int 172); (W16.of_int 167); (W16.of_int 242); (W16.of_int 62);
-(W16.of_int 107); (W16.of_int 116); (W16.of_int 10); (W16.of_int 74);
-(W16.of_int 115); (W16.of_int 193); (W16.of_int 29); (W16.of_int 44);
-(W16.of_int 192); (W16.of_int 216); (W16.of_int 165); (W16.of_int 6);
-(W16.of_int 49); (W16.of_int 91); (W16.of_int 42); (W16.of_int 72);
-(W16.of_int 66); (W16.of_int 194); (W16.of_int 151); (W16.of_int 94);
-(W16.of_int 96); (W16.of_int 3); (W16.of_int 27); (W16.of_int 155);
-(W16.of_int 149); (W16.of_int 228); (W16.of_int 190); (W16.of_int 242);
-(W16.of_int 49); (W16.of_int 91); (W16.of_int 42); (W16.of_int 72);
-(W16.of_int 66); (W16.of_int 194); (W16.of_int 151); (W16.of_int 94);
-(W16.of_int 96); (W16.of_int 3); (W16.of_int 27); (W16.of_int 155);
-(W16.of_int 149); (W16.of_int 228); (W16.of_int 190); (W16.of_int 242);
-(W16.of_int 73); (W16.of_int 98); (W16.of_int 252); (W16.of_int 128);
-(W16.of_int 121); (W16.of_int 202); (W16.of_int 220); (W16.of_int 134);
-(W16.of_int 7); (W16.of_int 26); (W16.of_int 171); (W16.of_int 222);
-(W16.of_int 205); (W16.of_int 223); (W16.of_int 77); (W16.of_int 92);
-(W16.of_int 73); (W16.of_int 98); (W16.of_int 252); (W16.of_int 128);
-(W16.of_int 121); (W16.of_int 202); (W16.of_int 220); (W16.of_int 134);
-(W16.of_int 7); (W16.of_int 26); (W16.of_int 171); (W16.of_int 222);
-(W16.of_int 205); (W16.of_int 223); (W16.of_int 77); (W16.of_int 92);
-(W16.of_int 0); (W16.of_int 0); (W16.of_int 0); (W16.of_int 0)]).
+(W16.of_int 202); (W16.of_int 10690); (W16.of_int 10690); (W16.of_int 10690);
+(W16.of_int 10690); (W16.of_int 1359); (W16.of_int 1359); (W16.of_int 1359);
+(W16.of_int 1359); (W16.of_int (-11201)); (W16.of_int (-11201));
+(W16.of_int (-11201)); (W16.of_int (-11201)); (W16.of_int 31164);
+(W16.of_int 31164); (W16.of_int 31164); (W16.of_int 31164); (W16.of_int 962);
+(W16.of_int 962); (W16.of_int 962); (W16.of_int 962); (W16.of_int 2127);
+(W16.of_int 2127); (W16.of_int 2127); (W16.of_int 2127); (W16.of_int 1855);
+(W16.of_int 1855); (W16.of_int 1855); (W16.of_int 1855); (W16.of_int 1468);
+(W16.of_int 1468); (W16.of_int 1468); (W16.of_int 1468);
+(W16.of_int (-28072)); (W16.of_int (-28072)); (W16.of_int 24313);
+(W16.of_int 24313); (W16.of_int (-10532)); (W16.of_int (-10532));
+(W16.of_int 8800); (W16.of_int 8800); (W16.of_int 18427); (W16.of_int 18427);
+(W16.of_int 8859); (W16.of_int 8859); (W16.of_int 26676); (W16.of_int 26676);
+(W16.of_int (-16162)); (W16.of_int (-16162)); (W16.of_int 2648);
+(W16.of_int 2648); (W16.of_int 1017); (W16.of_int 1017); (W16.of_int 732);
+(W16.of_int 732); (W16.of_int 608); (W16.of_int 608); (W16.of_int 1787);
+(W16.of_int 1787); (W16.of_int 411); (W16.of_int 411); (W16.of_int 3124);
+(W16.of_int 3124); (W16.of_int 1758); (W16.of_int 1758); (W16.of_int 19884);
+(W16.of_int (-28249)); (W16.of_int (-15886)); (W16.of_int (-8898));
+(W16.of_int (-28309)); (W16.of_int 9076); (W16.of_int (-30198));
+(W16.of_int 18250); (W16.of_int 13427); (W16.of_int 14017);
+(W16.of_int (-29155)); (W16.of_int (-12756)); (W16.of_int 16832);
+(W16.of_int 4312); (W16.of_int (-24155)); (W16.of_int (-17914));
+(W16.of_int 2476); (W16.of_int 3239); (W16.of_int 3058); (W16.of_int 830);
+(W16.of_int 107); (W16.of_int 1908); (W16.of_int 3082); (W16.of_int 2378);
+(W16.of_int 2931); (W16.of_int 961); (W16.of_int 1821); (W16.of_int 2604);
+(W16.of_int 448); (W16.of_int 2264); (W16.of_int 677); (W16.of_int 2054);
+(W16.of_int (-31183)); (W16.of_int 25435); (W16.of_int (-7382));
+(W16.of_int 24392); (W16.of_int (-20926)); (W16.of_int 10946);
+(W16.of_int 24215); (W16.of_int 16990); (W16.of_int 10336);
+(W16.of_int (-7933)); (W16.of_int (-22501)); (W16.of_int 10907);
+(W16.of_int 31637); (W16.of_int 28644); (W16.of_int 23998);
+(W16.of_int (-17422)); (W16.of_int 817); (W16.of_int 603); (W16.of_int 1322);
+(W16.of_int 1864); (W16.of_int 2114); (W16.of_int 1218); (W16.of_int 2455);
+(W16.of_int 2142); (W16.of_int 2144); (W16.of_int 2051); (W16.of_int 1819);
+(W16.of_int 2459); (W16.of_int 3221); (W16.of_int 996); (W16.of_int 958);
+(W16.of_int 1522); (W16.of_int 20297); (W16.of_int 2146); (W16.of_int 15356);
+(W16.of_int (-32384)); (W16.of_int (-6279)); (W16.of_int (-14902));
+(W16.of_int (-11044)); (W16.of_int 14470); (W16.of_int (-21497));
+(W16.of_int (-20198)); (W16.of_int 23211); (W16.of_int (-17442));
+(W16.of_int (-23859)); (W16.of_int (-20257)); (W16.of_int 7757);
+(W16.of_int 23132); (W16.of_int 1097); (W16.of_int 610); (W16.of_int 2044);
+(W16.of_int 384); (W16.of_int 3193); (W16.of_int 1994); (W16.of_int 220);
+(W16.of_int 1670); (W16.of_int 1799); (W16.of_int 794); (W16.of_int 2475);
+(W16.of_int 478); (W16.of_int 3021); (W16.of_int 991); (W16.of_int 1869);
+(W16.of_int 1628); (W16.of_int 0); (W16.of_int 0); (W16.of_int 0);
+(W16.of_int 0)]).
 
 abbrev  jzetas_inv =
 (BArray256.of_list16
-[(W16.of_int 165); (W16.of_int 15); (W16.of_int 180); (W16.of_int 67);
-(W16.of_int 34); (W16.of_int 29); (W16.of_int 52); (W16.of_int 108);
-(W16.of_int 35); (W16.of_int 102); (W16.of_int 86); (W16.of_int 230);
-(W16.of_int 231); (W16.of_int 254); (W16.of_int 250); (W16.of_int 161);
-(W16.of_int 123); (W16.of_int 163); (W16.of_int 37); (W16.of_int 106);
-(W16.of_int 55); (W16.of_int 63); (W16.of_int 136); (W16.of_int 191);
-(W16.of_int 129); (W16.of_int 185); (W16.of_int 5); (W16.of_int 215);
-(W16.of_int 159); (W16.of_int 166); (W16.of_int 184); (W16.of_int 208);
-(W16.of_int 75); (W16.of_int 156); (W16.of_int 184); (W16.of_int 95);
-(W16.of_int 164); (W16.of_int 104); (W16.of_int 125); (W16.of_int 54);
-(W16.of_int 162); (W16.of_int 90); (W16.of_int 54); (W16.of_int 9);
-(W16.of_int 147); (W16.of_int 122); (W16.of_int 247); (W16.of_int 246);
-(W16.of_int 140); (W16.of_int 219); (W16.of_int 204); (W16.of_int 35);
-(W16.of_int 235); (W16.of_int 80); (W16.of_int 182); (W16.of_int 91);
-(W16.of_int 152); (W16.of_int 243); (W16.of_int 154); (W16.of_int 227);
-(W16.of_int 182); (W16.of_int 214); (W16.of_int 83); (W16.of_int 79);
-(W16.of_int 251); (W16.of_int 92); (W16.of_int 41); (W16.of_int 65);
-(W16.of_int 213); (W16.of_int 228); (W16.of_int 64); (W16.of_int 142);
-(W16.of_int 183); (W16.of_int 247); (W16.of_int 141); (W16.of_int 150);
-(W16.of_int 195); (W16.of_int 15); (W16.of_int 90); (W16.of_int 85);
-(W16.of_int 68); (W16.of_int 131); (W16.of_int 138); (W16.of_int 82);
-(W16.of_int 154); (W16.of_int 64); (W16.of_int 8); (W16.of_int 253);
-(W16.of_int 8); (W16.of_int 26); (W16.of_int 46); (W16.of_int 13);
-(W16.of_int 10); (W16.of_int 40); (W16.of_int 117); (W16.of_int 58);
-(W16.of_int 35); (W16.of_int 205); (W16.of_int 102); (W16.of_int 6);
-(W16.of_int 161); (W16.of_int 37); (W16.of_int 8); (W16.of_int 169);
-(W16.of_int 130); (W16.of_int 66); (W16.of_int 79); (W16.of_int 61);
-(W16.of_int 130); (W16.of_int 249); (W16.of_int 45); (W16.of_int 196);
-(W16.of_int 69); (W16.of_int 194); (W16.of_int 178); (W16.of_int 63);
-(W16.of_int 75); (W16.of_int 216); (W16.of_int 147); (W16.of_int 171);
-(W16.of_int 55); (W16.of_int 226); (W16.of_int 115); (W16.of_int 44);
-(W16.of_int 237); (W16.of_int 103); (W16.of_int 246); (W16.of_int 161)]).
+[(W16.of_int 1701); (W16.of_int 1807); (W16.of_int 1460); (W16.of_int 2371);
+(W16.of_int 2338); (W16.of_int 2333); (W16.of_int 308); (W16.of_int 108);
+(W16.of_int 2851); (W16.of_int 870); (W16.of_int 854); (W16.of_int 1510);
+(W16.of_int 2535); (W16.of_int 1278); (W16.of_int 1530); (W16.of_int 1185);
+(W16.of_int 1659); (W16.of_int 1187); (W16.of_int 3109); (W16.of_int 874);
+(W16.of_int 1335); (W16.of_int 2111); (W16.of_int 136); (W16.of_int 1215);
+(W16.of_int 2945); (W16.of_int 1465); (W16.of_int 1285); (W16.of_int 2007);
+(W16.of_int 2719); (W16.of_int 2726); (W16.of_int 2232); (W16.of_int 2512);
+(W16.of_int 75); (W16.of_int 156); (W16.of_int 3000); (W16.of_int 2911);
+(W16.of_int 2980); (W16.of_int 872); (W16.of_int 2685); (W16.of_int 1590);
+(W16.of_int 2210); (W16.of_int 602); (W16.of_int 1846); (W16.of_int 777);
+(W16.of_int 147); (W16.of_int 2170); (W16.of_int 2551); (W16.of_int 246);
+(W16.of_int 1676); (W16.of_int 1755); (W16.of_int 460); (W16.of_int 291);
+(W16.of_int 235); (W16.of_int 3152); (W16.of_int 2742); (W16.of_int 2907);
+(W16.of_int 3224); (W16.of_int 1779); (W16.of_int 2458); (W16.of_int 1251);
+(W16.of_int 2486); (W16.of_int 2774); (W16.of_int 2899); (W16.of_int 1103);
+(W16.of_int 1275); (W16.of_int 2652); (W16.of_int 1065); (W16.of_int 2881);
+(W16.of_int 725); (W16.of_int 1508); (W16.of_int 2368); (W16.of_int 398);
+(W16.of_int 951); (W16.of_int 247); (W16.of_int 1421); (W16.of_int 3222);
+(W16.of_int 2499); (W16.of_int 271); (W16.of_int 90); (W16.of_int 853);
+(W16.of_int 1860); (W16.of_int 3203); (W16.of_int 1162); (W16.of_int 1618);
+(W16.of_int 666); (W16.of_int 320); (W16.of_int 8); (W16.of_int 2813);
+(W16.of_int 1544); (W16.of_int 282); (W16.of_int 1838); (W16.of_int 1293);
+(W16.of_int 2314); (W16.of_int 552); (W16.of_int 2677); (W16.of_int 2106);
+(W16.of_int 1571); (W16.of_int 205); (W16.of_int 2918); (W16.of_int 1542);
+(W16.of_int 2721); (W16.of_int 2597); (W16.of_int 2312); (W16.of_int 681);
+(W16.of_int 130); (W16.of_int 1602); (W16.of_int 1871); (W16.of_int 829);
+(W16.of_int 2946); (W16.of_int 3065); (W16.of_int 1325); (W16.of_int 2756);
+(W16.of_int 1861); (W16.of_int 1474); (W16.of_int 1202); (W16.of_int 2367);
+(W16.of_int 3147); (W16.of_int 1752); (W16.of_int 2707); (W16.of_int 171);
+(W16.of_int 3127); (W16.of_int 3042); (W16.of_int 1907); (W16.of_int 1836);
+(W16.of_int 1517); (W16.of_int 359); (W16.of_int 758); (W16.of_int 1441)]).
 
 abbrev  jzetas =
 (BArray256.of_list16
-[(W16.of_int 237); (W16.of_int 11); (W16.of_int 154); (W16.of_int 20);
-(W16.of_int 213); (W16.of_int 142); (W16.of_int 31); (W16.of_int 202);
-(W16.of_int 86); (W16.of_int 110); (W16.of_int 41); (W16.of_int 182);
-(W16.of_int 194); (W16.of_int 79); (W16.of_int 63); (W16.of_int 188);
-(W16.of_int 61); (W16.of_int 212); (W16.of_int 8); (W16.of_int 127);
-(W16.of_int 196); (W16.of_int 178); (W16.of_int 191); (W16.of_int 127);
-(W16.of_int 88); (W16.of_int 249); (W16.of_int 220); (W16.of_int 96);
-(W16.of_int 251); (W16.of_int 155); (W16.of_int 52); (W16.of_int 222);
-(W16.of_int 199); (W16.of_int 140); (W16.of_int 217); (W16.of_int 247);
-(W16.of_int 244); (W16.of_int 211); (W16.of_int 231); (W16.of_int 249);
-(W16.of_int 4); (W16.of_int 249); (W16.of_int 193); (W16.of_int 103);
-(W16.of_int 175); (W16.of_int 119); (W16.of_int 126); (W16.of_int 189);
-(W16.of_int 172); (W16.of_int 167); (W16.of_int 242); (W16.of_int 62);
-(W16.of_int 107); (W16.of_int 116); (W16.of_int 10); (W16.of_int 74);
-(W16.of_int 115); (W16.of_int 193); (W16.of_int 29); (W16.of_int 44);
-(W16.of_int 192); (W16.of_int 216); (W16.of_int 165); (W16.of_int 6);
-(W16.of_int 178); (W16.of_int 174); (W16.of_int 43); (W16.of_int 75);
-(W16.of_int 30); (W16.of_int 103); (W16.of_int 14); (W16.of_int 105);
-(W16.of_int 166); (W16.of_int 75); (W16.of_int 177); (W16.of_int 22);
-(W16.of_int 222); (W16.of_int 53); (W16.of_int 38); (W16.of_int 117);
-(W16.of_int 11); (W16.of_int 10); (W16.of_int 135); (W16.of_int 110);
-(W16.of_int 248); (W16.of_int 203); (W16.of_int 167); (W16.of_int 95);
-(W16.of_int 203); (W16.of_int 132); (W16.of_int 153); (W16.of_int 93);
-(W16.of_int 162); (W16.of_int 73); (W16.of_int 101); (W16.of_int 182);
-(W16.of_int 49); (W16.of_int 73); (W16.of_int 91); (W16.of_int 98);
-(W16.of_int 42); (W16.of_int 252); (W16.of_int 72); (W16.of_int 128);
-(W16.of_int 66); (W16.of_int 121); (W16.of_int 194); (W16.of_int 202);
-(W16.of_int 151); (W16.of_int 220); (W16.of_int 94); (W16.of_int 134);
-(W16.of_int 96); (W16.of_int 7); (W16.of_int 3); (W16.of_int 26);
-(W16.of_int 27); (W16.of_int 171); (W16.of_int 155); (W16.of_int 222);
-(W16.of_int 149); (W16.of_int 205); (W16.of_int 228); (W16.of_int 223);
-(W16.of_int 190); (W16.of_int 77); (W16.of_int 242); (W16.of_int 92)]).
+[(W16.of_int 2285); (W16.of_int 2571); (W16.of_int 2970); (W16.of_int 1812);
+(W16.of_int 1493); (W16.of_int 1422); (W16.of_int 287); (W16.of_int 202);
+(W16.of_int 3158); (W16.of_int 622); (W16.of_int 1577); (W16.of_int 182);
+(W16.of_int 962); (W16.of_int 2127); (W16.of_int 1855); (W16.of_int 1468);
+(W16.of_int 573); (W16.of_int 2004); (W16.of_int 264); (W16.of_int 383);
+(W16.of_int 2500); (W16.of_int 1458); (W16.of_int 1727); (W16.of_int 3199);
+(W16.of_int 2648); (W16.of_int 1017); (W16.of_int 732); (W16.of_int 608);
+(W16.of_int 1787); (W16.of_int 411); (W16.of_int 3124); (W16.of_int 1758);
+(W16.of_int 1223); (W16.of_int 652); (W16.of_int 2777); (W16.of_int 1015);
+(W16.of_int 2036); (W16.of_int 1491); (W16.of_int 3047); (W16.of_int 1785);
+(W16.of_int 516); (W16.of_int 3321); (W16.of_int 3009); (W16.of_int 2663);
+(W16.of_int 1711); (W16.of_int 2167); (W16.of_int 126); (W16.of_int 1469);
+(W16.of_int 2476); (W16.of_int 3239); (W16.of_int 3058); (W16.of_int 830);
+(W16.of_int 107); (W16.of_int 1908); (W16.of_int 3082); (W16.of_int 2378);
+(W16.of_int 2931); (W16.of_int 961); (W16.of_int 1821); (W16.of_int 2604);
+(W16.of_int 448); (W16.of_int 2264); (W16.of_int 677); (W16.of_int 2054);
+(W16.of_int 2226); (W16.of_int 430); (W16.of_int 555); (W16.of_int 843);
+(W16.of_int 2078); (W16.of_int 871); (W16.of_int 1550); (W16.of_int 105);
+(W16.of_int 422); (W16.of_int 587); (W16.of_int 177); (W16.of_int 3094);
+(W16.of_int 3038); (W16.of_int 2869); (W16.of_int 1574); (W16.of_int 1653);
+(W16.of_int 3083); (W16.of_int 778); (W16.of_int 1159); (W16.of_int 3182);
+(W16.of_int 2552); (W16.of_int 1483); (W16.of_int 2727); (W16.of_int 1119);
+(W16.of_int 1739); (W16.of_int 644); (W16.of_int 2457); (W16.of_int 349);
+(W16.of_int 418); (W16.of_int 329); (W16.of_int 3173); (W16.of_int 3254);
+(W16.of_int 817); (W16.of_int 1097); (W16.of_int 603); (W16.of_int 610);
+(W16.of_int 1322); (W16.of_int 2044); (W16.of_int 1864); (W16.of_int 384);
+(W16.of_int 2114); (W16.of_int 3193); (W16.of_int 1218); (W16.of_int 1994);
+(W16.of_int 2455); (W16.of_int 220); (W16.of_int 2142); (W16.of_int 1670);
+(W16.of_int 2144); (W16.of_int 1799); (W16.of_int 2051); (W16.of_int 794);
+(W16.of_int 1819); (W16.of_int 2475); (W16.of_int 2459); (W16.of_int 478);
+(W16.of_int 3221); (W16.of_int 3021); (W16.of_int 996); (W16.of_int 991);
+(W16.of_int 958); (W16.of_int 1869); (W16.of_int 1522); (W16.of_int 1628)]).
 
 module type Syscall_t = {
   proc randombytes_32 (_:BArray32.t) : BArray32.t
@@ -4661,8 +4702,6 @@ module M(SC:Syscall_t) = {
     t64 <- (W64.of_int 1);
     t64 <- (t64 `<<` (W8.of_int (((8 * rATE8) - 1) %% 64)));
     t128 <- (zeroextu128 t64);
-    trace___addratebit_avx2x4 <-
-    (trace___addratebit_avx2x4 ++ [(Assert, false)]);
     t256 <- (VPBROADCAST_4u64 (truncateu64 t128));
     trace___addratebit_avx2x4 <-
     (trace___addratebit_avx2x4 ++
@@ -6077,8 +6116,6 @@ module M(SC:Syscall_t) = {
         aT <- result_0;
         t64_1 <- result;
         t128_0 <- (zeroextu128 t64_1);
-        trace_a1____addstate_avx2 <-
-        (trace_a1____addstate_avx2 ++ [(Assert, false)]);
         r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
       }
       st <- (BArray224.set256 st 0 ((BArray224.get256 st 0) `^` r0));
@@ -12164,8 +12201,6 @@ module M(SC:Syscall_t) = {
         aT <- result_1;
         w <- result_0;
         t128 <- (zeroextu128 w);
-        trace_a32____a_ilen_read_bcast_upto8_at <-
-        (trace_a32____a_ilen_read_bcast_upto8_at ++ [(Assert, false)]);
         w256 <- (VPBROADCAST_4u64 (truncateu64 t128));
         param_9 <- w256;
         param_8 <- aT8;
@@ -12356,8 +12391,6 @@ module M(SC:Syscall_t) = {
           [(Assert,
            ((0 <= (offset + dELTA)) /\
            ((offset + dELTA) <= 18446744073709551615)))]);
-          trace_a32____a_ilen_write_upto16 <-
-          (trace_a32____a_ilen_write_upto16 ++ [(Assert, false)]);
           trace_a32____a_ilen_write_upto16 <-
           (trace_a32____a_ilen_write_upto16 ++
           [(Assert,
@@ -12886,8 +12919,6 @@ module M(SC:Syscall_t) = {
         aT <- result_0;
         t64_1 <- result;
         t128_0 <- (zeroextu128 t64_1);
-        trace_a32____addstate_avx2 <-
-        (trace_a32____addstate_avx2 ++ [(Assert, false)]);
         r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
       }
       st <- (BArray224.set256 st 0 ((BArray224.get256 st 0) `^` r0));
@@ -17013,8 +17044,6 @@ module M(SC:Syscall_t) = {
         aT <- result_0;
         t64_1 <- result;
         t128_0 <- (zeroextu128 t64_1);
-        trace_a33____addstate_avx2 <-
-        (trace_a33____addstate_avx2 ++ [(Assert, false)]);
         r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
       }
       st <- (BArray224.set256 st 0 ((BArray224.get256 st 0) `^` r0));
@@ -19475,8 +19504,6 @@ module M(SC:Syscall_t) = {
            ((0 <= (offset + dELTA)) /\
            ((offset + dELTA) <= 18446744073709551615)))]);
           trace_a64____a_ilen_write_upto16 <-
-          (trace_a64____a_ilen_write_upto16 ++ [(Assert, false)]);
-          trace_a64____a_ilen_write_upto16 <-
           (trace_a64____a_ilen_write_upto16 ++
           [(Assert,
            ((0 <= (offset + dELTA)) /\ (((offset + dELTA) + 8) <= 64)))]);
@@ -20004,8 +20031,6 @@ module M(SC:Syscall_t) = {
         aT <- result_0;
         t64_1 <- result;
         t128_0 <- (zeroextu128 t64_1);
-        trace_a64____addstate_avx2 <-
-        (trace_a64____addstate_avx2 ++ [(Assert, false)]);
         r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
       }
       st <- (BArray224.set256 st 0 ((BArray224.get256 st 0) `^` r0));
@@ -22313,8 +22338,6 @@ module M(SC:Syscall_t) = {
           [(Assert,
            ((0 <= (offset + dELTA)) /\
            ((offset + dELTA) <= 18446744073709551615)))]);
-          trace_a128____a_ilen_write_upto16 <-
-          (trace_a128____a_ilen_write_upto16 ++ [(Assert, false)]);
           trace_a128____a_ilen_write_upto16 <-
           (trace_a128____a_ilen_write_upto16 ++
           [(Assert,
@@ -25668,8 +25691,6 @@ module M(SC:Syscall_t) = {
         aT <- result_0;
         t64_1 <- result;
         t128_0 <- (zeroextu128 t64_1);
-        trace_a1568____addstate_avx2 <-
-        (trace_a1568____addstate_avx2 ++ [(Assert, false)]);
         r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
       }
       st <- (BArray224.set256 st 0 ((BArray224.get256 st 0) `^` r0));
@@ -28275,8 +28296,6 @@ module M(SC:Syscall_t) = {
         aT <- result_0;
         t64_1 <- result;
         t128_0 <- (zeroextu128 t64_1);
-        trace_a1600____addstate_avx2 <-
-        (trace_a1600____addstate_avx2 ++ [(Assert, false)]);
         r0 <- (VPBROADCAST_4u64 (truncateu64 t128_0));
       }
       st <- (BArray224.set256 st 0 ((BArray224.get256 st 0) `^` r0));
@@ -35187,8 +35206,6 @@ module M(SC:Syscall_t) = {
       f0 <- (VPSHUFB_256 f0 shufbidx);
       t0 <- (truncateu128 f0);
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
-      trace__i_poly_compress <-
-      (trace__i_poly_compress ++ [(Assert, false)]);
       t0 <- (BLENDV_16u8 t0 t1 (truncateu128 shufbidx));
       trace__i_poly_compress <-
       (trace__i_poly_compress ++
@@ -35889,8 +35906,6 @@ module M(SC:Syscall_t) = {
       f0 <- (VPSHUFB_256 f0 shufbidx);
       t0 <- (truncateu128 f0);
       t1 <- (VEXTRACTI128 f0 (W8.of_int 1));
-      trace___i_polyvec_compress <-
-      (trace___i_polyvec_compress ++ [(Assert, false)]);
       t0 <- (BLENDV_16u8 t0 t1 (truncateu128 shufbidx));
       trace___i_polyvec_compress <-
       (trace___i_polyvec_compress ++
@@ -36124,8 +36139,6 @@ module M(SC:Syscall_t) = {
       pol <- (BArray512.set128d pol (2 * (W64.to_uint ctr)) data);
     } else {
       ms <- (update_msf (! condition_8) ms);
-      trace___write_u128_boundchk <-
-      (trace___write_u128_boundchk ++ [(Assert, false)]);
       data_u64 <- (MOVV_64 (truncateu64 data));
       condition_4 <- (ctr \ule (W64.of_int 252));
       if (condition_4) {

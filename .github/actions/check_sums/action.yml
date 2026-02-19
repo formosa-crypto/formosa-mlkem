@@ -12,7 +12,7 @@ runs:
           run: nix-shell --arg full false --run "echo Dependencies OK…"
         - name: Run Checksum Tests
           shell: bash
-          run: nix-shell --arg full false --run "make -C bench run-tests"
+          run: nix-shell --arg full false --run "make -C test run"
         - name: Generate Checksum Summary
           if: always()
           shell: bash

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BIN_DIR="./bench/bin"
+BIN_DIR="./test/bin"
 TARGETS_768=("test_jasmin_768_ref" "test_jasmin_768_avx2")
 TARGETS_1024=("test_jasmin_1024_ref" "test_jasmin_1024_avx2")
 

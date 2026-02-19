@@ -322,10 +322,10 @@ lemma __addratebit_avx2x4_proof _st _b_st _rATE8 :
       (__addratebit_avx2x4_spec _st _b_st _rATE8).
 proof.
 rewrite /__addratebit_avx2x4_spec .
-  proc; auto . admit. (*assert false - fix compiler*)
+  proc; auto . rewrite /is_init /valid /= => &m /> *. smt(BArray800.init_arrP).
 qed .
 
-require import Keccak_new_ASIZE.
+require import Keccak_ASIZE.
 
 clone KECCAK_ARRAY_ASIZE as KECCAK1 with
   op size <= 1, 
@@ -2165,10 +2165,13 @@ qed.
 lemma __write_u128_boundchk_proof _pol _b_pol _ctr _data _ms :
       (__write_u128_boundchk_spec _pol _b_pol _ctr _data _ms).
 proof.
-rewrite /__write_u128_boundchk_spec .
+  rewrite /__write_u128_boundchk_spec .
   proc. sp 3.
-  if. auto.  move => &m /> ?. rewrite  W64.uleE /=. rewrite /is_init /= => *. smt(W64.to_uint_cmp).
-  admit. (* assert false - fix compiler *)
+  if. auto.  move => &m /> ?. rewrite  W64.uleE /=. rewrite /is_init /= => *. smt(W64.to_uint_cmp). 
+  auto. move => &m /> ?. rewrite !uleE /is_init /valid /= => /> *. 
+  split. move => *. rewrite !to_uintD_small /=; smt().
+  move => *. split. move => *. rewrite !to_uintD_small /=; smt().
+  move => *. smt().
 qed .
 
 lemma __gen_matrix_buf_rejection_filter24_proof _pol _b_pol _counter _buf _b_buf _buf_offset _load_shuffle _mask _bounds _sst _b_sst _ones _ms :
@@ -2637,7 +2640,8 @@ lemma __crypto_kem_enc_jazz_proof _ct _b_ct _shk _b_shk _pk _b_pk _randomnessp _
       _randomnessp _b_randomnessp).
 proof.
 rewrite /__crypto_kem_enc_jazz_spec .
-proc; auto .
+  proc.
+  rewrite /=. auto .
 ecall (__indcpa_enc_proof param_6 b_param_1 param_5 b_param_0 param_4 
        (BArray1184.init_arr (JWord.W8.of_int 255)) param_3 b_param).
 auto .
@@ -2646,7 +2650,12 @@ auto .
 ecall (_sha3_256A_A1184_proof param_0 b_param_4 param (BArray1184.init_arr
                                                       (JWord.W8.of_int 255))).
 auto .  
-rewrite /is_init /valid /= => &m /> *. admitted. (*assert false - FIX compiler
+rewrite /is_init /valid /= => &m /> *.
+split.  smt(BArray1184.init_arrP).
+move => *.  split.  smt(BArray32.init_arrP SBArray64_32.SBArray64_32.is_init_cell_set).
+move => *.  split.  smt(BArray32.init_arrP SBArray64_32.SBArray64_32.is_init_cell_set SBArray64_32.SBArray64_32.is_init_cell_get BArray64.init_arrP).
+move => *. 
+admitted. (*assert false - FIX compiler
 smt (List.all_cat BArray1568.init_arrP SBArray64_32.SBArray64_32.is_init_cell_get SBArray64_32.SBArray64_32.is_init_cell_set BArray32.init_arrP BArray64.init_arrP BArray1568.init_arrP).                                                 
 qed .*)
 

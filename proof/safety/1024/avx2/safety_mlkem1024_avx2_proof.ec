@@ -289,10 +289,10 @@ lemma __addratebit_avx2x4_proof _st _b_st _rATE8 :
       (__addratebit_avx2x4_spec _st _b_st _rATE8).
 proof.
 rewrite /__addratebit_avx2x4_spec .
-proc; auto . admit. (*assert false - fix compiler*)
+proc; auto . smt(List.all_cat BArray800.init_arrP). 
 qed .
 
-require import Keccak_new_ASIZE.
+require import Keccak_ASIZE.
 
 clone KECCAK_ARRAY_ASIZE as KECCAK1 with
   op size <= 1, 
@@ -1878,8 +1878,7 @@ rewrite /_i_poly_compress_spec .
 proc; auto .
 while ((valid trace__i_poly_compress) /\ 0<=i <=8 /\ BArray160.is_init b_rp 0 (i*20)).
 auto .
-rewrite /is_init /valid /= => &m /> *. split. admit. (*assert false - fix  compiler*)
-smt (List.all_cat).
+rewrite /is_init /valid /= => &m /> *. split. smt(List.all_cat). smt().
 auto .
 ecall (_poly_csubq_proof param (BArray512.init_arr (JWord.W8.of_int 255))).
 auto .
@@ -2058,8 +2057,8 @@ rewrite /__i_polyvec_compress_spec .
 proc; auto .
 while ((valid trace___i_polyvec_compress) /\  0<=i /\ i<=64 /\ (i<> 0 => BArray1410.is_init b_rp 0 (i*22 + 2))).
 auto .
-rewrite /is_init /valid /= => &m /> *. split. admit. (*assert false - compiler fix *)
-smt (List.all_cat).
+rewrite /is_init /valid /= => &m /> *. split. smt(List.all_cat). 
+smt ().
 auto .
 ecall (__polyvec_csubq_proof param (BArray2048.init_arr (JWord.W8.of_int 255))).
 auto .
@@ -2118,7 +2117,10 @@ proof.
 rewrite /__write_u128_boundchk_spec .
   proc. sp 3.
   if. auto.  move => &m /> ?. rewrite  W64.uleE /=. rewrite /is_init /= => *. smt(W64.to_uint_cmp).
-  admit. (* assert false - fix compiler *)
+  auto. move => &m /> ?. rewrite !uleE /is_init /valid /= => /> *. 
+  split. move => *. rewrite !to_uintD_small /=; smt().
+  move => *. split. move => *. rewrite !to_uintD_small /=; smt().
+  move => *. smt().
 qed .
 
 lemma __gen_matrix_buf_rejection_filter24_proof _pol _b_pol _counter _buf _b_buf _buf_offset _load_shuffle _mask _bounds _sst _b_sst _ones _ms :

@@ -11,7 +11,14 @@ env:
 
 jobs:
     correctness_check:
-        name: Correctness check
+        name: Correctness checks
+        permissions:
+          contents: read
+          id-token: write
+        uses: ./.github/workflows/correctness.yml
+        secrets: inherit 
+    safety_check:
+        name: Safety check
         runs-on: ubuntu-latest
         strategy:
           fail-fast: false
@@ -19,21 +26,11 @@ jobs:
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
         steps:
-         - uses: actions/checkout@v6
-           with:
-            submodules: recursive
-         - uses: ./.github/actions/correctness
-           with:
-            size: ${{matrix.size}}
-            dir: ${{matrix.dir}}
-         - uses: ./.github/actions/check_sums
-
-    safety_check:
-        name: Safety check
-        runs-on: ubuntu-latest
-        steps:
         - uses: actions/checkout@v6
         - uses: ./.github/actions/safety
+          with:
+            size: ${{matrix.size}}
+            dir: ${{matrix.dir}}
     ct_check:
         name: CT Check
         runs-on: ubuntu-latest

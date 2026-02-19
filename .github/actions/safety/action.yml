@@ -1,6 +1,15 @@
 name: Safety Check
 description: Run safety checks for MLKEM implementation using Valgrind
 
+inputs:
+  size:
+    description: 'Size of the implementation (768 or 1024)'
+    required: true
+  dir:
+    description: 'Directory of the implementation (ref or avx2)'
+    required: true
+
+
 runs:
   using: composite
   steps:
@@ -12,8 +21,4 @@ runs:
     run: nix-shell --arg full false --run "echo Dependencies OK…"
   - name: Run Valgrind Memory Check
     shell: bash 
-    run: nix-shell --arg full false --run "make -C bench memory-check"
-  - name: Generate Memory Check Summary
-    if: always()
-    shell: bash
-    run: nix-shell --arg full false --run "./scripts/check_memory.sh"
+    run: nix-shell --arg full false --run "make -C test memory_${{inputs.size}}_${{inputs.dir}}"

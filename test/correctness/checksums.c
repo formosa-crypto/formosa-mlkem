@@ -10,7 +10,7 @@
 
 #include "try-anything.h"
 #include "api.h"
-#include "jade_kem.h"
+#include "../common/jade_kem.h"
 
 // ////////////////////////////////////////////////////////////////////////////
 

@@ -11,21 +11,8 @@ $(BIN)/bench_jasmin_768_avx2 \
 $(BIN)/bench_jasmin_1024_ref \
 $(BIN)/bench_jasmin_1024_avx2 \
 $(BIN)/bench_mlkem_native_768 \
-$(BIN)/bench_mlkem_native_1024 \
+$(BIN)/bench_mlkem_native_1024 
 
-TTARGETS ?= \
-$(BIN)/test_jasmin_768_ref \
-$(BIN)/test_jasmin_768_avx2 \
-$(BIN)/test_jasmin_1024_ref \
-$(BIN)/test_jasmin_1024_avx2 \
-$(BIN)/test_mlkem_native_768 \
-$(BIN)/test_mlkem_native_1024
-
-MTARGETS ?= \
-$(BIN)/memory_jasmin_768_ref \
-$(BIN)/memory_jasmin_768_avx2 \
-$(BIN)/memory_jasmin_1024_ref \
-$(BIN)/memory_jasmin_1024_avx2
 
 
 # --------------------------------------------------------------------
@@ -34,63 +21,24 @@ all: $(TARGETS)
 
 
 $(BIN)/bench_jasmin_768_ref: rnd libj_768_ref | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/768/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_ref ./common/crypto_kem.c ./src/jasmin/768/ref/libkyber768_ref.a ./src/randombytes/librandombytes1.a
+	$(CC) $(CFLAGS) -o $@ -I./bench/ -I./src/jasmin/768/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_ref ./bench/crypto_kem.c ./src/jasmin/768/ref/libkyber768_ref.a ./src/randombytes/librandombytes1.a
 
 $(BIN)/bench_jasmin_768_avx2: rnd libj_768_avx2 | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/768/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_avx2 ./common/crypto_kem.c ./src/jasmin/768/avx2/libkyber768_avx2.a ./src/randombytes/librandombytes1.a
+	$(CC) $(CFLAGS) -o $@ -I./bench/ -I./src/jasmin/768/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_avx2 ./bench/crypto_kem.c ./src/jasmin/768/avx2/libkyber768_avx2.a ./src/randombytes/librandombytes1.a
 
 $(BIN)/bench_jasmin_1024_ref: rnd libj_1024_ref | $(BIN) 
-	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/1024/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_ref ./common/crypto_kem.c ./src/jasmin/1024/ref/libkyber1024_ref.a ./src/randombytes/librandombytes1.a
+	$(CC) $(CFLAGS) -o $@ -I./bench/ -I./src/jasmin/1024/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_ref ./bench/crypto_kem.c ./src/jasmin/1024/ref/libkyber1024_ref.a ./src/randombytes/librandombytes1.a
 
 $(BIN)/bench_jasmin_1024_avx2: rnd libj_1024_avx2 | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/jasmin/1024/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_avx2 ./common/crypto_kem.c ./src/jasmin/1024/avx2/libkyber1024_avx2.a ./src/randombytes/librandombytes1.a
+	$(CC) $(CFLAGS) -o $@ -I./bench/ -I./src/jasmin/1024/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_avx2 ./bench/crypto_kem.c ./src/jasmin/1024/avx2/libkyber1024_avx2.a ./src/randombytes/librandombytes1.a
 
 #--
 
 $(BIN)/bench_mlkem_native_768: libmn | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/bindings/mlkem-native-768 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM768 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM768 ./common/crypto_kem.c ./src/mlkem-native/test/build/libmlkem768.a ./src/randombytes/librandombytes1.a
+	$(CC) $(CFLAGS) -o $@ -I./bench/ -I./src/bindings/mlkem-native-768 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM768 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM768 ./bench/crypto_kem.c ./src/mlkem-native/test/build/libmlkem768.a ./src/randombytes/librandombytes1.a
 
 $(BIN)/bench_mlkem_native_1024: libmn | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./common/ -I./src/bindings/mlkem-native-1024 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM1024 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM1024 ./common/crypto_kem.c ./src/mlkem-native/test/build/libmlkem1024.a ./src/randombytes/librandombytes1.a
-
-# --------------------------------------------------------------------
-.PHONY: all $(TTARGETS)
-all-tests: $(TTARGETS)
-
-$(BIN)/test_jasmin_768_ref: libj_768_ref | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/jasmin/768/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_ref ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/768/ref/libkyber768_ref.a
-
-$(BIN)/test_jasmin_768_avx2: libj_768_avx2 | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/jasmin/768/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_avx2 ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/768/avx2/libkyber768_avx2.a
-
-$(BIN)/test_jasmin_1024_ref: libj_1024_ref | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/jasmin/1024/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_ref ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/1024/ref/libkyber1024_ref.a
-
-$(BIN)/test_jasmin_1024_avx2: libj_1024_avx2 | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/jasmin/1024/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_avx2 ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/1024/avx2/libkyber1024_avx2.a
-
-#--
-
-$(BIN)/test_mlkem_native_768: libmn | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/bindings/mlkem-native-768 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM768 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM768 ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/mlkem-native/test/build/libmlkem768.a
-
-$(BIN)/test_mlkem_native_1024: libmn | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./test/ -I./src/bindings/mlkem-native-1024 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM1024 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM1024 ./test/crypto_kem.c test/notrandombytes.c test/notrandombytes1.c ./src/mlkem-native/test/build/libmlkem1024.a
-
-# --------------------------------------------------------------------
-
-$(BIN)/memory_jasmin_768_ref: libj_768_ref | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./memory/ -I./src/jasmin/768/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_ref ./memory/memory.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/768/ref/libkyber768_ref.a
-
-$(BIN)/memory_jasmin_768_avx2: libj_768_avx2 | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./memory/ -I./src/jasmin/768/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_avx2 ./memory/memory.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/768/avx2/libkyber768_avx2.a
-
-$(BIN)/memory_jasmin_1024_ref: libj_1024_ref | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./memory/ -I./src/jasmin/1024/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_ref ./memory/memory.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/1024/ref/libkyber1024_ref.a
-
-$(BIN)/memory_jasmin_1024_avx2: libj_1024_avx2 | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./memory/ -I./src/jasmin/1024/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_avx2 ./memory/memory.c test/notrandombytes.c test/notrandombytes1.c ./src/jasmin/1024/avx2/libkyber1024_avx2.a
-
+	$(CC) $(CFLAGS) -o $@ -I./bench/ -I./src/bindings/mlkem-native-1024 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM1024 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM1024 ./bench/crypto_kem.c ./src/mlkem-native/test/build/libmlkem1024.a ./src/randombytes/librandombytes1.a
 
 # --------------------------------------------------------------------
 
@@ -121,11 +69,6 @@ libmn:
 run: $(TARGETS)
 	for d in $(TARGETS); do (./$$d > $$d.out); done
 
-run-tests: $(TTARGETS)
-	for d in $(TTARGETS); do (./$$d > $$d.sha); done
-
-memory-check: $(MTARGETS)
-	for d in $(MTARGETS); do ((valgrind --leak-check=full --error-exitcode=1 --log-file=$$d-mem.out ./$$d) || true); done
 
 # --------------------------------------------------------------------
 .PHONY: libs-clean clean
