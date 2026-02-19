@@ -39,10 +39,10 @@ $(BIN)/test_jasmin_1024_avx2: libj_1024_avx2 | $(BIN)
 #--
 
 $(BIN)/test_mlkem_native_768: libmn | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./correctness/ -I./../bench/src/bindings/mlkem-native-768 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM768 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM768 ./correctness/checksums.c correctness/notrandombytes.c correctness/notrandombytes1.c ../bench/src/mlkem-native/libmlkem768.a
+	$(CC) $(CFLAGS) -o $@ -I./correctness/ -I./../bench/src/bindings/mlkem-native-768 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM768 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM768 ./correctness/checksums.c correctness/notrandombytes.c correctness/notrandombytes1.c ../bench/src/mlkem-native/test/build/libmlkem768.a
 
 $(BIN)/test_mlkem_native_1024: libmn | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./correctness/ -I./../bench/src/bindings/mlkem-native-1024 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM1024 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM1024 ./correctness/checksums.c correctness/notrandombytes.c correctness/notrandombytes1.c ../bench/src/mlkem-native/libmlkem1024.a
+	$(CC) $(CFLAGS) -o $@ -I./correctness/ -I./../bench/src/bindings/mlkem-native-1024 -DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM1024 -DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM1024 ./correctness/checksums.c correctness/notrandombytes.c correctness/notrandombytes1.c ../bench/src/mlkem-native/test/build/libmlkem1024.a
 
 # --------------------------------------------------------------------
 
