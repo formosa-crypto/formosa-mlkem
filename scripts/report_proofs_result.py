@@ -2,24 +2,18 @@ import os
 import re
 import sys
 
-def parse_and_report(log_file, m_type, m_size, m_dir):
-    """Reads log, parses results, and writes summary to GITHUB_STEP_SUMMARY."""
-    
-    results = {} #2:07.9]
+def parse_and_report(log_file, m_type, m_size, m_dir):    
+    results = {} 
     success_pattern = re.compile(r'\[✓\].*?\[\s*.*?\].*?\[\s*(\d+?:\d{2}\.\d).*?\]\s*(.*)')
-    warning_pattern = re.compile(r'\[ϟ\]\s*(.*?):')
     error_pattern = re.compile(r'\[✗\].*?\[\s*.*?\].*?\[\s*(\d+?:\d{2}\.\d).*?\]\s*(.*)')
 
     if not os.path.exists(log_file):
-        # Write a simple error message if the log wasn't created
         with open(os.environ.get('GITHUB_STEP_SUMMARY', '/dev/null'), 'a', encoding='utf-8') as f:
             f.write(f"## ❌ Error: Proof log file '{log_file}' not found.\n")
         sys.exit(0)
 
-    # --- Parsing Logic ---
     with open(log_file, "r", encoding="utf-8") as f:
         for line in f:
-            # Check for Success/Timing
             s_match = success_pattern.search(line)
             e_match = error_pattern.search(line)
 
@@ -33,7 +27,6 @@ def parse_and_report(log_file, m_type, m_size, m_dir):
                 filepath = e_match.group(2).strip()
                 filename = os.path.basename(filepath)
                 results[filename] = {"status": "❌", "time": duration }
-    # --- Markdown Generation ---
     job_outcome = os.environ.get('PROOF_JOB_OUTCOME', 'failure')
     status_emoji = "✅" if job_outcome == "success" else "❌"
 
@@ -50,7 +43,6 @@ def parse_and_report(log_file, m_type, m_size, m_dir):
         status_display = data["status"]
         markdown.append(f"| `{filename}` | {status_display} | {data['time']}|")
 
-    # Write to GITHUB_STEP_SUMMARY
     with open(os.environ['GITHUB_STEP_SUMMARY'], 'w', encoding='utf-8') as f:
         f.write("\n".join(markdown) + "\n\n")
 

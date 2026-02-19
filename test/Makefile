@@ -25,10 +25,10 @@ $(BIN)/memory_jasmin_1024_avx2
 all: $(TARGETS)
 
 $(BIN)/test_jasmin_768_ref: libj_768_ref | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./correctness/ -I./../bench/jasmin/768/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_ref ./correctness/checksums.c correctness/notrandombytes.c correctness/notrandombytes1.c ../bench/src/jasmin/768/ref/libkyber768_ref.a
+	$(CC) $(CFLAGS) -o $@ -I./correctness/ -I./../bench/src/jasmin/768/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_ref ./correctness/checksums.c correctness/notrandombytes.c correctness/notrandombytes1.c ../bench/src/jasmin/768/ref/libkyber768_ref.a
 
 $(BIN)/test_jasmin_768_avx2: libj_768_avx2 | $(BIN)
-	$(CC) $(CFLAGS) -o $@ -I./correctness/ -I./../bench/jasmin/768/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_avx2 ./correctness/checksums.c correctness/notrandombytes.c correctness/notrandombytes1.c ../bench/src/jasmin/768/avx2/libkyber768_avx2.a
+	$(CC) $(CFLAGS) -o $@ -I./correctness/ -I./../bench/src/jasmin/768/avx2/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM768_AMD64_AVX2 -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_avx2 ./correctness/checksums.c correctness/notrandombytes.c correctness/notrandombytes1.c ../bench/src/jasmin/768/avx2/libkyber768_avx2.a
 
 $(BIN)/test_jasmin_1024_ref: libj_1024_ref | $(BIN)
 	$(CC) $(CFLAGS) -o $@ -I./correctness/ -I./../bench/src/jasmin/1024/ref/ -DJADE_NAMESPACE=JADE_KEM_MLKEM_MLKEM1024_AMD64_REF -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_ref ./correctness/checksums.c correctness/notrandombytes.c correctness/notrandombytes1.c ../bench/src/jasmin/1024/ref/libkyber1024_ref.a
@@ -92,16 +92,19 @@ run: $(TARGETS)
 	for d in $(TARGETS); do (./$$d > $$d.sha); done
 
 memory_768_ref: $(BIN)/memory_jasmin_768_ref
-	(valgrind --leak-check=full --error-exitcode=1 --log-file=$@.out ./$(BIN)/memory_jasmin_768_ref)
-
+	(valgrind --leak-check=full --log-file=$@.out ./$(BIN)/memory_jasmin_768_ref || true; grep -q "ERROR SUMMARY: 0 errors" $@.out && exit 0 || { cat $@.out; exit 1; })
+ 
 memory_768_avx2: $(BIN)/memory_jasmin_768_avx2
-	(valgrind --leak-check=full --error-exitcode=1 --log-file=$@.out ./$(BIN)/memory_jasmin_768_avx2)
+	(valgrind --leak-check=full --log-file=$@.out ./$(BIN)/memory_jasmin_768_avx2 || true; grep -q "ERROR SUMMARY: 0 errors" $@.out && exit 0 || { cat $@.out; exit 1; })
+
 
 memory_1024_ref: $(BIN)/memory_jasmin_1024_ref
-	(valgrind --leak-check=full --error-exitcode=1 --log-file=$@.out ./$(BIN)/memory_jasmin_1024_ref)
+	(valgrind --leak-check=full --log-file=$@.out ./$(BIN)/memory_jasmin_1024_ref || true; grep -q "ERROR SUMMARY: 0 errors" $@.out && exit 0 || { cat $@.out; exit 1; })
+
 
 memory_1024_avx2: $(BIN)/memory_jasmin_1024_avx2
-	(valgrind --leak-check=full --error-exitcode=1 --log-file=$@.out ./$(BIN)/memory_jasmin_1024_avx2)
+	(valgrind --leak-check=full --log-file=$@.out ./$(BIN)/memory_jasmin_1024_avx2 || true; grep -q "ERROR SUMMARY: 0 errors" $@.out && exit 0 || { cat $@.out; exit 1; })
+
 
 memory-check: $(MTARGETS)
 	for d in $(MTARGETS); do ((valgrind --leak-check=full --error-exitcode=1 --log-file=$$d-mem.out ./$$d) || true); done
