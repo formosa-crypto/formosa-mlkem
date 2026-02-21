@@ -395,7 +395,7 @@ qed.
    are aligned and we should have the same output!
 *)
 
-module DC0(O : RO.RO) = {
+local module DC0(O : RO.RO) = {
    proc distinguish = PKE.Correctness_Adv(BasePKE, B(A,O)).main
 }.
 
@@ -408,7 +408,7 @@ proc*.
 by call (RO.FullEager.RO_LRO_D DC0 _); 1: by rewrite (randd_ll).
 qed.
 
-module DC1(O : RO.RO) = {
+local module DC1(O : RO.RO) = {
    proc distinguish = B(A,O).main
 }.
 
