@@ -33,7 +33,8 @@ jobs:
           with:
             nix_path: nixpkgs=channel:nixos-unstable
         - run: nix-shell --arg full false --run "echo Dependencies OK…"
-        - run: nix-shell --arg full false --run "make -C code/jasmin/${{matrix.size}}/${{matrix.dir}}/ test"
+        - run: nix-shell --arg full false --run "make -C code/jasmin/${{matrix.size}}/${{matrix.dir}}/ jkem.s"
+        - run: nix-shell --arg full false --run "make -C tests/apitest run_test_kem_${{matrix.dir}}_${{matrix.size}}"
     check-sums:
         name: Test MLKEM implementation checksums
         runs-on: ubuntu-latest

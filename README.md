@@ -26,8 +26,9 @@ Then the following actions are possible:
 * from the top-level folder, `make check` will re-check all the proof scripts
 * from the `code/jasmin/mlkem-XXX` folder, `make ct` will check the code for constant-time
 * from the `code/jasmin/mlkem-XXX` folder, `make sct` will check the code for speculative constant-time
-* from the `code/jasmin/mlkem-XXX` folder, `make` will build the assembly file and rudimentary test executables
 * from the `code/jasmin/mlkem-XXX` folder, `make pqcp` will re-generate the files exported to the Post Quantum Code Package repository.
+* from the `tests/apitest` folder, `make all_run_test_kem` will build & run the assembly file and rudimentary test executables
+* from the `tests/apitest` folder, `make all_run_speed_kem` will build & runthe assembly file and rudimentary bench executables
 
 ## Constant-time goals / properties
 
