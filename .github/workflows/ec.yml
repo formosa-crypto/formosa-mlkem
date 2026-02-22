@@ -52,6 +52,8 @@ jobs:
           run: nix-shell --run "echo Dependencies OK…"
         - name: Configure provers
           run: nix-shell --run 'easycrypt why3config'
+        - name: Print EasyCrypt configuration
+          run: nix-shell --run 'easycrypt config'
         - name: Check EasyCrypt proofs (${{matrix.category}})
           id: ec_proofs 
           run: |
