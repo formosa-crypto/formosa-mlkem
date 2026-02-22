@@ -10,7 +10,7 @@ import sys
 def tick(flag: bool) -> str:
     return "✅" if flag else "❌"
 
-def parse_and_report(log_file, m_type, m_size, m_dir):
+def parse_and_report(log_file: str, category: str):
     """Reads log, parses results, and writes summary to GITHUB_STEP_SUMMARY."""
     if not os.path.exists(log_file):
         # Write a simple error message if the log wasn't created
@@ -41,7 +41,7 @@ def parse_and_report(log_file, m_type, m_size, m_dir):
         allok &= os.environ.get('PROOF_JOB_OUTCOME') == 'success'
 
     markdown = [
-        f"## Proof Summary: {m_type.capitalize()} MLKEM{m_size}({m_dir}) - {tick(allok)}",
+        f"## Proof Summary: MLKEM ({category}) - {tick(allok)}",
         "---",
         "| File | Status | Duration |",
         "| ---- | ------ | -------- |"
@@ -62,9 +62,9 @@ def parse_and_report(log_file, m_type, m_size, m_dir):
         print(markdown)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        print("Usage: python <log_file> <type> <size> <dir>", file = sys.stderr)
+    if len(sys.argv)-1 != 2:
+        print("Usage: python <log_file> <category>", file = sys.stderr)
         sys.exit(1)
         
-    log_file, m_type, m_size, m_dir = sys.argv[1:]
-    parse_and_report(log_file, m_type, m_size, m_dir)
+    log_file, category = sys.argv[1:]
+    parse_and_report(log_file, category)
