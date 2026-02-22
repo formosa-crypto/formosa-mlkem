@@ -48,13 +48,13 @@ jobs:
           id: ec_proofs 
           run: |
             set -o pipefail
-            nix-shell --run "easycrypt runtest config/tests.config mlkem_${{matrix.type}}_${{matrix.size}}_${{matrix.dir}}"  2>&1 | tee proof_output.log
+            nix-shell --run "easycrypt runtest -report report.yaml config/tests.config mlkem_${{matrix.type}}_${{matrix.size}}_${{matrix.dir}}"
         - name: Generate Detailed Job Summary
           if: always() 
           run: |
             export PROOF_JOB_OUTCOME=${{ steps.ec_proofs.outcome }}
             python scripts/report_proofs_result.py \
-              proof_output.log \
+              report.yaml \
               "${{ matrix.type }}" \
               "${{ matrix.size }}" \
               "${{ matrix.dir }}"

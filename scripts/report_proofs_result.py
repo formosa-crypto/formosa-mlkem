@@ -1,62 +1,69 @@
+#! /usr/bin/env python3
+
+import functools as ft
+import operator as op
 import os
+import yaml
 import re
 import sys
 
+def tick(flag: bool) -> str:
+    return "✅" if flag else "❌"
+
 def parse_and_report(log_file, m_type, m_size, m_dir):
     """Reads log, parses results, and writes summary to GITHUB_STEP_SUMMARY."""
-    
-    results = {} #2:07.9]
-    success_pattern = re.compile(r'\[✓\].*?\[\s*.*?\].*?\[\s*(\d+?:\d{2}\.\d).*?\]\s*(.*)')
-    warning_pattern = re.compile(r'\[ϟ\]\s*(.*?):')
-    error_pattern = re.compile(r'\[✗\].*?\[\s*.*?\].*?\[\s*(\d+?:\d{2}\.\d).*?\]\s*(.*)')
-
     if not os.path.exists(log_file):
         # Write a simple error message if the log wasn't created
         with open(os.environ.get('GITHUB_STEP_SUMMARY', '/dev/null'), 'a', encoding='utf-8') as f:
             f.write(f"## ❌ Error: Proof log file '{log_file}' not found.\n")
-        sys.exit(0)
+        return
 
-    # --- Parsing Logic ---
-    with open(log_file, "r", encoding="utf-8") as f:
-        for line in f:
-            # Check for Success/Timing
-            s_match = success_pattern.search(line)
-            e_match = error_pattern.search(line)
+    with open(log_file) as stream:
+        report = yaml.safe_load(stream)
 
-            if s_match:
-                duration = s_match.group(1)
-                filepath = s_match.group(2).strip()
-                filename = os.path.basename(filepath)                
-                results[filename] = {"status": "✅", "time": duration }
-            elif e_match:
-                duration = e_match.group(1)
-                filepath = e_match.group(2).strip()
-                filename = os.path.basename(filepath)
-                results[filename] = {"status": "❌", "time": duration }
+    report = [report1 for test in report for report1 in test['details']]
+
+    # --- Extract info from report ---
+    results = {}
+
+    for report1 in report:
+        duration = report1['time']
+        filepath = re.search(r'^.* \((.*)\)$', report1['name']).group(1)
+        filename = os.path.basename(filepath)
+        status   = report1['success'] == report1['shouldpass']
+
+        results[filename] = dict(status = status, duration = duration)
+
     # --- Markdown Generation ---
-    job_outcome = os.environ.get('PROOF_JOB_OUTCOME', 'failure')
-    status_emoji = "✅" if job_outcome == "success" else "❌"
+    allok = ft.reduce(op.and_, (r1['status'] for r1 in results.values()), True)
+
+    if 'PROOF_JOB_OUTCOME' in os.environ:
+        allok &= os.environ.get('PROOF_JOB_OUTCOME') == 'success'
 
     markdown = [
-        f"## Proof Summary: {m_type.capitalize()} MLKEM{m_size}({m_dir}) - {status_emoji}",
+        f"## Proof Summary: {m_type.capitalize()} MLKEM{m_size}({m_dir}) - {tick(allok)}",
         "---",
         "| File | Status | Duration |",
-        "| --- | --- | --- |"
+        "| ---- | ------ | -------- |"
     ]
 
     for filename in sorted(results.keys()):
         data = results[filename]
-        
-        status_display = data["status"]
-        markdown.append(f"| `{filename}` | {status_display} | {data['time']}|")
+        markdown.append(f"| `{filename}` | {tick(data['status'])} | {data['duration']}|")
+
+    markdown = "\n".join(markdown) + "\n"
 
     # Write to GITHUB_STEP_SUMMARY
-    with open(os.environ['GITHUB_STEP_SUMMARY'], 'w', encoding='utf-8') as f:
-        f.write("\n".join(markdown) + "\n\n")
+    if 'GITHUB_STEP_SUMMARY' in os.environ:
+        with open(os.environ['GITHUB_STEP_SUMMARY'], 'w', encoding='utf-8') as f:
+            f.write(markdown)
+    else:
+        # For debugging from CLI
+        print(markdown)
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print("Usage: python <log_file> <type> <size> <dir>")
+        print("Usage: python <log_file> <type> <size> <dir>", file = sys.stderr)
         sys.exit(1)
         
     log_file, m_type, m_size, m_dir = sys.argv[1:]
