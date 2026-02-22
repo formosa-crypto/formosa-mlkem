@@ -45,13 +45,13 @@ let
     coqPackages = { coq = null; flocq = null; };
   };
   bitwuzla = callPackage ./config/bitwuzla.nix { inherit (oc) buildDunePackage zarith; };
-  ecVersion = "f02e732e6fa62ad4de185f3d4e217eff4097b626";
+  ecVersion = "e71eed9916390c1beb3ec0eb4f83adb1c71fb21b";
   ec = (easycrypt.overrideAttrs (o: {
     src = fetchFromGitHub {
       owner = "vbgl";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = "sha256-pRShAzAsOvFWLI4rwTSPg3lrkHmPpKxLWA4Z77ZMurk=";
+      hash = "sha256-ipfVm+pR8YKsPSLanThw8TW/52gXTJj895U8zlM0c3w=";
     };
     postPatch = ''
       substituteInPlace dune-project \
