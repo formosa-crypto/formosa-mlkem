@@ -80,11 +80,7 @@ jobs:
           run: nix-shell --run 'easycrypt why3config'
         - name: Run ${{matrix.type}} Proofs MLKEM${{matrix.size}}(${{matrix.dir}})
           run: |
-           if [ ${{matrix.type}} == "correctness" ] && [ ${{matrix.dir}} == "ref" ]; then
-              TARGET_DIR="proof/${{matrix.type}}/${{matrix.size}}"
-           else
-              TARGET_DIR="proof/${{matrix.type}}/${{matrix.size}}/${{matrix.dir}}"
-           fi
+           TARGET_DIR="proof/${{matrix.type}}/${{matrix.size}}/${{matrix.dir}}"
            HTML_REPORT_DIR="reports/${{matrix.type}}/${{matrix.size}}/${{matrix.dir}}"
            mkdir -p ${HTML_REPORT_DIR}
            TSTATS_DIR=".tstats"
