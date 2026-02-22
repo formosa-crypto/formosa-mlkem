@@ -31,9 +31,17 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            type: [ 'safety' , 'correctness' ]
-            size: [ '768', '1024' ]
-            dir: [ 'ref', 'avx2' ]
+            category:
+            - correctness_768_ref
+            - correctness_768_avx2
+            - correctness_1024_ref
+            - correctness_1024_avx2
+            - safety_768_ref
+            - safety_768_avx2
+            - safety_1024_ref
+            - safety_1024_avx2
+            - security
+            - spec_bridge
         steps:
         - uses: actions/checkout@v4
         - name: Install Nix
@@ -44,20 +52,18 @@ jobs:
           run: nix-shell --run "echo Dependencies OK…"
         - name: Configure provers
           run: nix-shell --run 'easycrypt why3config'
-        - name: Run ${{matrix.type}} Proofs MLKEM${{matrix.size}}(${{matrix.dir}})
+        - name: Check EasyCrypt proofs (${{matrix.category}})
           id: ec_proofs 
           run: |
             set -o pipefail
-            nix-shell --run "easycrypt runtest -report report.yaml config/tests.config mlkem_${{matrix.type}}_${{matrix.size}}_${{matrix.dir}}"
+            nix-shell --run "easycrypt runtest -report report.yaml config/tests.config mlkem_${{matrix.category}}"
         - name: Generate Detailed Job Summary
           if: always() 
           run: |
             export PROOF_JOB_OUTCOME=${{ steps.ec_proofs.outcome }}
             python scripts/report_proofs_result.py \
               report.yaml \
-              "${{ matrix.type }}" \
-              "${{ matrix.size }}" \
-              "${{ matrix.dir }}"
+              "${{matrix.category}}"
     heatmap_proofs:
         name: Generate Heat-Map Proofs
         if: false
