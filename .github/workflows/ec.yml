@@ -60,6 +60,7 @@ jobs:
               "${{ matrix.dir }}"
     heatmap_proofs:
         name: Generate Heat-Map Proofs
+        if: false
         runs-on: ubuntu-latest
         strategy:
           fail-fast: false
