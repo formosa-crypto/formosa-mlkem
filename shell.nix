@@ -23,8 +23,8 @@ let crypto-specs =
   fetchFromGitHub {
     owner = "formosa-crypto";
     repo = "crypto-specs";
-    rev = "3213f7c794357359d2abf026ec7e942f1d31f9b5";
-    hash = "sha256-VjrcN4NEnVXXW5y3wTPD/rxk5mnMZXvg0IF9Y+etHY8=";
+    rev = "5a494c25e60ad8ec16fb5c9c3af6b3632d211bbb";
+    hash = "sha256-6q1Oig2nLGBotfzWRic3x5+NpdUmCze5RgNG7uWUPWg=";
   }
 ; in
 
