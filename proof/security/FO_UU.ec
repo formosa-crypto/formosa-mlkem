@@ -889,10 +889,13 @@ wp;call(:H1.bad,
   if{1}.
   (* badc *) 
   + rcondt {1} 2; 1: by auto => />; smt(assoc_none).
-    by auto => />;smt(get_setE assoc_none assoc_cons mapP).
+    auto=> /> &1 &2; case=> |> *.
+    - by progress; smt(get_setE mem_set assoc_cons assocTP mapP).
+    - by progress; smt(get_setE mem_set assoc_cons assocTP mapP).
   (* good c *)
   + rcondt {1} 5; 1: by auto => />; smt(assoc_none).
-    by auto => />;smt(get_setE assoc_none assoc_cons mapP).
+    auto=> /> &1 &2; case=> |> *.
+    by progress; smt(get_setE mem_set assoc_cons assocTP mapP).
 + move => *;proc;inline *;auto => />; 
   sp;if{1};2:by auto => /> /#.
   sp;if{1}; 2: by auto => />  *;smt(dkey_ll). 
@@ -904,7 +907,32 @@ wp;call(:H1.bad,
 + proc;inline *. 
   swap {1} 3 -2; swap {2} 8 -7;seq 1 1 : (#pre /\ ={k}); 1: by auto.
   sp 2 7;if{2};last by auto => /> /#.
-  by if{1}; auto => />;smt(get_setE assoc_none assoc_cons mapP).
+  if{1}; auto=> |> &1 &2 b Nb h1 h2 h3 h4 h5 h6 h7 h8; last first.
+  - by smt(get_setE mem_set assoc_cons assocTP mapP).
+  split=> h9 h10; last first.
+  - split; first by rewrite !get_setE /#.
+    split; first by smt(assocTP).
+    by progress; smt(get_setE mem_set assoc_cons assocTP mapP).
+  - split; last first.
+    - split; first by move=> *; rewrite mem_set /#.
+      split.
+      - move=> m'; rewrite mem_set; case => [?|->>]; last first.
+        - split; first done.
+          rewrite !get_setE /=; split; first smt(assocTP).
+          move: h9; pose s := (enc _ _ _).
+          case _: (assoc _ _) => //= k' E; (have := h4 (s, k') _ _) => /=.
+          - by apply: assoc_some.
+          - by rewrite /goodc /oc2m /c2m !h10.
+          by rewrite /oc2m h10 /=.
+        - split; first by smt(assocTP).
+          by split; rewrite !get_setE /#.
+      - by move=> m'; rewrite !(mem_set, get_setE) /#.
+    - rewrite !get_setE /=.
+       move: h9; pose s := (enc _ _ _).
+       case _: (assoc _ _) => //= k' E; (have := h4 (s, k') _ _) => /=.
+       - by apply: assoc_some.
+       - by rewrite /goodc /oc2m /c2m !h10.
+       by rewrite /oc2m h10 /=.
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 + by move => *;proc;inline *;auto => />;smt(dkey_ll). 
 + by auto => /> /#. 
