@@ -12,7 +12,7 @@ WArray34 WArray40 WArray64 WArray128 WArray160 WArray168 WArray192 WArray200
 WArray256 WArray384 WArray512 WArray1408 WArray1536 WArray1568 WArray2048
 WArray3168 WArray8192.
 
-abbrev  jzetas_inv =
+abbrev jzetas_inv =
 ((Array128.of_list witness)
 [(W16.of_int 1701); (W16.of_int 1807); (W16.of_int 1460); (W16.of_int 2371);
 (W16.of_int 2338); (W16.of_int 2333); (W16.of_int 308); (W16.of_int 108);
@@ -47,7 +47,7 @@ abbrev  jzetas_inv =
 (W16.of_int 3127); (W16.of_int 3042); (W16.of_int 1907); (W16.of_int 1836);
 (W16.of_int 1517); (W16.of_int 359); (W16.of_int 758); (W16.of_int 1441)]).
 
-abbrev  jzetas =
+abbrev jzetas =
 ((Array128.of_list witness)
 [(W16.of_int 2285); (W16.of_int 2571); (W16.of_int 2970); (W16.of_int 1812);
 (W16.of_int 1493); (W16.of_int 1422); (W16.of_int 287); (W16.of_int 202);
@@ -82,7 +82,7 @@ abbrev  jzetas =
 (W16.of_int 3221); (W16.of_int 3021); (W16.of_int 996); (W16.of_int 991);
 (W16.of_int 958); (W16.of_int 1869); (W16.of_int 1522); (W16.of_int 1628)]).
 
-abbrev  kECCAK1600_RC =
+abbrev kECCAK1600_RC =
 ((Array24.of_list witness)
 [(W64.of_int 1); (W64.of_int 32898); (W64.of_int (-9223372036854742902));
 (W64.of_int (-9223372034707259392)); (W64.of_int 32907);
