@@ -17093,8 +17093,8 @@ ensures #[prover=Cas] {((((uint /* of u64 */) counter) <=
   g1 = #VPCMPGT_16u16(bounds, f1); /*  */ 
   g0 = #VPACKSS_16u16(g0, g1); /*  */ 
   reg u64 good;
-  #[declassify]
   good = (64u)#MOVEMASK_32u8(g0); /*  */ 
+  () = #declassify(good); /* :k */ 
   good = #protect_64(good, ms); /* :k */ 
   reg u64 t0_0;
   t0_0 = good; /* u64 */ 
@@ -17251,8 +17251,8 @@ ensures #[prover=Cas] {(((64u) ((uint /* of u64 */) counter)) <=u result.1)}
   g1 = #set0_256(); /*  */ 
   g0 = #VPACKSS_16u16(g0, g1); /*  */ 
   reg u64 good;
-  #[declassify]
   good = (64u)#MOVEMASK_32u8(g0); /*  */ 
+  () = #declassify(good); /* :k */ 
   good = #protect_64(good, ms); /* :k */ 
   reg u64 t0_0;
   t0_0 = good; /* u64 */ 
@@ -17541,8 +17541,8 @@ ensures #[prover=Cas] {(is_arr_init(result.0, 0, MLKEM_PUBLICKEYBYTES) &&
   stack u8[MLKEM_SYMBYTES] publicseed;
   stack u8[MLKEM_SYMBYTES] noiseseed;
   for i = 0 to (MLKEM_SYMBYTES / 8) {
-    #[declassify]
     t64 = buf[:u64 i]; /* u64 */ 
+    () = #declassify(t64); /* :k */ 
     publicseed[:u64 i] = t64; /* u64 */ 
     t64 = buf[:u64 (i + (MLKEM_SYMBYTES / 8))]; /* u64 */ 
     noiseseed[:u64 i] = t64; /* u64 */ 
@@ -17616,9 +17616,9 @@ ensures #[prover=Cas] {is_arr_init(result.0, 0, MLKEM_CIPHERTEXTBYTES)}
   inline int w;
   for w = 0 to (MLKEM_SYMBYTES / 8) {
     reg u64 t64;
-    #[declassify]
     t64 =
       pk.[#unaligned :u64 (((MLKEM_POLYVECBYTES / 8) + w) * 8)]; /* u64 */ 
+    () = #declassify(t64); /* :k */ 
     publicseed[:u64 w] = t64; /* u64 */ 
   }
   stack u16[MLKEM_N] k;
@@ -17886,15 +17886,12 @@ ensures #[prover=Cas] {is_arr_init(result.0, 0, MLKEM_SYMBYTES)}
 public
 "]
 export
-fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand (#[secret]
-                                                      reg mut ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-                                                      #[secret]
+fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair_derand (reg mut ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
                                                       reg mut ptr u8[MLKEM_SECRETKEYBYTES] secret_key,
-                                                      #[secret]
                                                       reg const ptr u8[
                                                       (2 * MLKEM_SYMBYTES)] coins) -> 
-(#[secret] reg mut ptr u8[MLKEM_PUBLICKEYBYTES], #[secret]
-reg mut ptr u8[MLKEM_SECRETKEYBYTES], #[public] reg u64)
+(reg mut ptr u8[MLKEM_PUBLICKEYBYTES], reg mut ptr u8[MLKEM_SECRETKEYBYTES],
+reg u64)
 requires #[prover=Cas] {is_arr_init(coins, 0, (2 * MLKEM_SYMBYTES))} 
 ensures #[prover=Cas] {(is_arr_init(result.0, 0, MLKEM_PUBLICKEYBYTES) &&
                        is_arr_init(result.1, 0, MLKEM_SECRETKEYBYTES))}
@@ -17920,16 +17917,12 @@ ensures #[prover=Cas] {(is_arr_init(result.0, 0, MLKEM_PUBLICKEYBYTES) &&
 public
 "]
 export
-fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand (#[secret]
-                                                  reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
-                                                  #[secret]
+fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc_derand (reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
                                                   reg mut ptr u8[MLKEM_SYMBYTES] shared_secret,
-                                                  #[secret]
                                                   reg const ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-                                                  #[secret]
                                                   reg const ptr u8[MLKEM_SYMBYTES] coins) -> 
-(#[secret] reg mut ptr u8[MLKEM_CIPHERTEXTBYTES], #[secret]
-reg mut ptr u8[MLKEM_SYMBYTES], #[public] reg u64)
+(reg mut ptr u8[MLKEM_CIPHERTEXTBYTES], reg mut ptr u8[MLKEM_SYMBYTES],
+reg u64)
 requires #[prover=Cas] {(is_arr_init(coins, 0, MLKEM_SYMBYTES) &&
                         is_arr_init(public_key, 0, MLKEM_PUBLICKEYBYTES))}
 
@@ -17956,12 +17949,10 @@ ensures #[prover=Cas] {(is_arr_init(result.0, 0, MLKEM_CIPHERTEXTBYTES) &&
 public
 "]
 export
-fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair (#[secret]
-                                               reg mut ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
-                                               #[secret]
+fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair (reg mut ptr u8[MLKEM_PUBLICKEYBYTES] public_key,
                                                reg mut ptr u8[MLKEM_SECRETKEYBYTES] secret_key) -> 
-(#[secret] reg mut ptr u8[MLKEM_PUBLICKEYBYTES], #[secret]
-reg mut ptr u8[MLKEM_SECRETKEYBYTES], #[public] reg u64)
+(reg mut ptr u8[MLKEM_PUBLICKEYBYTES], reg mut ptr u8[MLKEM_SECRETKEYBYTES],
+reg u64)
 
 ensures #[prover=Cas] {(is_arr_init(result.0, 0, MLKEM_PUBLICKEYBYTES) &&
                        is_arr_init(result.1, 0, MLKEM_SECRETKEYBYTES))}
@@ -17992,14 +17983,11 @@ ensures #[prover=Cas] {(is_arr_init(result.0, 0, MLKEM_PUBLICKEYBYTES) &&
 public
 "]
 export
-fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc (#[secret]
-                                           reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
-                                           #[secret]
+fn jade_kem_mlkem_mlkem1024_amd64_avx2_enc (reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
                                            reg mut ptr u8[MLKEM_SYMBYTES] shared_secret,
-                                           #[secret]
                                            reg const ptr u8[MLKEM_PUBLICKEYBYTES] public_key) -> 
-(#[secret] reg mut ptr u8[MLKEM_CIPHERTEXTBYTES], #[secret]
-reg mut ptr u8[MLKEM_SYMBYTES], #[public] reg u64)
+(reg mut ptr u8[MLKEM_CIPHERTEXTBYTES], reg mut ptr u8[MLKEM_SYMBYTES],
+reg u64)
 requires #[prover=Cas] {is_arr_init(public_key, 0, MLKEM_PUBLICKEYBYTES)} 
 ensures #[prover=Cas] {(is_arr_init(result.0, 0, MLKEM_CIPHERTEXTBYTES) &&
                        is_arr_init(result.1, 0, MLKEM_SYMBYTES))}
@@ -18030,13 +18018,10 @@ ensures #[prover=Cas] {(is_arr_init(result.0, 0, MLKEM_CIPHERTEXTBYTES) &&
 public
 "]
 export
-fn jade_kem_mlkem_mlkem1024_amd64_avx2_dec (#[secret]
-                                           reg mut ptr u8[MLKEM_SYMBYTES] shared_secret,
-                                           #[secret]
+fn jade_kem_mlkem_mlkem1024_amd64_avx2_dec (reg mut ptr u8[MLKEM_SYMBYTES] shared_secret,
                                            reg const ptr u8[MLKEM_CIPHERTEXTBYTES] ciphertext,
-                                           #[secret]
                                            reg const ptr u8[MLKEM_SECRETKEYBYTES] secret_key) -> 
-(#[secret] reg mut ptr u8[MLKEM_SYMBYTES], #[public] reg u64)
+(reg mut ptr u8[MLKEM_SYMBYTES], reg u64)
 requires #[prover=Cas] {(is_arr_init(ciphertext, 0, MLKEM_CIPHERTEXTBYTES) &&
                         is_arr_init(secret_key, 0, MLKEM_SECRETKEYBYTES))}
 

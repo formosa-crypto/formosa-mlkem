@@ -10940,23 +10940,23 @@ L_poly_basemul$1:
 	vpmullw	%ymm5, %ymm2, %ymm8
 	vpmulhw	%ymm5, %ymm3, %ymm2
 	vpmulhw	%ymm0, %ymm8, %ymm3
-	vpsubw	%ymm3, %ymm2, %ymm8
-	vpmullw	%ymm6, %ymm4, %ymm2
+	vpsubw	%ymm3, %ymm2, %ymm2
+	vpmullw	%ymm6, %ymm4, %ymm10
 	vpmulhw	%ymm6, %ymm4, %ymm3
-	vpunpcklwd	%ymm3, %ymm2, %ymm9
-	vpunpckhwd	%ymm3, %ymm2, %ymm10
-	vpmullw	%ymm7, %ymm4, %ymm2
+	vpunpcklwd	%ymm3, %ymm10, %ymm9
+	vpunpckhwd	%ymm3, %ymm10, %ymm10
+	vpmullw	%ymm7, %ymm4, %ymm12
 	vpmulhw	%ymm7, %ymm4, %ymm3
-	vpunpcklwd	%ymm3, %ymm2, %ymm11
-	vpunpckhwd	%ymm3, %ymm2, %ymm4
-	vpmullw	%ymm6, %ymm5, %ymm2
+	vpunpcklwd	%ymm3, %ymm12, %ymm11
+	vpunpckhwd	%ymm3, %ymm12, %ymm4
+	vpmullw	%ymm6, %ymm5, %ymm12
 	vpmulhw	%ymm6, %ymm5, %ymm3
-	vpunpcklwd	%ymm3, %ymm2, %ymm5
-	vpunpckhwd	%ymm3, %ymm2, %ymm6
-	vpmullw	%ymm7, %ymm8, %ymm2
-	vpmulhw	%ymm7, %ymm8, %ymm3
-	vpunpcklwd	%ymm3, %ymm2, %ymm8
-	vpunpckhwd	%ymm3, %ymm2, %ymm12
+	vpunpcklwd	%ymm3, %ymm12, %ymm5
+	vpunpckhwd	%ymm3, %ymm12, %ymm6
+	vpmullw	%ymm7, %ymm2, %ymm12
+	vpmulhw	%ymm7, %ymm2, %ymm3
+	vpunpcklwd	%ymm3, %ymm12, %ymm8
+	vpunpckhwd	%ymm3, %ymm12, %ymm12
 	vpsubd	%ymm8, %ymm9, %ymm7
 	vpsubd	%ymm12, %ymm10, %ymm8
 	vpaddd	%ymm11, %ymm5, %ymm5
@@ -11251,9 +11251,9 @@ L_shake256_A32__A1120$6:
 	vpinsrq	$1, %rdx, %xmm7, %xmm7
 	vinserti128	$1, %xmm7, %ymm9, %ymm9
 	vpxor	%ymm9, %ymm4, %ymm4
-	movq	$1, %rcx
-	shlq	$63, %rcx
-	movq	%rcx, %xmm7
+	movq	$1, %rdx
+	shlq	$63, %rdx
+	movq	%rdx, %xmm7
 	vpxor	%ymm8, %ymm8, %ymm8
 	vinserti128	$0, %xmm7, %ymm8, %ymm8
 	vpxor	%ymm8, %ymm0, %ymm0
@@ -12528,13 +12528,13 @@ L_nttunpack$1:
 	vperm2i128	$32, %ymm8, %ymm4, %ymm6
 	vperm2i128	$49, %ymm8, %ymm4, %ymm8
 	vperm2i128	$32, %ymm9, %ymm5, %ymm1
-	vperm2i128	$49, %ymm9, %ymm5, %ymm12
+	vperm2i128	$49, %ymm9, %ymm5, %ymm5
 	vperm2i128	$32, %ymm10, %ymm7, %ymm13
 	vperm2i128	$49, %ymm10, %ymm7, %ymm7
 	vpunpcklqdq	%ymm1, %ymm2, %ymm0
 	vpunpckhqdq	%ymm1, %ymm2, %ymm10
-	vpunpcklqdq	%ymm12, %ymm3, %ymm4
-	vpunpckhqdq	%ymm12, %ymm3, %ymm5
+	vpunpcklqdq	%ymm5, %ymm3, %ymm4
+	vpunpckhqdq	%ymm5, %ymm3, %ymm5
 	vpunpcklqdq	%ymm13, %ymm6, %ymm2
 	vpunpckhqdq	%ymm13, %ymm6, %ymm1
 	vpunpcklqdq	%ymm7, %ymm8, %ymm6
