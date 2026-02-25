@@ -84,7 +84,7 @@ fn _shake256_A32__A1120
 }
 
 fn _shake256_A32__A1600
-( #spill_to_mmx reg mut ptr u8[32] out
+( #[spill_to_mmx] reg mut ptr u8[32] out
 , reg const ptr u8[32] in0
 , reg const ptr u8[1568] in1) -> reg ptr u8[32]
 { stack u64[25] st_s;
@@ -158,7 +158,7 @@ fn _sha3_256A_A1184
 }
 
 fn _sha3_256A_A1568
-( #spill_to_mmx reg mut ptr u8[32] out
+( #[spill_to_mmx] reg mut ptr u8[32] out
 , reg ptr u8[1568] in
 ) -> reg ptr u8[32]
 { stack u64[25] st_s;
