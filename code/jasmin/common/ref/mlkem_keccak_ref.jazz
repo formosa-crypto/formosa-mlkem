@@ -140,8 +140,8 @@ export fn shake128_next_state_ref
 }
 
 export fn sha3_256A_A1184_ref
-( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg const ptr u8[1184] in
+( #[spill_to_mmx] reg mut ptr u8[32] out
+, #[spill_to_mmx] reg const ptr u8[1184] in
 ) -> reg ptr u8[32]
 { stack u64[25] st;
   st = __state_init_ref(st);
@@ -154,8 +154,8 @@ export fn sha3_256A_A1184_ref
 }
 
 export fn sha3_256A_A1568_ref
-( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg const ptr u8[1568] in
+( #[spill_to_mmx] reg mut ptr u8[32] out
+, #[spill_to_mmx] reg const ptr u8[1568] in
 ) -> reg ptr u8[32]
 { stack u64[25] st;
   st = __state_init_ref(st);

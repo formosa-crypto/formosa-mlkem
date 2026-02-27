@@ -48,6 +48,11 @@ namespace A1568 {
   from Keccak require "ref/keccak1600_fixedsizes_ASIZE.jinc"
 }
 
+#[safety =
+   { requires = is_arr_init(in,0,33)
+   , ensures = is_arr_init(out,0,128)
+   }
+ ]
 fn _shake256_128_33
 ( reg mut ptr u8[128] out
 , reg const ptr u8[33] in
@@ -65,6 +70,11 @@ fn _shake256_128_33
   return out;
 }
 
+#[safety =
+   { requires = is_arr_init(in0,0,32) && is_arr_init(in1,0,1088)
+   , ensures = is_arr_init(out,0,32)
+   }
+ ]
 fn _shake256_A32__A1120
 ( reg mut ptr u8[32] out
 , reg const ptr u8[32] in0
@@ -83,6 +93,11 @@ fn _shake256_A32__A1120
   return out;
 }
 
+#[safety =
+   { requires = is_arr_init(in0,0,32) && is_arr_init(in1,0,1568)
+   , ensures = is_arr_init(out,0,32)
+   }
+ ]
 fn _shake256_A32__A1600
 ( #[spill_to_mmx] reg mut ptr u8[32] out
 , reg const ptr u8[32] in0
@@ -102,6 +117,11 @@ fn _shake256_A32__A1600
   return out;
 }
 
+#[safety =
+   { requires = is_arr_init(in,0,33)
+   , ensures = is_arr_init(out,0,64)
+   }
+ ]
 fn _sha3_512A_A33
 ( reg mut ptr u8[64] out,
   reg const ptr u8[33] in
@@ -118,6 +138,11 @@ fn _sha3_512A_A33
   return out;
 }
 
+#[safety =
+   { requires = is_arr_init(in,0,34)
+   , ensures = is_arr_init(st,0,25 * 8)
+   }
+ ]
 fn _shake128_absorb34
 ( reg mut ptr u64[25] st
 , reg const ptr u8[34] in
@@ -128,6 +153,11 @@ fn _shake128_absorb34
   return st;
 }
 
+#[safety =
+   { requires = is_arr_init(st,0,25*8)
+   , ensures = is_arr_init(st,0,25*8) && is_arr_init(out,0,R168)
+   }
+ ]
 fn _shake128_squeezeblock
 ( reg mut ptr u64[25] st
 , reg mut ptr u8[R168] out
@@ -140,6 +170,11 @@ fn _shake128_squeezeblock
  return st, out;
 }
 
+#[safety =
+   { requires = is_arr_init(in,0,1184)
+   , ensures = is_arr_init(out,0,32)
+   }
+ ]
 fn _sha3_256A_A1184
 ( reg mut ptr u8[32] out
 , reg ptr u8[1184] in
@@ -157,6 +192,11 @@ fn _sha3_256A_A1184
   return out;
 }
 
+#[safety =
+   { requires = is_arr_init(in,0,1568)
+   , ensures = is_arr_init(out,0,32)
+   }
+ ]
 fn _sha3_256A_A1568
 ( #[spill_to_mmx] reg mut ptr u8[32] out
 , reg ptr u8[1568] in
@@ -174,6 +214,11 @@ fn _sha3_256A_A1568
   return out;
 }
 
+#[safety =
+   { requires = is_arr_init(in,0,32)
+   , ensures = is_arr_init(out,0,32)
+   }
+ ]
 fn _isha3_256_32
 ( reg mut ptr u8[32] out
 , reg ptr u8[32] in
@@ -191,6 +236,11 @@ fn _isha3_256_32
   return out;
 }
 
+#[safety =
+   { requires = is_arr_init(in,0,64)
+   , ensures = is_arr_init(out,0,64)
+   }
+ ]
 fn _sha3_512A_A64
 ( reg mut ptr u8[64] out
 , reg const ptr u8[64] in
