@@ -18,13 +18,16 @@ jobs:
           matrix:
             size: [ '768', '1024' ]
             dir: [ 'ref', 'avx2' ]
+            type: [ 'ec', 'ec_safety' ]
         steps:
-        - uses: actions/checkout@v4
-        - uses: cachix/install-nix-action@v31
-          with:
-            nix_path: nixpkgs=channel:nixos-unstable
-        - run: nix-shell --arg full false --run "echo Dependencies OK…"
-        - run: nix-shell --arg full false --run "make -C code/jasmin/${{matrix.size}}/${{matrix.dir}}/extraction ec"
+         - uses: actions/checkout@v6
+           with:
+            submodules: recursive
+         - uses: ./.github/actions/ec_extraction
+           with:
+            type: ${{matrix.type}}
+            size: ${{matrix.size}}
+            dir: ${{matrix.dir}}
     test_proofs:
         name: Check Proofs
         runs-on: ubuntu-latest
@@ -43,69 +46,10 @@ jobs:
             - security
             - spec_bridge
         steps:
-        - uses: actions/checkout@v4
-        - name: Install Nix
-          uses: cachix/install-nix-action@v31
-          with:
-            nix_path: nixpkgs=channel:nixos-unstable
-        - name: Check Dependencies
-          run: nix-shell --run "echo Dependencies OK…"
-        - name: Configure provers
-          run: nix-shell --run 'easycrypt why3config'
-        - name: Print EasyCrypt configuration
-          run: nix-shell --run 'easycrypt config'
-        - name: Check EasyCrypt proofs (${{matrix.category}})
-          id: ec_proofs 
-          run: |
-            set -o pipefail
-            nix-shell --run "easycrypt runtest -report report.yaml config/tests.config mlkem_${{matrix.category}}"
-        - name: Generate Detailed Job Summary
-          if: always() 
-          run: |
-            export PROOF_JOB_OUTCOME=${{ steps.ec_proofs.outcome }}
-            python scripts/report_proofs_result.py \
-              report.yaml \
-              "${{matrix.category}}"
-    heatmap_proofs:
-        name: Generate Heat-Map Proofs
-        if: false
-        runs-on: ubuntu-latest
-        strategy:
-          fail-fast: false
-          matrix:
-            type: ['safety', 'correctness']
-            size: [ '768', '1024' ]
-            dir: [ 'ref', 'avx2' ]
-        steps:
-        - uses: actions/checkout@v4
-        - name: Install Nix
-          uses: cachix/install-nix-action@v31
-          with:
-            nix_path: nixpkgs=channel:nixos-unstable
-        - name: Check Dependencies
-          run: nix-shell --run "echo Dependencies OK…"
-        - name: Configure provers
-          run: nix-shell --run 'easycrypt why3config'
-        - name: Run ${{matrix.type}} Proofs MLKEM${{matrix.size}}(${{matrix.dir}})
-          run: |
-           TARGET_DIR="proof/${{matrix.type}}/${{matrix.size}}/${{matrix.dir}}"
-           HTML_REPORT_DIR="reports/${{matrix.type}}/${{matrix.size}}/${{matrix.dir}}"
-           mkdir -p ${HTML_REPORT_DIR}
-           TSTATS_DIR=".tstats"
-           mkdir -p ${TSTATS_DIR}
-           for EC_FILE in ${TARGET_DIR}/*.ec; do
-              if [ -e "$EC_FILE" ]; then
-                TSTATS_FILE="${TSTATS_DIR}/$(basename "${EC_FILE%.ec}.tstats")"
-                FILENAME_BASE="$(basename "${EC_FILE%.ec}")"
-                HTML_REPORT_PATH="${HTML_REPORT_DIR}/${FILENAME_BASE}.html"
-                nix-shell --run "easycrypt -tstats ${TSTATS_FILE} ${EC_FILE}"
-                python scripts/generate_heatmap.py ${EC_FILE} ${TSTATS_FILE} > ${HTML_REPORT_PATH}                
-              fi
-           done
-        - name: Upload Heatmap Artifacts
-          uses: actions/upload-artifact@v4
-          with:
-            name: easycrypt-heatmap-reports-${{matrix.type}}-${{matrix.size}}-${{matrix.dir}}
-            path: reports/${{matrix.type}}/${{matrix.size}}/${{matrix.dir}}
-            retention-days: 7
+         - uses: actions/checkout@v6
+           with:
+            submodules: recursive
+         - uses: ./.github/actions/check_proofs
+           with:
+            category: ${{matrix.category}}
 

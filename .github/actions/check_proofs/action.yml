@@ -1,0 +1,38 @@
+name: Check Proofs
+description: Check proofs for MLKEM implementations
+
+inputs:
+  category:
+    description: 'What proofs to check'
+    required: true
+
+runs:
+  using: composite
+  steps:
+        - name: Install Nix
+          uses: cachix/install-nix-action@v31
+          with:
+            nix_path: nixpkgs=channel:nixos-unstable
+        - name: Check Dependencies
+          shell: bash
+          run: nix-shell --run "echo Dependencies OK…"
+        - name: Configure provers
+          shell: bash
+          run: nix-shell --run 'easycrypt why3config'
+        - name: Print EasyCrypt configuration
+          shell: bash
+          run: nix-shell --run 'easycrypt config'
+        - name: Check EasyCrypt proofs (${{inputs.category}})
+          shell: bash
+          id: ec_proofs 
+          run: |
+            set -o pipefail
+            nix-shell --run "easycrypt runtest -report report.yaml config/tests.config mlkem_${{inputs.category}}"
+        - name: Generate Detailed Job Summary
+          shell: bash
+          if: always() 
+          run: |
+            export PROOF_JOB_OUTCOME=${{ steps.ec_proofs.outcome }}
+            python scripts/report_proofs_result.py \
+              report.yaml \
+              "${{inputs.category}}"

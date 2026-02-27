@@ -1,0 +1,36 @@
+
+name: Correctness Verification
+permissions:
+  contents: read
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  NIXPKGS_ALLOW_UNFREE: 1
+
+jobs:
+    correctness_simple:
+        name: Compare with kyber
+        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+          matrix:
+            size: [ '768', '1024' ]
+            dir: [ 'ref', 'avx2' ]
+        steps:
+         - uses: actions/checkout@v6
+           with:
+            submodules: recursive
+         - uses: ./.github/actions/correctness
+           with:
+            size: ${{matrix.size}}
+            dir: ${{matrix.dir}}
+    correctness_checksums:
+        name: Check sums verification
+        runs-on: ubuntu-latest
+        steps:
+         - uses: actions/checkout@v6
+           with:
+            submodules: recursive
+         - uses: ./.github/actions/check_sums

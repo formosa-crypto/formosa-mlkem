@@ -1,0 +1,55 @@
+
+name: Implementation Verification
+permissions:
+  contents: read
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  NIXPKGS_ALLOW_UNFREE: 1
+
+jobs:
+    correctness_check:
+        name: Correctness checks
+        permissions:
+          contents: read
+          id-token: write
+        uses: ./.github/workflows/correctness.yml
+        secrets: inherit 
+    safety_check:
+        name: Safety check
+        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+          matrix:
+            size: [ '768', '1024' ]
+            dir: [ 'ref', 'avx2' ]
+        steps:
+        - uses: actions/checkout@v6
+        - uses: ./.github/actions/safety
+          with:
+            size: ${{matrix.size}}
+            dir: ${{matrix.dir}}
+    ct_check:
+        name: Jasmin CT Check
+        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+          matrix:
+            target: [ 'ct' , 'sct' ]
+            size: [ '768', '1024' ]
+            dir: [ 'ref', 'avx2' ]
+            exclude:
+            - dir: 'ref'
+              target: 'sct'
+        steps:
+        - uses: actions/checkout@v6
+          with:
+            submodules: recursive
+        - uses: ./.github/actions/CT
+          with:
+            target: ${{matrix.target}}
+            size: ${{matrix.size}}
+            dir: ${{matrix.dir}}
+
