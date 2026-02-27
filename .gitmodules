@@ -1,18 +1,17 @@
-[submodule "jasmin"]
-	path = jasmin
-	url = https://github.com/jasmin-lang/jasmin.git
-	branch = main
 [submodule "crypto-specs"]
 	path = crypto-specs
-	url = git@github.com:formosa-crypto/crypto-specs.git
-	branch = bdep
+	url = https://github.com/formosa-crypto/crypto-specs.git
+	branch = main
 [submodule "formosa-keccak"]
 	path = formosa-keccak
-	url = git@github.com:formosa-crypto/formosa-keccak.git
-	branch = bdep
+	url = https://github.com/formosa-crypto/formosa-keccak.git
+	branch = main
 [submodule "code/kyber"]
 	path = code/kyber
 	url = https://github.com/pq-crystals/kyber.git
 [submodule "bench/src/mlkem-native"]
 	path = bench/src/mlkem-native
 	url = https://github.com/pq-code-package/mlkem-native.git
+[submodule "jasmin"]
+	path = jasmin
+	url = https://gitlab.com/jasmin-lang/jasmin-compiler.git

@@ -4,7 +4,7 @@
 TOPLEVEL  = ../../
 JASMINDIR = $(TOPLEVEL)/jasmin
 CODEDIR   = $(TOPLEVEL)/code
-SYSCALL   = $(JASMINDIR)/compiler/syscall/jasmin_syscall.c
+SYSCALL   = jasmin_syscall.c
 
 # ------------------------------------------------------------------------
 CFLAGS  ?= -Wall -W -I ../../code -I ../../code/jasmin

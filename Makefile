@@ -2,6 +2,7 @@
 
 # --------------------------------------------------------------------
 ECCONF := config/tests.config 
+ECJOBS ?= 3
 CHECKS ?= \
 	mlkem_correctness_768_ref   \
 	mlkem_correctness_768_avx2  \
@@ -28,7 +29,7 @@ jasmin:
 	make -C code/jasmin/1024/avx2/extraction
 
 checkec:
-	easycrypt runtest -jobs 3 $(ECCONF) $(CHECKS)
+	easycrypt runtest -jobs $(ECJOBS) $(ECCONF) $(CHECKS)
 
 assembly:
 	$(MAKE) -C code/jasmin/768/avx2/ jkem.s
