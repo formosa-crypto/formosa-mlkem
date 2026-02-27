@@ -52,7 +52,7 @@ equiv addratebit_avx2x4_eq:
 (****************************************************************************)
 (****************************************************************************)
 
-from Keccak require import Keccakf1600_ref Keccakf1600_avx2x4.
+from Keccak require import Keccakf1600_avx2 Keccakf1600_avx2x4.
 from JazzEC require import WArray1152.
 from JazzEC require import Array24 Array5.
 
