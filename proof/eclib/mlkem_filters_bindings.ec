@@ -402,6 +402,8 @@ op VPUNPCKL_16u8 : W64.t -> W64.t -> W128.t.
 (* -------------------------------------------------------------------- *)
 bind circuit
  VPUNPCKL_16u8  <- "VPUNPCKL_16u8",
- VPINC_8u8      <- "VPINC_8u8".
+ VPINC_8u8      <- "VPINC_8u8"
+
+ from "specs/avx2.spec".
 
 

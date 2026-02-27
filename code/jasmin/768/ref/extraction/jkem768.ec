@@ -334,11 +334,13 @@ module M = {
     return st;
   }
   proc __addratebit_ref (st:W64.t Array25.t, _RATE8:int) : W64.t Array25.t = {
-    var t64:W64.t;
-    t64 <- (W64.of_int 1);
-    t64 <- (t64 `<<` (W8.of_int (((8 * _RATE8) - 1) %% 64)));
-    t64 <- (t64 `^` st.[((_RATE8 - 1) %/ 8)]);
-    st.[((_RATE8 - 1) %/ 8)] <- t64;
+    
+    st <-
+    (Array25.init
+    (WArray200.get64
+    (WArray200.set8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)
+    ((get8_direct (WArray200.init64 (fun i => st.[i])) (_RATE8 - 1)) `^`
+    (W8.of_int 128)))));
     return st;
   }
   proc a32____a_ilen_read_upto8_at (buf:W8.t Array32.t, offset:int,

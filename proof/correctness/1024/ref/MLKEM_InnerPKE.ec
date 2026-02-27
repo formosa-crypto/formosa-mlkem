@@ -451,15 +451,14 @@ seq 3 1 : (
   by smt().
 
 (* sampling loop *)
-
-while(to_uint ctr{1} = j0{2} /\ 0<= j0{2} <= 256 /\ state{1} = XOF.state{2} /\
+while(ctr{1} = j0{2} /\ 0<= j0{2} <= 256 /\ state{1} = XOF.state{2} /\
   (forall (k0 : int), 0 <= k0 => k0 < 32 => extseed{1}.[k0] = seed{2}.[k0]) /\
   (forall (k0 : int),
     0 <= k0 => k0 < j0{2} => incoeff (to_sint poly{1}.[k0]) = aa{2}.[k0]) /\ 
   (forall (k0 : int),
     0 <= k0 => k0 < j0{2} => 0 <= to_sint poly{1}.[k0] /\ to_sint poly{1}.[k0] < q)); last first.
 + auto => /> &1 &2??????; do split; 1..3: by smt().
-  move => ctrl polyl aar; rewrite ultE /= => *; split; last by smt().
+  move => ctrl polyl aar => *; split; last by smt().
   by rewrite /lift_array256 tP => k kb; rewrite mapiE //= /#.
 
 swap {1} 2 -1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
@@ -468,97 +467,90 @@ swap {1} 2 -1; seq 1 1 : (#pre /\ buf{1} = b168{2}).
   by auto => />. 
 
 wp; conseq />.
-splitwhile{1} ^while : to_uint ctr0 < 256.
-while{1} (!(to_uint pos{1} < 166 /\ to_uint ctr0{1} < 256) /\ 
-      (cond{1} => to_uint pos{1} < 166) /\ #post) (168 - to_uint pos{1}).
-+ move => &h z; rcondf ^if; auto => /> &m; rewrite !ultE /= /#.
+splitwhile{1} ^while : ctr0 < 256.
+while{1} (!(pos{1} < 166 /\ ctr0{1} < 256) /\ 
+      (cond{1} => pos{1} < 166) /\ #post) (168 - pos{1}).
++ move => &h z; rcondf ^if; auto => /> &m  /#.
 
-while(0<=j0{2}<=256 /\ 0<=k{2}<=168 /\to_uint ctr0{1} = j0{2} /\ buf0{1} = b168{2} /\
-    (cond{1} => to_uint pos{1} < 166) /\ 
-    to_uint pos{1} = k{2} /\ k{2} %% 3 = 0 /\
+while(0<=j0{2}<=256 /\ 0<=k{2}<=168 /\ ctr0{1} = j0{2} /\ buf0{1} = b168{2} /\
+    (cond{1} => pos{1} < 166) /\ 
+    pos{1} = k{2} /\ k{2} %% 3 = 0 /\
    (forall (k0 : int), 
            0 <=  k0 < j0{2} => 
               incoeff (to_sint rp{1}.[k0]) = aa{2}.[k0]) /\
    (forall (k0 : int), 
         0 <= k0 < j0{2} => 
             0 <= to_sint rp{1}.[k0] /\ to_sint rp{1}.[k0] < q));
-  last first.
-
-+ auto => /> &1 &2 *; do split; 1,2: smt().
-  move => ctrl rpl aar kr => *; do split; 1, 2, 3:  smt().
-  * by  rewrite ultE /=.
-  * by  rewrite ultE /=.
-  by smt().
+  last  by  auto => /> /#.
 
 rcondt{1} ^if; first by move => &m; auto => &h /> *; rewrite ultE.
 
-seq 17 6 : (#{/~k{2} < 168}{/~pos{1} \ult (of_int (168 - 2))%W64}{/~cond{1}}pre /\ to_uint val1{1} = d1{2} /\ to_uint val2{1} = d2{2}); 
+seq 17 6 : (#{/~k{2} < 168}{/~cond{1}}pre /\ to_uint val1{1} = d1{2} /\ to_uint val2{1} = d2{2}); 
   1: by auto => /> &1 &2 *; do split; rewrite ?ultE ?to_uintD_small // ?mergebytes // ?mergebytes2 // /#. 
 
-seq 4 2 : (to_uint ctr0{1} = j0{2} /\
-           to_uint pos{1} = k{2} /\
-           #{/~pos{1} \ult (of_int (168 - 2))%W64}
-            {/~cond{1}}post).
+seq 4 2 : (ctr0{1} = j0{2} /\
+           pos{1} = k{2} /\
+           #{/~cond{1}}post).
 
 + sp 1 0; if; 1: by move => &1 &2; rewrite ultE qE; smt().
   + sp 3 2; if{2}.
     + rcondt{1} 2; 1: by move => *; auto => /> *; rewrite ultE; smt().
       rcondt{1} 4; 1: by move => *; auto => /> *; rewrite ultE /= to_uintD_small /= /#.
-      auto => /> &1 aar ctrl rpl 8?; rewrite ultE /= => *; do split; 2..3:smt().
-      + rewrite to_uintD_small /= /#.
-      + rewrite to_uintD_small /= /#.
-      + move => k0 ??; rewrite to_uintD_small /= 1:/#.
-        case (k0 < to_uint ctrl); 1: by move => *; rewrite !set_neqiE /#.        move => *;rewrite !get_setE 1..4:/#.
-          by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
+      auto => /> &1 &2 j02 aar rpl 8?; rewrite ultE /= => *; do split.
+      + smt().
+      + smt(). 
+      + move => k0 ??.
+        case (k0 < j02); 1: by move => *; rewrite !set_neqiE /#.
+        move => *;rewrite !get_setE 1..4:/#.
+        by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
 
-      move => k0 ??; rewrite to_uintD_small /= 1:/#.
-      case (k0 < to_uint ctrl); 1: by move => *; rewrite !set_neqiE /#.
-      move => *; case (k0 = to_uint ctrl). 
+      move => k0 ??.
+      case (k0 < j02); 1: by move => *; rewrite !set_neqiE /#.
+      move => *; case (k0 = j02). 
       + move => *; rewrite set_neqiE 1,2:/# set_eqiE 1,2:/#.
         by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
-      move => *;have -> : (k0 = to_uint ctrl + 1) by smt(). 
+      move => *;have -> : (k0 = j02 + 1) by smt(). 
       rewrite set_eqiE 1,2:/#.
       by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
      
     sp 1 0;if{1}; last first. 
-    + auto => /> &1  aar ctr0 rpl; rewrite !ultE /= => *;  do split; 2..3: smt().
-      + by rewrite to_uintD_small /= /#. 
-      + by rewrite to_uintD_small /= /#. 
-      + move => k0??;case (k0 < to_uint ctr0); 1: by move => *; rewrite !set_neqiE /#.
-        move => *;have -> : (k0 = to_uint ctr0) by smt(). 
+    + auto => /> &1 &2 j02  aar rpl; rewrite !ultE /= => *;  do split.
+      + smt().
+      + smt().
+      + move => k0??;case (k0 < j02); 1: by move => *; rewrite !set_neqiE /#.
+        move => *;have -> : (k0 = j02) by smt(). 
         rewrite set_eqiE 1,2:/# set_eqiE 1,2:/#.
         by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
-      move => k0 ??; case (k0 < to_uint ctr0); 1: by move => *; rewrite !set_neqiE /#.
-      move => *;have -> : (k0 = to_uint ctr0) by smt(). 
+      move => k0 ??; case (k0 < j02); 1: by move => *; rewrite !set_neqiE /#.
+      move => *;have -> : (k0 = j02) by smt(). 
       rewrite set_eqiE 1,2:/#.
       by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
     rcondf{1} 3. 
-    + move => *; auto => /> &1; rewrite !ultE /= => *.
-      by rewrite  ultE /= to_uintD_small /= /#.  
-    auto => /> &1  aar ctr0 rpl; rewrite !ultE /= => *;  do split; 2..3: smt().
-    + by rewrite to_uintD_small /= /#. 
-    + by rewrite to_uintD_small /= /#. 
-    + move => k0??;case (k0 < to_uint ctr0); 1: by move => *; rewrite !set_neqiE /#.
-      move => *;have -> : (k0 = to_uint ctr0) by smt(). 
+    + move => *; auto => /> &1; rewrite !ultE /=  /#. 
+    auto => /> &1  &2 j02 aar rpl; rewrite !ultE /= => *;  do split.
+    + by smt(). 
+    + by smt(). 
+    + move => k0??;case (k0 < j02); 1: by move => *; rewrite !set_neqiE /#.
+      move => *;have -> : (k0 = j02) by smt(). 
       rewrite set_eqiE 1,2:/# set_eqiE 1,2:/#.
       by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
-    move => k0 ??; case (k0 < to_uint ctr0); 1: by move => *; rewrite !set_neqiE /#.
-    move => *;have -> : (k0 = to_uint ctr0) by smt(). 
+    move => k0 ??; case (k0 < j02); 1: by move => *; rewrite !set_neqiE /#.
+    move => *;have -> : (k0 = j02) by smt(). 
     rewrite set_eqiE 1,2:/#.
     by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
 
   sp 2 0; if{2}.
   + rcondt{1} 1; 1: by move => *; auto => /> *; rewrite ultE /#.
     rcondt{1} 3; 1: by move => *; auto => /> *; rewrite ultE /#.
-    auto => /> &1 &2 8?; rewrite ultE /= => *; do split; 2..3:smt().
-    + rewrite to_uintD_small /= /#.
-    + rewrite to_uintD_small /= /#.
-    + move => k0 ??;  case (k0 < to_uint ctr0{1}); 1: by move => *; rewrite !set_neqiE /#.
-      move => *;have -> : (k0 = to_uint ctr0{1}) by smt(). 
+    auto => /> &1 &2 8?; rewrite ultE /= => *; do split.
+    + by smt().
+    + by smt().
+    + move => k0 ??;  case (k0 < j0{2}); 1: by move => *; rewrite !set_neqiE /#.
+      move => *;have -> : (k0 = j0{2}) by smt(). 
       rewrite set_eqiE 1,2:/# set_eqiE 1,2:/#.
       by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
-    move => k0 ??; case (k0 < to_uint ctr0{1}); 1: by move => *; rewrite !set_neqiE /#.
-    move => *;have -> : (k0 = to_uint ctr0{1}) by smt(). 
+    move => k0 ??; case (k0 < j0{2}); 1: by move => *; rewrite !set_neqiE /#.
+    move => *;have -> : (k0 = j0{2}) by smt(). 
     rewrite set_eqiE 1,2:/#.
     by rewrite to_sint_unsigned; rewrite /to_sint /smod /=; smt(W16.to_uint_cmp).
      
@@ -566,8 +558,7 @@ seq 4 2 : (to_uint ctr0{1} = j0{2} /\
   rcondf{1} 3; 1: by move => *; auto => /> &1; rewrite !ultE /= /#.
   by auto => />.  
 
-auto => /> &1 &2 *; rewrite ultE /#.
-
+auto => /> /#.
 qed.
 
 lemma sigextu16_to_sint (a : W8.t) :  W16.to_sint (sigextu16 a) = to_sint a.
