@@ -1,0 +1,26 @@
+name: Extract to EasyCrypt
+description: Extract MLKEM implementation to EasyCrypt
+
+inputs:
+  type:
+    description: 'Type of extraction (ec or ec_safety)'
+    required: true
+  size:
+    description: 'Size of the implementation (768 or 1024)'
+    required: true
+  dir:
+    description: 'Directory of the implementation (ref or avx2)'
+    required: true
+
+runs:
+  using: composite
+  steps:
+        - uses: cachix/install-nix-action@v31
+          with:
+            nix_path: nixpkgs=channel:nixos-unstable
+        - name: Check Dependencies
+          shell: bash
+          run: nix-shell --arg full false --run "echo Dependencies OK…"
+        - name: Extract to EasyCrypt
+          shell: bash
+          run: nix-shell --arg full false --run "make -C code/jasmin/${{inputs.size}}/${{inputs.dir}}/extraction ${{inputs.type}}"
