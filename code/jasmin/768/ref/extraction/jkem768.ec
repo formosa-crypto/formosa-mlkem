@@ -12,7 +12,7 @@ WArray34 WArray40 WArray64 WArray128 WArray168 WArray192 WArray200 WArray256
 WArray384 WArray512 WArray960 WArray1088 WArray1152 WArray1184 WArray1536
 WArray2400 WArray4608.
 
-abbrev jzetas_inv =
+abbrev  jzetas_inv =
 ((Array128.of_list witness)
 [(W16.of_int 1701); (W16.of_int 1807); (W16.of_int 1460); (W16.of_int 2371);
 (W16.of_int 2338); (W16.of_int 2333); (W16.of_int 308); (W16.of_int 108);
@@ -47,7 +47,7 @@ abbrev jzetas_inv =
 (W16.of_int 3127); (W16.of_int 3042); (W16.of_int 1907); (W16.of_int 1836);
 (W16.of_int 1517); (W16.of_int 359); (W16.of_int 758); (W16.of_int 1441)]).
 
-abbrev jzetas =
+abbrev  jzetas =
 ((Array128.of_list witness)
 [(W16.of_int 2285); (W16.of_int 2571); (W16.of_int 2970); (W16.of_int 1812);
 (W16.of_int 1493); (W16.of_int 1422); (W16.of_int 287); (W16.of_int 202);
@@ -82,7 +82,7 @@ abbrev jzetas =
 (W16.of_int 3221); (W16.of_int 3021); (W16.of_int 996); (W16.of_int 991);
 (W16.of_int 958); (W16.of_int 1869); (W16.of_int 1522); (W16.of_int 1628)]).
 
-abbrev kECCAK1600_RC =
+abbrev  kECCAK1600_RC =
 ((Array24.of_list witness)
 [(W64.of_int 1); (W64.of_int 32898); (W64.of_int (-9223372036854742902));
 (W64.of_int (-9223372034707259392)); (W64.of_int 32907);
@@ -2572,54 +2572,54 @@ module M = {
     }
     return rp;
   }
-  proc __rej_uniform (rp:W16.t Array256.t, offset:W64.t, buf:W8.t Array168.t) : 
-  W64.t * W16.t Array256.t = {
-    var ctr:W64.t;
+  proc __rej_uniform (rp:W16.t Array256.t, offset:int, buf:W8.t Array168.t) : 
+  int * W16.t Array256.t = {
     var ms:W64.t;
-    var pos:W64.t;
     var cond:bool;
     var val1:W16.t;
     var t:W16.t;
     var val2:W16.t;
+    var ctr:int;
+    var pos:int;
     ms <- (init_msf);
     ctr <- offset;
-    pos <- (W64.of_int 0);
-    cond <- (pos \ult (W64.of_int (168 - 2)));
+    pos <- 0;
+    cond <- (pos < (168 - 2));
     while (cond) {
       ms <- (update_msf cond ms);
-      cond <- (ctr \ult (W64.of_int 256));
+      cond <- (ctr < 256);
       if (cond) {
         ms <- (update_msf cond ms);
-        val1 <- (zeroextu16 buf.[(W64.to_uint pos)]);
+        val1 <- (zeroextu16 buf.[pos]);
         val1 <- (protect_16 val1 ms);
-        t <- (zeroextu16 buf.[(W64.to_uint (pos + (W64.of_int 1)))]);
+        t <- (zeroextu16 buf.[(pos + 1)]);
         t <- (protect_16 t ms);
         val2 <- t;
         val2 <- (val2 `>>` (W8.of_int 4));
         t <- (t `&` (W16.of_int 15));
         t <- (t `<<` (W8.of_int 8));
         val1 <- (val1 `|` t);
-        t <- (zeroextu16 buf.[(W64.to_uint (pos + (W64.of_int 2)))]);
+        t <- (zeroextu16 buf.[(pos + 2)]);
         t <- (protect_16 t ms);
         t <- (t `<<` (W8.of_int 4));
         val2 <- (val2 `|` t);
-        pos <- (pos + (W64.of_int 3));
+        pos <- (pos + 3);
         cond <- (val1 \ult (W16.of_int 3329));
         if (cond) {
           ms <- (update_msf cond ms);
-          rp.[(W64.to_uint ctr)] <- val1;
-          ctr <- (ctr + (W64.of_int 1));
+          rp.[ctr] <- val1;
+          ctr <- (ctr + 1);
         } else {
           ms <- (update_msf (! cond) ms);
         }
         cond <- (val2 \ult (W16.of_int 3329));
         if (cond) {
           ms <- (update_msf cond ms);
-          cond <- (ctr \ult (W64.of_int 256));
+          cond <- (ctr < 256);
           if (cond) {
             ms <- (update_msf cond ms);
-            rp.[(W64.to_uint ctr)] <- val2;
-            ctr <- (ctr + (W64.of_int 1));
+            rp.[ctr] <- val2;
+            ctr <- (ctr + 1);
           } else {
             ms <- (update_msf (! cond) ms);
           }
@@ -2628,9 +2628,9 @@ module M = {
         }
       } else {
         ms <- (update_msf (! cond) ms);
-        pos <- (W64.of_int 168);
+        pos <- 168;
       }
-      cond <- (pos \ult (W64.of_int (168 - 2)));
+      cond <- (pos < (168 - 2));
     }
     return (ctr, rp);
   }
@@ -2642,13 +2642,13 @@ module M = {
     var extseed:W8.t Array34.t;
     var i:int;
     var state:W64.t Array25.t;
-    var ctr:W64.t;
-    var sctr:W64.t;
     var buf:W8.t Array168.t;
     var poly:W16.t Array256.t;
     var k:W64.t;
     var rij:W16.t Array256.t;
     var t:W16.t;
+    var ctr:int;
+    var sctr:int;
     buf <- witness;
     extseed <- witness;
     poly <- witness;
@@ -2675,8 +2675,8 @@ module M = {
           extseed.[(32 + 1)] <- (W8.of_int j);
         }
         state <@ _shake128_absorb34 (state, extseed);
-        ctr <- (W64.of_int 0);
-        while ((ctr \ult (W64.of_int 256))) {
+        ctr <- 0;
+        while ((ctr < 256)) {
           sctr <- ctr;
           (state, buf) <@ _shake128_squeezeblock (state, buf);
           ctr <- sctr;

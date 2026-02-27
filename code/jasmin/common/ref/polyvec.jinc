@@ -86,6 +86,11 @@ fn __polyvec_reduce(stack u16[MLKEM_VECN] r) -> stack u16[MLKEM_VECN]
   return r;
 }
 
+#[ safety =
+   { requires = is_arr_init(a,0,2*MLKEM_VECN)
+   , ensures = is_arr_init(rp,0,MLKEM_POLYVECBYTES)
+   }
+ ]
 inline
 fn __i_polyvec_tobytes(reg ptr u8[MLKEM_POLYVECBYTES] rp, stack u16[MLKEM_VECN] a) -> reg ptr u8[MLKEM_POLYVECBYTES] 
 {

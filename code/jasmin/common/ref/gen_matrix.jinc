@@ -3,12 +3,18 @@ require "params.jinc"
 
 param int SHAKE128_RATE = 168;
 
+#[safety =
+   { requires = is_arr_init(buf,0,SHAKE128_RATE) && is_arr_init(rp,0,offset*2)
+   , res = {final_ctr, final_rp}
+   , ensures = is_arr_init(final_rp,0, 2* final_ctr) && offset <= final_ctr
+   }
+ ]
 inline
-fn __rej_uniform(stack u16[MLKEM_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] buf) ->  reg u64, stack u16[MLKEM_N]
+fn __rej_uniform(stack u16[MLKEM_N] rp, reg ui64 offset, stack u8[SHAKE128_RATE] buf) ->  reg ui64, stack u16[MLKEM_N]
 {
   reg u16 val1 val2;
   reg u16 t;
-  reg u64 pos ctr;
+  reg ui64 pos ctr;
 
   #[msf]reg u64 ms;
   reg bool cond;
@@ -80,6 +86,11 @@ fn __rej_uniform(stack u16[MLKEM_N] rp, reg u64 offset, stack u8[SHAKE128_RATE] 
   return ctr, rp;
 }
 
+#[safety =
+   { requires = is_arr_init(seed,0,MLKEM_SYMBYTES) && 0<= transposed && transposed <= 1
+   , ensures = is_arr_init(r,0,MLKEM_K * MLKEM_VECN * 2)
+   }
+ ]
 inline
 fn __gen_matrix(stack u8[MLKEM_SYMBYTES] seed, reg u64 transposed) -> stack u16[MLKEM_K*MLKEM_VECN]
 {
@@ -91,8 +102,9 @@ fn __gen_matrix(stack u8[MLKEM_SYMBYTES] seed, reg u64 transposed) -> stack u16[
 
   reg u8 c;
   reg u16 t;
-  reg u64 ctr k;
-  #[mmx] reg u64 sctr;
+  reg ui64 ctr;
+  reg u64 k;
+  #[mmx] reg ui64 sctr;
   #[mmx] reg u64 stransposed;
   inline int j i;
 
