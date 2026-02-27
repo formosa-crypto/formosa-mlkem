@@ -42,6 +42,11 @@ fn _poly_csubq(reg mut ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
+#[safety =
+   { requires = is_arr_init(ap,0,32*16) && is_arr_init(bp,0,32*16)
+   , ensures = is_arr_init(rp,0,32*16)
+   }
+ ]
 fn _poly_basemul(reg mut ptr u16[MLKEM_N] rp, reg const ptr u16[MLKEM_N] ap bp) -> reg ptr u16[MLKEM_N]
 {
   reg u16 zeta;
@@ -137,6 +142,11 @@ fn __poly_reduce(reg mut ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
+#[safety =
+   { requires = is_arr_init(ap,0,MLKEM_POLYBYTES)
+   , ensures = is_arr_init(rp,0,16*32)
+   }
+ ]
 fn _poly_frombytes(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_POLYBYTES] ap) -> reg ptr u16[MLKEM_N]
 {
   reg u8 c0, c1, c2;
@@ -185,6 +195,11 @@ fn _poly_frommont(reg mut ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
+#[ safety =
+   { requires = is_arr_init(ap,0,32)
+   , ensures = is_arr_init(rp,0,16*32)
+   }
+ ]
 fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_INDCPA_MSGBYTES] ap) -> reg ptr u16[MLKEM_N]
 {
   reg u8 c;
@@ -245,6 +260,11 @@ fn _i_poly_frommsg(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_INDCPA_MS
   return rp;
 }
 
+#[ safety =
+   { requires = is_arr_init(s_seed,0,MLKEM_SYMBYTES)
+   , ensures = is_arr_init(rp,0,MLKEM_N * 2)
+   }
+ ]
 fn _poly_getnoise(reg mut ptr u16[MLKEM_N] rp, reg const ptr u8[MLKEM_SYMBYTES] s_seed, reg u8 nonce) -> reg ptr u16[MLKEM_N]
 {
   stack u8[MLKEM_SYMBYTES +1] extseed;   /* 33 = MLKEM_SYMBYTES +1 */
@@ -412,6 +432,11 @@ fn _poly_ntt(reg mut ptr u16[MLKEM_N] rp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
+#[safety =
+   { requires = is_arr_init(ap, 0, 32*16) && is_arr_init(bp, 0, 32*16)
+   , ensures = is_arr_init(rp,0, 32*16)
+   }
+ ]
 fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
 {
   reg u16 a;
@@ -430,6 +455,11 @@ fn _poly_sub(reg ptr u16[MLKEM_N] rp ap bp) -> reg ptr u16[MLKEM_N]
   return rp;
 }
 
+#[safety =
+   { requires = is_arr_init(a, 0, 2*MLKEM_N)
+   , ensures = is_arr_init(rp,0, MLKEM_POLYBYTES) && is_arr_init(a,0, 2*MLKEM_N)
+   }
+ ]
 fn _poly_tobytes(reg mut ptr u8[MLKEM_POLYBYTES] rp, reg mut ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_POLYBYTES], reg ptr u16[MLKEM_N]
 {
   reg u16 t0, t1, d;
@@ -463,6 +493,11 @@ fn _poly_tobytes(reg mut ptr u8[MLKEM_POLYBYTES] rp, reg mut ptr u16[MLKEM_N] a)
   return rp, a;
 }
 
+#[safety =
+   { requires = is_arr_init(a, 0, 2*MLKEM_N)
+   , ensures = is_arr_init(rp,0, MLKEM_N/8) && is_arr_init(a,0, 2*MLKEM_N)
+   }
+ ]
 fn _i_poly_tomsg(reg mut ptr u8[MLKEM_N/8] rp, reg mut ptr u16[MLKEM_N] a) -> reg ptr u8[MLKEM_N/8], reg ptr u16[MLKEM_N]
 {
   reg u16 t;

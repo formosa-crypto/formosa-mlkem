@@ -101,8 +101,8 @@ export fn shake128_next_state_avx2
 }
 
 export fn sha3_256A_A1184_avx2
-( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg const ptr u8[1184] in
+( #[spill_to_mmx] reg mut ptr u8[32] out
+, #[spill_to_mmx] reg const ptr u8[1184] in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
   st = __state_init_avx2();
@@ -113,8 +113,8 @@ export fn sha3_256A_A1184_avx2
 }
 
 export fn sha3_256A_A1568_avx2
-( #spill_to_mmx reg mut ptr u8[32] out
-, #spill_to_mmx reg const ptr u8[1568] in
+( #[spill_to_mmx] reg mut ptr u8[32] out
+, #[spill_to_mmx] reg const ptr u8[1568] in
 ) -> reg ptr u8[32]
 { reg u256[7] st;
   st = __state_init_avx2();
