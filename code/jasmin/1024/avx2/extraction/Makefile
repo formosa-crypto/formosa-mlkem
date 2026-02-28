@@ -7,7 +7,7 @@
 .PHONY: all ec ec_safety clean
 
 # --------------------------------------------------------------------
-all: ec ec_safety
+all: ec
 
 
 ec: 
