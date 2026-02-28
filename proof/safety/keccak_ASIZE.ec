@@ -4,7 +4,7 @@ from Jasmin require import JModel_x86.
 
 import SLH64.
 
-from Jasmin require import Jcheck JSafety.
+from Jasmin require import Jcheck.
 
 from JazzEC require import
 Array5 Array6 Array7 Array24 Array25 Array40 Array160 Array200 Array224
