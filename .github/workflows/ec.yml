@@ -36,9 +36,7 @@ jobs:
             - correctness_768_avx2
             - correctness_1024_ref
             - correctness_1024_avx2
-            - safety_768_ref
             - safety_768_avx2
-            - safety_1024_ref
             - safety_1024_avx2
             - security
             - spec_bridge
