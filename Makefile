@@ -37,5 +37,9 @@ assembly:
 	$(MAKE) -C code/jasmin/1024/avx2/ jkem.s
 	$(MAKE) -C code/jasmin/1024/ref/ jkem.s
 
+pqcp:
+	$(MAKE) -C code/jasmin/768/avx2 pqcp
+	$(MAKE) -C code/jasmin/1024/avx2 pqcp
+
 clean_eco:
 	find proof -name '*.eco' -exec rm '{}' ';'
