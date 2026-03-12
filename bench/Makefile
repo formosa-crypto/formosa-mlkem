@@ -6,9 +6,14 @@ ALL := \
  bin/formosa-mlkem-768-ref \
  bin/formosa-mlkem-1024-ref
 
+ALL_EXTENDED := $(ALL) \
+ bin/pqcp-mlkem-768-avx2 \
+ bin/pqcp-mlkem-1024-avx2
+
 default: run
 
 compile: $(ALL)
+compile-extended: $(ALL_EXTENDED)
 
 run: compile
 	@./bin/formosa-mlkem-768-avx2 "" "fmlkem768 avx2" 1
@@ -16,6 +21,11 @@ run: compile
 	@./bin/formosa-mlkem-768-ref "" "fmlkem768 ref" 0
 	@./bin/formosa-mlkem-1024-ref "" "fmlkem1024 ref" 0
 
+run-extended: compile-extended
+	@./bin/pqcp-mlkem-768-avx2 "" "pqcpmlkem768 avx2" 0
+	@./bin/pqcp-mlkem-1024-avx2 "" "pqcpmlkem1024 avx2" 0
+
+#-- formosa-mlkem (this repository ----------------------------------
 #-- avx2
 bin/formosa-mlkem-768-avx2: randombytes/librandombytes1.a
 	$(CC) $(CFLAGS) -o $@ src/crypto_kem.c \
@@ -54,11 +64,31 @@ bin/formosa-mlkem-1024-ref: randombytes/librandombytes1.a
     ../code/jasmin/1024/ref/jkem.s \
     randombytes/librandombytes1.a
 
-#--randombytes
+#-- mlkem-libjade (from pq-code-package) ----------------------------
+#--avx2
+bin/pqcp-mlkem-768-avx2: randombytes/librandombytes1.a
+	$(CC) $(CFLAGS) -o $@ src/crypto_kem.c \
+		-DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem768_amd64_avx2 \
+		-DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_avx2 \
+		-Irandombytes/ \
+		-I../code/jasmin/768/avx2/include/ \
+		third_party/mlkem-libjade/src/mlkem768_amd64_avx2/mlkem768_amd64_avx2.s \
+    randombytes/librandombytes1.a
+
+bin/pqcp-mlkem-1024-avx2: randombytes/librandombytes1.a
+	$(CC) $(CFLAGS) -o $@ src/crypto_kem.c \
+		-DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem1024_amd64_avx2 \
+		-DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_avx2 \
+		-Irandombytes/ \
+		-I../code/jasmin/1024/avx2/include/ \
+		third_party/mlkem-libjade/src/mlkem1024_amd64_avx2/mlkem1024_amd64_avx2.s \
+    randombytes/librandombytes1.a
+
+#-- randombytes -----------------------------------------------------
 randombytes/librandombytes1.a:
 	$(MAKE) -C randombytes/
 
-#--misc
+#-- misc ------------------------------------------------------------
 .PHONY: clean
 clean:
 	$(RM) -f bin/formosa-mlkem-*
