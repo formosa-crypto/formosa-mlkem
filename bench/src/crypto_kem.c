@@ -1,114 +1,215 @@
 #include "api.h"
 #include "namespace.h"
+#include "randombytes1.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <inttypes.h>
 
 //
 
-#define CRYPTO_BYTES           NAMESPACE(BYTES)
-#define CRYPTO_PUBLICKEYBYTES  NAMESPACE(PUBLICKEYBYTES)
-#define CRYPTO_SECRETKEYBYTES  NAMESPACE(SECRETKEYBYTES)
-#define CRYPTO_CIPHERTEXTBYTES NAMESPACE(CIPHERTEXTBYTES)
-#define CRYPTO_ALGNAME         NAMESPACE(ALGNAME)
+#define CRYPTO_SECRETKEYBYTES     NAMESPACE(SECRETKEYBYTES)
+#define CRYPTO_PUBLICKEYBYTES     NAMESPACE(PUBLICKEYBYTES)
+#define CRYPTO_KEYPAIRCOINBYTES   NAMESPACE(KEYPAIRCOINBYTES)
 
-#define crypto_kem_keypair NAMESPACE_LC(keypair)
-#define crypto_kem_enc NAMESPACE_LC(enc)
-#define crypto_kem_dec NAMESPACE_LC(dec)
+#define CRYPTO_CIPHERTEXTBYTES    NAMESPACE(CIPHERTEXTBYTES)
+#define CRYPTO_BYTES              NAMESPACE(BYTES)
+#define CRYPTO_ENCCOINBYTES       NAMESPACE(ENCCOINBYTES)
 
-#define OP 3
+#define CRYPTO_ALGNAME            NAMESPACE(ALGNAME)
+#define CRYPTO_ARCH               NAMESPACE(ARCH)
+#define CRYPTO_IMPL               NAMESPACE(IMPL)
+
+#define crypto_kem_keypair        NAMESPACE_LC(keypair)
+#define crypto_kem_keypair_derand NAMESPACE_LC(keypair_derand)
+#define crypto_kem_enc            NAMESPACE_LC(enc)
+#define crypto_kem_enc_derand     NAMESPACE_LC(enc_derand)
+#define crypto_kem_dec            NAMESPACE_LC(dec)
+
+#define OP 5
 
 //
 
 #include "config.h"
 #include "cpucycles.c"
-#include "median.c"
 #include "alignedcalloc.c"
+
+//
+
+void print_results_op5(
+  const char *cpu,
+  const char *impl,
+  int print_header,
+  uint64_t results[OP][RUNS]
+){
+  #ifdef RUNS_SORT
+  for(size_t i=0; i<OP; i++)
+  { qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64);
+    qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64);
+    qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64);
+    qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64);
+    qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64);
+  }
+  #endif
+
+  if(print_header)
+  { printf("|        cpu |          implem. |    keypair | keypair_derand ");
+    printf("|        enc | enc_derand |        dec |\n");
+    printf("|-----------:|-----------------:|-----------:|---------------:");
+    printf("|-----------:|-----------:|-----------:|\n");
+  }
+
+  printf("|%12.11s", cpu);
+  printf("|%18.17s", impl);
+
+  printf("|%12" PRIu64 "", results[0][0]);
+  printf("|%16" PRIu64 "", results[1][0]);
+  printf("|%12" PRIu64 "", results[2][0]);
+  printf("|%12" PRIu64 "", results[3][0]);
+  printf("|%12" PRIu64 "", results[4][0]);
+  printf("|\n");
+}
+
 
 //
 
 int main(int argc, char**argv)
 {
-  int run, loop, i;
+  const char *cpu_name = "";
+  const char *implementation_name = "";
+  int print_headers = 1;
+
+  if (argc > 1) cpu_name = argv[1];
+  if (argc > 2) implementation_name = argv[2];
+  if (argc > 3) print_headers = (int)strtol(argv[3], NULL, 10);
+
+  size_t run, i;
   uint64_t cycles[TIMINGS];
-  uint64_t results[OP][LOOPS];
+  uint64_t results[OP][RUNS];
 
-  uint64_t cycles_keypair[RUNS];
-  uint64_t cycles_enc[RUNS];
-  uint64_t cycles_dec[RUNS];
+  // 'rand'
+  uint8_t *_ss,  *ss,  *s;  // CRYPTO_SECRETKEYBYTES  // keypair, dec
+  uint8_t *_ps,  *ps,  *p;  // CRYPTO_PUBLICKEYBYTES  // keypair, enc
+  uint8_t *_cs,  *cs,  *c;  // CRYPTO_CIPHERTEXTBYTES // enc, dec
+  uint8_t *_ks,  *ks,  *k;  // CRYPTO_BYTES           // enc
+  uint8_t *_ts,  *ts,  *t;  // CRYPTO_BYTES           // dec
 
-  uint8_t *_ps, *ps, *p; // CRYPTO_PUBLICKEYBYTES
-  uint8_t *_ss, *ss, *s; // CRYPTO_SECRETKEYBYTES
-  uint8_t *_k, *k; // CRYPTO_BYTES
-  uint8_t *_cs, *cs, *c; // CRYPTO_CIPHERTEXTBYTES
-  uint8_t *_t, *t; // CRYPTO_BYTES
-  size_t plen, slen, clen;
+  // 'derand'
+  uint8_t *_d_ss,  *d_ss,  *d_s;  // CRYPTO_SECRETKEYBYTES    // keypair, dec
+  uint8_t *_d_ps,  *d_ps,  *d_p;  // CRYPTO_PUBLICKEYBYTES    // keypair, enc
+  uint8_t *_d_cs,  *d_cs,  *d_c;  // CRYPTO_CIPHERTEXTBYTES   // enc, dec
+  uint8_t *_d_ks,  *d_ks,  *d_k;  // CRYPTO_BYTES             // enc
+  uint8_t *_d_kcs, *d_kcs, *d_kc; // CRYPTO_KEYPAIRCOINBYTES  // keypair
+  uint8_t *_d_ecs, *d_ecs, *d_ec; // CRYPTO_ENCCOINBYTES      // enc
 
-  plen = alignedcalloc_step(CRYPTO_PUBLICKEYBYTES);
-  slen = alignedcalloc_step(CRYPTO_SECRETKEYBYTES);
-  clen = alignedcalloc_step(CRYPTO_CIPHERTEXTBYTES);
+  size_t slen, plen, clen, klen, tlen;
+  size_t kclen, eclen;
 
-  ps = alignedcalloc(&_ps, plen * TIMINGS);
-  ss = alignedcalloc(&_ss, slen * TIMINGS);
-  cs = alignedcalloc(&_cs, clen * TIMINGS);
+  slen  = alignedcalloc_step(CRYPTO_SECRETKEYBYTES);
+  plen  = alignedcalloc_step(CRYPTO_PUBLICKEYBYTES);
+  clen  = alignedcalloc_step(CRYPTO_CIPHERTEXTBYTES);
+  klen  = alignedcalloc_step(CRYPTO_BYTES);
+  tlen  = alignedcalloc_step(CRYPTO_BYTES);
+  kclen = alignedcalloc_step(CRYPTO_KEYPAIRCOINBYTES);
+  eclen = alignedcalloc_step(CRYPTO_ENCCOINBYTES);
 
-  k = alignedcalloc(&_k, CRYPTO_BYTES);
-  t = alignedcalloc(&_t, CRYPTO_BYTES);
+  //
+
+  ss  = alignedcalloc(&_ss,  slen  * TIMINGS);
+  ps  = alignedcalloc(&_ps,  plen  * TIMINGS);
+  cs  = alignedcalloc(&_cs,  clen  * TIMINGS);
+  ks  = alignedcalloc(&_ks,  klen  * TIMINGS);
+  ts  = alignedcalloc(&_ts,  tlen  * TIMINGS);
+
+  d_ss  = alignedcalloc(&_d_ss,  slen  * TIMINGS);
+  d_ps  = alignedcalloc(&_d_ps,  plen  * TIMINGS);
+  d_cs  = alignedcalloc(&_d_cs,  clen  * TIMINGS);
+  d_ks  = alignedcalloc(&_d_ks,  klen  * TIMINGS);
+  d_kcs = alignedcalloc(&_d_kcs, kclen * TIMINGS);
+  d_ecs = alignedcalloc(&_d_ecs, eclen * TIMINGS);
 
   for(run = 0; run < RUNS; run++)
   {
-    for(loop = 0; loop < LOOPS; loop++)
-    {
-      // keypair
-      p = ps; s = ss;
-      for (i = 0; i < TIMINGS; i++, p += plen, s += slen)
-      { cycles[i] = cpucycles();
-        crypto_kem_keypair(p, s); }
-      results[0][loop] = cpucycles_median(cycles, TIMINGS);
+    // //////////////////////////////////////////////////
+    // keypair
+    p = ps; s = ss;
+    for (i = 0; i < TIMINGS; i++, p += plen, s += slen)
+    { cycles[i] = cpucycles();
+      crypto_kem_keypair(p, s); }
+    results[0][run] = cpucycles_median(cycles, TIMINGS);
 
-      // enc
-      p = ps;
-      c = cs;
-      for (i = 0; i < TIMINGS; i++, p += plen, c += clen)
-      { cycles[i] = cpucycles();
-        crypto_kem_enc(c, k, p); }
-      results[1][loop] = cpucycles_median(cycles, TIMINGS);
+    // //////////////////////////////////////////////////
+    // keypair derand:
+    d_kc = d_kcs;
+    for (i = 0; i < TIMINGS; i++, d_kc += kclen)
+    { randombytes(d_kc, CRYPTO_KEYPAIRCOINBYTES); }
 
-      // dec
-      s = ss;
-      c = cs;
-      for (i = 0; i < TIMINGS; i++, s += slen, c += clen)
-      { cycles[i] = cpucycles();
-        crypto_kem_dec(t, c, s); }
-      results[2][loop] = cpucycles_median(cycles, TIMINGS);
+    d_p = d_ps; d_s = d_ss; d_kc = d_kcs;
+    for (i = 0; i < TIMINGS; i++, d_p += plen, d_s += slen, d_kc += kclen)
+    { cycles[i] = cpucycles();
+      crypto_kem_keypair_derand(d_p, d_s, d_kc); }
+    results[1][run] = cpucycles_median(cycles, TIMINGS);
+
+    // //////////////////////////////////////////////////
+    // enc
+    c = cs; k = ks; p = ps;
+    for (i = 0; i < TIMINGS; i++, c += clen, k += klen, p += plen)
+    { cycles[i] = cpucycles();
+      crypto_kem_enc(c, k, p); }
+    results[2][run] = cpucycles_median(cycles, TIMINGS);
+
+    // //////////////////////////////////////////////////
+    // enc derand
+    d_ec = d_ecs;
+    for (i = 0; i < TIMINGS; i++, d_ec += eclen)
+    { randombytes(d_ec, CRYPTO_ENCCOINBYTES); }
+
+    d_c = d_cs; d_k = d_ks; d_p = d_ps; d_ec = d_ecs;
+    for (i = 0; i < TIMINGS; i++, d_c += clen, d_k += klen, d_p += plen, d_ec += eclen)
+    { cycles[i] = cpucycles();
+      crypto_kem_enc_derand(d_c, d_k, d_p, d_ec); }
+    results[3][run] = cpucycles_median(cycles, TIMINGS);
+
+    // //////////////////////////////////////////////////
+    // dec
+    t = ts; c = cs; s = ss;
+    for (i = 0; i < TIMINGS; i++, t += tlen, c += clen, s += slen)
+    { cycles[i] = cpucycles();
+      crypto_kem_dec(t, c, s); }
+    results[4][run] = cpucycles_median(cycles, TIMINGS);
+
+    // //////////////////////////////////////////////////
+    // check that shared_secrets match
+    k = ks; t = ts;
+    for (i = 0; i < TIMINGS; i++, k += klen, t += tlen)
+    { assert(memcmp(k, t, CRYPTO_BYTES) == 0); }
+
+    d_k = d_ks; t = ts; d_c = d_cs; d_s = d_ss;
+    for (i = 0; i < TIMINGS; i++, d_k += klen, t += tlen, d_c += clen, d_s += slen)
+    { crypto_kem_dec(t, d_c, d_s);
+      assert(memcmp(d_k, t, CRYPTO_BYTES) == 0);
     }
-
-    median_fr(results);
-
-    cycles_keypair[run] = results[0][0];
-    cycles_enc[run] = results[1][0];
-    cycles_dec[run] = results[2][0];
   }
 
-  qsort(cycles_keypair,RUNS,sizeof(uint64_t),cmp_uint64);
-  qsort(cycles_enc,RUNS,sizeof(uint64_t),cmp_uint64);
-  qsort(cycles_dec,RUNS,sizeof(uint64_t),cmp_uint64);
-
-
-  printf("|%" PRIu64 "|%" PRIu64 "|%"  PRIu64 "|",
-      median_runs(cycles_keypair),
-      median_runs(cycles_enc),
-      median_runs(cycles_dec));
+  print_results_op5(cpu_name, implementation_name, print_headers, results);
 
   free(_ps);
   free(_ss);
+  free(_ks);
   free(_cs);
-  free(_k);
-  free(_t);
+  free(_ts);
+
+  free(_d_ps);
+  free(_d_ss);
+  free(_d_ks);
+  free(_d_cs);
+  free(_d_kcs);
+  free(_d_ecs);
 
   return 0;
 }
+
 
