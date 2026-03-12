@@ -1,3 +1,4 @@
+*.o
+*.a
 bin/
-supercop-*
-!supercop-patch
+

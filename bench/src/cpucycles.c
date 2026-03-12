@@ -1,7 +1,12 @@
 #ifndef CPUCYCLES_C
 #define CPUCYCLES_C
 
-static inline uint64_t cpucycles(void) {
+#include <stdint.h>
+#include <stddef.h>
+#include <stdlib.h>
+
+static inline uint64_t cpucycles(void)
+{
   uint64_t result;
 
   __asm__ volatile ("rdtsc; shlq $32,%%rdx; orq %%rdx,%%rax"
@@ -33,6 +38,5 @@ static uint64_t cpucycles_median(uint64_t *cycles, size_t timings)
 
   return median(cycles, timings-1);
 }
-
 
 #endif

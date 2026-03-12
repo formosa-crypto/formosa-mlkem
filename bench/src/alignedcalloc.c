@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-//include <error.h>
 
 static size_t alignedcalloc_step(size_t len)
 {
@@ -14,10 +13,10 @@ static size_t alignedcalloc_step(size_t len)
 
 static uint8_t *alignedcalloc(uint8_t** _x, size_t len)
 {
-  uint8_t* x = (uint8_t*) calloc(1, len + 128);
-  if (!x) exit(-1); //error(-1, -1, "out of memory");
+  uint8_t* x = calloc(1, len + 128);
+  if (!x) exit(-1);
   if(_x){ *_x = x; }
-  x += 63 & (-(unsigned long) x);
+  x += 63 & (-(uintptr_t) x);
   return x;
 }
 

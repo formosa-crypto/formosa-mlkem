@@ -15,3 +15,6 @@
 [submodule "jasmin"]
 	path = jasmin
 	url = https://gitlab.com/jasmin-lang/jasmin-compiler.git
+[submodule "bench/third_party/mlkem-libjade"]
+	path = bench/third_party/mlkem-libjade
+	url = https://github.com/pq-code-package/mlkem-libjade.git
