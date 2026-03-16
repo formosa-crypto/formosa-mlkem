@@ -113,10 +113,10 @@ bin/mlkem-native-1024-avx2: randombytes/librandombytes1.a third_party/mlkem-nati
     randombytes/librandombytes1.a
 
 third_party/mlkem-native/test/build/libmlkem768.a:
-	$(MAKE) -C third_party/mlkem-native/ build
+	$(MAKE) -C third_party/mlkem-native/ build OPT=1 AUTO=1
 
 third_party/mlkem-native/test/build/libmlkem1024.a:
-	$(MAKE) -C third_party/mlkem-native/ build
+	$(MAKE) -C third_party/mlkem-native/ build OPT=1 AUTO=1
 
 #-- randombytes -----------------------------------------------------
 randombytes/librandombytes1.a:
