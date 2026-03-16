@@ -4,15 +4,9 @@ from typing import List, Dict
 
 
 def time_to_color(time_ratio: float) -> str:
-    
-    r = int(100 + (time_ratio * 155)) 
-    g = int(200 - (time_ratio * 150)) 
-    b = 0
 
-    r = max(0, min(255, r))
-    g = max(0, min(255, g))
-    
-    return f"rgb({r}, {g}, {b})"
+    hue = (1 - time_ratio) * 120 
+    return f"hsl({hue}, 70%, 45%)"
 
 def parse_time_data(time_file_path: str) -> Dict[int, float]:
     line_times = {}
@@ -37,7 +31,6 @@ def generate_html_report(easycrypt_lines: List[str], line_times: Dict[int, float
         return ""
 
     max_time = max(line_times.values())
-    
     html_content = [
         "<!DOCTYPE html>",
         "<html lang='en'>",
@@ -51,32 +44,73 @@ def generate_html_report(easycrypt_lines: List[str], line_times: Dict[int, float
         ".line-num { width: 4%; text-align: right; background-color: #333; color: #ccc; }",
         ".time { width: 10%; font-weight: bold; text-align: right; }",
         ".code { white-space: pre; font-weight: bold; }",
-        ".line-num-bg { background-color: inherit !important; }",
+        ".hidden { display: none; }",
+        ".controls { margin-bottom: 15px; }",
         "</style>",
+
+        "<script>",
+        "function showAll() {",
+        "  document.querySelectorAll('.code-line').forEach(r => r.classList.remove('hidden'));",
+        "}",
+
+        "function filterCritical() {",
+        "  const threshold = parseFloat(document.getElementById('threshold').value);",
+        "  document.querySelectorAll('.code-line').forEach(r => {",
+        "    const ratio = parseFloat(r.dataset.ratio);",
+        "    if (ratio < threshold) r.classList.add('hidden');",
+        "    else r.classList.remove('hidden');",
+        "  });",
+        "}",
+
+        "function filterWithContext() {",
+        "  const threshold = parseFloat(document.getElementById('threshold').value);",
+        "  const ctx = parseInt(document.getElementById('context').value);",
+        "  const rows = Array.from(document.querySelectorAll('.code-line'));",
+
+        "  rows.forEach(r => r.classList.add('hidden'));",
+
+        "  rows.forEach((r,i)=>{",
+        "    const ratio = parseFloat(r.dataset.ratio);",
+        "    if (ratio >= threshold) {",
+        "      for (let j=-ctx; j<=ctx; j++) {",
+        "        let k = i+j;",
+        "        if (k>=0 && k<rows.length) rows[k].classList.remove('hidden');",
+        "      }",
+        "    }",
+        "  });",
+        "}",
+        "</script>",
+
         "</head>",
         "<body>",
+
         f"<h1>HeatMap Proofs: {os.path.basename(ec_filename)}</h1>",
+        "<div class='controls'>",
+        "Threshold (ratio): <input id='threshold' type='number' step='0.05' value='0.6' min='0' max='1'>",
+        "Context lines: <input id='context' type='number' value='2' min='0' max='50'>",
+        "<button onclick='showAll()'>Show All</button>",
+        "<button onclick='filterCritical()'>Only Critical</button>",
+        "<button onclick='filterWithContext()'>Critical + Context</button>",
+        "</div>",
         "<table>",
-        "<thead><tr><th class='line-num'>Line Number</th><th class='time'>Time (s)</th><th>EasyCrypt Code</th></tr></thead>",
+        "<thead><tr><th class='line-num'>Line</th><th class='time'>Time (s)</th><th>EasyCrypt Code</th></tr></thead>",
         "<tbody>"
     ]
-    
+
     for i, line_content in enumerate(easycrypt_lines):
         line_num = i + 1
         time_sec = line_times.get(line_num, 0.0)
+
         time_ratio = time_sec / max_time if max_time > 0 else 0.0
-        
         bg_color = time_to_color(time_ratio)
-        
+
         cleaned_line = line_content.rstrip().expandtabs(4).replace('<', '&lt;').replace('>', '&gt;')
-        
-        row_style = f"style='background-color: {bg_color};'"
-        time_display = f"{time_sec:.6f}" if time_sec > 0.0 else "0.000000"
-        line_num_style = f"style='background-color: {bg_color};'"
+
+        time_display = f"{time_sec:.6f}" if time_sec > 0 else "0.000000"
 
         html_content.append(
-            f"<tr {row_style}>"
-            f"<td class='line-num' {line_num_style}>{line_num}</td>"
+            f"<tr class='code-line' data-ratio='{time_ratio}' style='background-color:{bg_color};'>"
+            f"<td class='line-num'>{line_num}</td>"
             f"<td class='time'>{time_display}</td>"
             f"<td class='code'>{cleaned_line}</td>"
             f"</tr>"
@@ -84,7 +118,6 @@ def generate_html_report(easycrypt_lines: List[str], line_times: Dict[int, float
 
     html_content.extend(["</tbody>", "</table>", "</body>", "</html>"])
     return "\n".join(html_content)
-
 
 def main():
     

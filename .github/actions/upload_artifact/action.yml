@@ -1,0 +1,124 @@
+name: Upload Proofs Heatmap 
+description: Upload a heatmap of proofs to github pages
+
+runs:
+  using: composite
+  steps:
+        - name: Setup Pages
+          uses: actions/configure-pages@v5
+        - name: Download all artifacts
+          uses: actions/download-artifact@v4
+          with:
+            path: reports
+        - name: Build index
+          shell: bash
+          run: |
+            INDEX=reports/index.html
+            mkdir -p reports
+
+            cat <<'EOF' > "$INDEX"
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+            <meta charset="UTF-8">
+            <title>EasyCrypt Proof Heatmaps</title>
+            <style>
+            body {
+              font-family: system-ui, sans-serif;
+              background: #111;
+              color: #e6e6e6;
+              margin: 40px;
+            }
+
+            h1 {
+              margin-bottom: 30px;
+            }
+
+            .grid {
+              display: grid;
+              grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+              gap: 20px;
+            }
+
+            .card {
+              background: #1b1b1b;
+              border: 1px solid #333;
+              border-radius: 8px;
+              padding: 15px;
+            }
+
+            .card h2 {
+              margin-top: 0;
+              font-size: 18px;
+              color: #ddd;
+            }
+
+            .card ul {
+              list-style: none;
+              padding-left: 0;
+            }
+
+            .card li {
+              margin: 6px 0;
+            }
+
+            a {
+              color: #6ab0ff;
+              text-decoration: none;
+            }
+
+            a:hover {
+              text-decoration: underline;
+            }
+
+            footer {
+              margin-top: 40px;
+              color: #777;
+              font-size: 13px;
+            }
+            </style>
+            </head>
+            <body>
+
+            <h1>EasyCrypt Proof Heatmaps</h1>
+            <div class="grid">
+            EOF
+
+
+            for d in reports/*/; do
+              dir=$(basename "$d")
+
+              echo "<div class=\"card\">" >> "$INDEX"
+              echo "<h2>$dir</h2>" >> "$INDEX"
+              echo "<ul>" >> "$INDEX"
+
+              for f in "$d"/*.html; do
+                name=$(basename "$f")
+                echo "<li><a href=\"$dir/$name\">$name</a></li>" >> "$INDEX"
+              done
+
+              echo "</ul></div>" >> "$INDEX"
+            done
+
+
+            cat <<'EOF' >> "$INDEX"
+            </div>
+
+            <footer>
+            Generated automatically by MLKEM CI
+            </footer>
+
+            </body>
+            </html>
+            EOF
+
+        - name: Upload Heatmap Artifacts
+          uses: actions/upload-pages-artifact@v3
+          with:
+              name: heatmap-report
+              path: reports/
+        - name: Deploy to GitHub Pages
+          id: deployment
+          uses: actions/deploy-pages@v4
+          with:
+            artifact_name: heatmap-report

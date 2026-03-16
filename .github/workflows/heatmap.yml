@@ -1,0 +1,66 @@
+name: Heatmap of Proofs
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+on:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  NIXPKGS_ALLOW_UNFREE: 1
+  ECRJOBS: 8
+
+jobs:
+    heatmap_proofs:
+        name: Generate Heatmap of Proofs
+        runs-on: ubuntu-latest
+        strategy:
+          fail-fast: false
+          matrix:
+            category:
+            - correctness_768_ref
+            - correctness_768_avx2
+            - correctness_1024_ref
+            - correctness_1024_avx2
+            - safety_768_avx2
+            - safety_1024_avx2
+            - security
+            - spec
+        environment:
+          name: github-pages
+          url: easycrypt-heatmap-reports-${{matrix.category}}
+        steps:
+         - uses: actions/checkout@v6
+           with:
+            submodules: recursive
+         - name: Install Nix
+           uses: cachix/install-nix-action@v31
+           with:
+             nix_path: nixpkgs=channel:nixos-unstable
+         - name: Check Dependencies
+           shell: bash
+           run: nix-shell --run "echo Dependencies OK…"
+         - name: Set env
+           run: echo "PATH_PROOF=$(echo "${{ matrix.category }}" | tr '_' '/')" >> $GITHUB_ENV
+         - uses: ./.github/actions/heatmap_proofs
+           with:
+            category: ${{matrix.category}}
+            path: ${{env.PATH_PROOF}}
+    upload_artifact:
+        name: Upload Heatmap Artifacts
+        needs: heatmap_proofs
+        if: always()
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v6
+            with:
+              submodules: recursive
+          - name: Install Nix
+            uses: cachix/install-nix-action@v31
+            with:
+              nix_path: nixpkgs=channel:nixos-unstable
+          - name: Check Dependencies
+            shell: bash
+            run: nix-shell --run "echo Dependencies OK…"
+          - uses: ./.github/actions/upload_artifact

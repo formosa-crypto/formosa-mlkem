@@ -1,0 +1,39 @@
+name: Proofs Heatmap
+description: Generate a heatmap of proofs
+
+inputs:
+  path:
+    description: 'Path to proofs'
+    required: true
+  category:
+    description: 'Proof category'
+    required: true
+
+runs:
+  using: composite
+  steps:
+        - name: Configure provers
+          shell: bash
+          run: nix-shell --run 'easycrypt why3config'
+        - name: Run ${{inputs.category}} Proofs
+          shell: bash
+          run: |
+           TARGET_DIR="proof/${{inputs.path}}"
+           HTML_REPORT_DIR="reports"
+           mkdir -p ${HTML_REPORT_DIR}
+           TSTATS_DIR=".tstats"
+           mkdir -p ${TSTATS_DIR}
+           for EC_FILE in ${TARGET_DIR}/*.ec; do
+              if [ -e "$EC_FILE" ]; then
+                TSTATS_FILE="${TSTATS_DIR}/$(basename "${EC_FILE%.ec}.tstats")"
+                FILENAME_BASE="$(basename "${EC_FILE%.ec}")"
+                HTML_REPORT_PATH="${HTML_REPORT_DIR}/${FILENAME_BASE}.html"
+                nix-shell --run "easycrypt -tstats ${TSTATS_FILE} ${EC_FILE}"
+                python scripts/generate_heatmap.py ${EC_FILE} ${TSTATS_FILE} > ${HTML_REPORT_PATH}                
+              fi
+           done
+        - name: Upload Heatmap Artifacts
+          uses: actions/upload-artifact@v4
+          with:
+            name: heatmap_${{inputs.category}}
+            path: reports/*.html
