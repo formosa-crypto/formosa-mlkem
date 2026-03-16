@@ -27,9 +27,6 @@ jobs:
             - safety_1024_avx2
             - security
             - spec
-        environment:
-          name: github-pages
-          url: easycrypt-heatmap-reports-${{matrix.category}}
         steps:
          - uses: actions/checkout@v6
            with:
