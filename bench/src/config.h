@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 #ifndef RUNS
-#define RUNS 10
+#define RUNS 3
 #endif
 
 #ifndef RUNS_SORT
@@ -10,7 +10,7 @@
 #endif
 
 #ifndef TIMINGS
-#define TIMINGS 10000
+#define TIMINGS 10001
 #endif
 
 #endif

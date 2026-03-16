@@ -47,29 +47,24 @@ void print_results_op5(
 ){
   #ifdef RUNS_SORT
   for(size_t i=0; i<OP; i++)
-  { qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64);
-    qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64);
-    qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64);
-    qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64);
-    qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64);
-  }
+  { qsort(&(results[i][0]), RUNS, sizeof(uint64_t), cmp_uint64); }
   #endif
 
   if(print_header)
-  { printf("|        cpu |          implem. |    keypair | keypair_derand ");
+  { printf("|        cpu |              implem. |    keypair | keypair_derand ");
     printf("|        enc | enc_derand |        dec |\n");
-    printf("|-----------:|-----------------:|-----------:|---------------:");
+    printf("|-----------:|---------------------:|-----------:|---------------:");
     printf("|-----------:|-----------:|-----------:|\n");
   }
 
   printf("|%12.11s", cpu);
-  printf("|%18.17s", impl);
+  printf("|%22.21s", impl);
 
-  printf("|%12" PRIu64 "", results[0][0]);
-  printf("|%16" PRIu64 "", results[1][0]);
-  printf("|%12" PRIu64 "", results[2][0]);
-  printf("|%12" PRIu64 "", results[3][0]);
-  printf("|%12" PRIu64 "", results[4][0]);
+  printf("|%12" PRIu64 "", results[0][RUNS/2]);
+  printf("|%16" PRIu64 "", results[1][RUNS/2]);
+  printf("|%12" PRIu64 "", results[2][RUNS/2]);
+  printf("|%12" PRIu64 "", results[3][RUNS/2]);
+  printf("|%12" PRIu64 "", results[4][RUNS/2]);
   printf("|\n");
 }
 
@@ -88,7 +83,9 @@ int main(int argc, char**argv)
 
   size_t run, i;
   uint64_t cycles[TIMINGS];
-  uint64_t results[OP][RUNS];
+  uint64_t begin, end;
+  uint64_t median[OP][RUNS];
+  int r;
 
   // 'rand'
   uint8_t *_ss,  *ss,  *s;  // CRYPTO_SECRETKEYBYTES  // keypair, dec
@@ -137,9 +134,13 @@ int main(int argc, char**argv)
     // keypair
     p = ps; s = ss;
     for (i = 0; i < TIMINGS; i++, p += plen, s += slen)
-    { cycles[i] = cpucycles();
-      crypto_kem_keypair(p, s); }
-    results[0][run] = cpucycles_median(cycles, TIMINGS);
+    { begin = cpucycles_begin();
+      r = crypto_kem_keypair(p, s);
+      end = cpucycles_end();
+      cycles[i] = end - begin;
+      assert(r == 0);
+    }
+    median[0][run] = cpucycles_median(cycles, TIMINGS);
 
     // //////////////////////////////////////////////////
     // keypair derand:
@@ -149,17 +150,25 @@ int main(int argc, char**argv)
 
     d_p = d_ps; d_s = d_ss; d_kc = d_kcs;
     for (i = 0; i < TIMINGS; i++, d_p += plen, d_s += slen, d_kc += kclen)
-    { cycles[i] = cpucycles();
-      crypto_kem_keypair_derand(d_p, d_s, d_kc); }
-    results[1][run] = cpucycles_median(cycles, TIMINGS);
+    { begin = cpucycles_begin();
+      r = crypto_kem_keypair_derand(d_p, d_s, d_kc);
+      end = cpucycles_end();
+      cycles[i] = end - begin;
+      assert(r == 0);
+    }
+    median[1][run] = cpucycles_median(cycles, TIMINGS);
 
     // //////////////////////////////////////////////////
     // enc
     c = cs; k = ks; p = ps;
     for (i = 0; i < TIMINGS; i++, c += clen, k += klen, p += plen)
-    { cycles[i] = cpucycles();
-      crypto_kem_enc(c, k, p); }
-    results[2][run] = cpucycles_median(cycles, TIMINGS);
+    { begin = cpucycles_begin();
+      r = crypto_kem_enc(c, k, p);
+      end = cpucycles_end();
+      cycles[i] = end - begin;
+      assert(r == 0);
+    }
+    median[2][run] = cpucycles_median(cycles, TIMINGS);
 
     // //////////////////////////////////////////////////
     // enc derand
@@ -169,17 +178,25 @@ int main(int argc, char**argv)
 
     d_c = d_cs; d_k = d_ks; d_p = d_ps; d_ec = d_ecs;
     for (i = 0; i < TIMINGS; i++, d_c += clen, d_k += klen, d_p += plen, d_ec += eclen)
-    { cycles[i] = cpucycles();
-      crypto_kem_enc_derand(d_c, d_k, d_p, d_ec); }
-    results[3][run] = cpucycles_median(cycles, TIMINGS);
+    { begin = cpucycles_begin();
+      r = crypto_kem_enc_derand(d_c, d_k, d_p, d_ec);
+      end = cpucycles_end();
+      cycles[i] = end - begin;
+      assert(r == 0);
+    }
+    median[3][run] = cpucycles_median(cycles, TIMINGS);
 
     // //////////////////////////////////////////////////
     // dec
     t = ts; c = cs; s = ss;
     for (i = 0; i < TIMINGS; i++, t += tlen, c += clen, s += slen)
-    { cycles[i] = cpucycles();
-      crypto_kem_dec(t, c, s); }
-    results[4][run] = cpucycles_median(cycles, TIMINGS);
+    { begin = cpucycles_begin();
+      r = crypto_kem_dec(t, c, s);
+      end = cpucycles_end();
+      cycles[i] = end - begin;
+      assert(r == 0);
+    }
+    median[4][run] = cpucycles_median(cycles, TIMINGS);
 
     // //////////////////////////////////////////////////
     // check that shared_secrets match
@@ -194,7 +211,7 @@ int main(int argc, char**argv)
     }
   }
 
-  print_results_op5(cpu_name, implementation_name, print_headers, results);
+  print_results_op5(cpu_name, implementation_name, print_headers, median);
 
   free(_ps);
   free(_ss);

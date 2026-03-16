@@ -1,5 +1,7 @@
 CFLAGS ?= -Wall -O3 -fomit-frame-pointer -fno-lto -march=native
 
+CPU ?= ""
+
 ALL := \
  bin/formosa-mlkem-768-avx2 \
  bin/formosa-mlkem-1024-avx2 \
@@ -18,20 +20,18 @@ compile: $(ALL)
 compile-extended: $(ALL_EXTENDED)
 
 run: compile
-	@./bin/formosa-mlkem-768-avx2 "" "fmlkem768 avx2" 1
-	@./bin/formosa-mlkem-1024-avx2 "" "fmlkem1024 avx2" 0
-	@./bin/formosa-mlkem-768-ref "" "fmlkem768 ref" 0
-	@./bin/formosa-mlkem-1024-ref "" "fmlkem1024 ref" 0
+	@./bin/formosa-mlkem-768-avx2 "$(CPU)" "f.mlkem768 avx2" 1
+	@./bin/formosa-mlkem-1024-avx2 "$(CPU)" "f.mlkem1024 avx2" 0
+	@./bin/formosa-mlkem-768-ref "$(CPU)" "f.mlkem768 ref" 0
+	@./bin/formosa-mlkem-1024-ref "$(CPU)" "f.mlkem1024 ref" 0
 
 run-extended: compile-extended
-	@./bin/formosa-mlkem-768-avx2 "" "fmlkem768 avx2" 1
-	@./bin/formosa-mlkem-1024-avx2 "" "fmlkem1024 avx2" 0
-	@./bin/formosa-mlkem-768-ref "" "fmlkem768 ref" 0
-	@./bin/formosa-mlkem-1024-ref "" "fmlkem1024 ref" 0
-	@./bin/pqcp-mlkem-768-avx2 "" "pqcpmlkem768 avx2" 0
-	@./bin/pqcp-mlkem-1024-avx2 "" "pqcpmlkem1024 avx2" 0
-	@./bin/mlkem-native-768-avx2 "" "nat.mlkem768 avx2" 0
-	@./bin/mlkem-native-1024-avx2 "" "nat.mlkem1024 avx2" 0
+	@./bin/formosa-mlkem-768-avx2 "$(CPU)" "f.mlkem768 avx2" 1
+	@./bin/formosa-mlkem-1024-avx2 "$(CPU)" "f.mlkem1024 avx2" 0
+	@./bin/pqcp-mlkem-768-avx2 "$(CPU)" "pqcp.l.mlkem768 avx2" 0
+	@./bin/pqcp-mlkem-1024-avx2 "$(CPU)" "pqcp.l.mlkem1024 avx2" 0
+	@./bin/mlkem-native-768-avx2 "$(CPU)" "nat.mlkem768 avx2" 0
+	@./bin/mlkem-native-1024-avx2 "$(CPU)" "nat.mlkem1024 avx2" 0
 
 #-- formosa-mlkem (this repository ----------------------------------
 #-- avx2
