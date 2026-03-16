@@ -2,6 +2,8 @@
 name: CI
 permissions:
   contents: read
+  pages: write
+  id-token: write
 on:
   workflow_dispatch:
   push:
@@ -24,6 +26,7 @@ jobs:
     name: EasyCrypt
     permissions:
       contents: read
+      pages: write
       id-token: write
     uses: ./.github/workflows/ec.yml
     secrets: inherit 

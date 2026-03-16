@@ -1,6 +1,9 @@
 name: EasyCrypt
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
 on:
   workflow_call:
   workflow_dispatch:
@@ -70,6 +73,7 @@ jobs:
       name: Generate Heatmap of Proofs
       permissions:
         contents: read
+        pages: write
         id-token: write
       uses: ./.github/workflows/heatmap.yml
       secrets: inherit 
