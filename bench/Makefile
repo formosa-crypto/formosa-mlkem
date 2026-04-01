@@ -28,8 +28,6 @@ run: compile
 run-extended: compile-extended
 	@./bin/formosa-mlkem-768-avx2 "$(CPU)" "f.mlkem768 avx2" 1
 	@./bin/formosa-mlkem-1024-avx2 "$(CPU)" "f.mlkem1024 avx2" 0
-	@./bin/pqcp-mlkem-768-avx2 "$(CPU)" "pqcp.l.mlkem768 avx2" 0
-	@./bin/pqcp-mlkem-1024-avx2 "$(CPU)" "pqcp.l.mlkem1024 avx2" 0
 	@./bin/mlkem-native-768-avx2 "$(CPU)" "nat.mlkem768 avx2" 0
 	@./bin/mlkem-native-1024-avx2 "$(CPU)" "nat.mlkem1024 avx2" 0
 
