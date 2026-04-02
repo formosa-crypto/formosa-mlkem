@@ -18,3 +18,9 @@
 [submodule "bench/third_party/mlkem-libjade"]
 	path = bench/third_party/mlkem-libjade
 	url = https://github.com/pq-code-package/mlkem-libjade.git
+[submodule "bench/third_party/kyber"]
+	path = bench/third_party/kyber
+	url = https://github.com/pq-crystals/kyber
+[submodule "bench/third_party/pqcrystals-kyber"]
+	path = bench/third_party/pqcrystals-kyber
+	url = https://github.com/pq-crystals/kyber
