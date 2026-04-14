@@ -9910,15 +9910,15 @@ Ljade_kem_mlkem_mlkem768_amd64_ref_enc$2:
 	leaq	3912(%rsp), %rax
 	call	L_i_poly_compress$1
 Ljade_kem_mlkem_mlkem768_amd64_ref_enc$1:
-	movq	8(%rsp), %rax
-	movq	184(%rsp), %rcx
-	movq	%rcx, (%rax)
-	movq	192(%rsp), %rcx
-	movq	%rcx, 8(%rax)
-	movq	200(%rsp), %rcx
-	movq	%rcx, 16(%rax)
-	movq	208(%rsp), %rcx
-	movq	%rcx, 24(%rax)
+	movq	8(%rsp), %rcx
+	movq	184(%rsp), %rax
+	movq	%rax, (%rcx)
+	movq	192(%rsp), %rax
+	movq	%rax, 8(%rcx)
+	movq	200(%rsp), %rax
+	movq	%rax, 16(%rcx)
+	movq	208(%rsp), %rax
+	movq	%rax, 24(%rcx)
 	movq	%mm0, %rsi
 	movq	%mm1, %rdi
 	movq	616(%rsp), %rax
@@ -11970,15 +11970,15 @@ Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$2:
 	leaq	3912(%rsp), %rax
 	call	L_i_poly_compress$1
 Ljade_kem_mlkem_mlkem768_amd64_ref_enc_derand$1:
-	movq	8(%rsp), %rax
-	movq	184(%rsp), %rcx
-	movq	%rcx, (%rax)
-	movq	192(%rsp), %rcx
-	movq	%rcx, 8(%rax)
-	movq	200(%rsp), %rcx
-	movq	%rcx, 16(%rax)
-	movq	208(%rsp), %rcx
-	movq	%rcx, 24(%rax)
+	movq	8(%rsp), %rcx
+	movq	184(%rsp), %rax
+	movq	%rax, (%rcx)
+	movq	192(%rsp), %rax
+	movq	%rax, 8(%rcx)
+	movq	200(%rsp), %rax
+	movq	%rax, 16(%rcx)
+	movq	208(%rsp), %rax
+	movq	%rax, 24(%rcx)
 	movq	%mm0, %rsi
 	movq	%mm1, %rdi
 	movq	616(%rsp), %rax
@@ -23434,13 +23434,13 @@ L_poly_basemul$3:
 	negw	%bx
 	incq	%rsi
 	movw	(%rax,%rsi,2), %dx
-	movw	(%rcx,%rsi,2), %di
+	movw	(%rcx,%rsi,2), %r8w
 	incq	%rsi
 	movw	(%rax,%rsi,2), %r9w
-	movw	(%rcx,%rsi,2), %r8w
+	movw	(%rcx,%rsi,2), %di
 	decq	%rsi
 	movswl	%r9w, %r12d
-	movswl	%r8w, %r13d
+	movswl	%di, %r13d
 	imull	%r13d, %r12d
 	imull	$-218038272, %r12d, %r13d
 	sarl	$16, %r13d
@@ -23457,7 +23457,7 @@ L_poly_basemul$3:
 	sarl	$16, %r14d
 	movw	%r14w, %r11w
 	movswl	%dx, %r12d
-	movswl	%di, %r13d
+	movswl	%r8w, %r13d
 	imull	%r13d, %r12d
 	imull	$-218038272, %r12d, %r13d
 	sarl	$16, %r13d
@@ -23466,7 +23466,7 @@ L_poly_basemul$3:
 	sarl	$16, %r14d
 	addw	%r14w, %r11w
 	movswl	%dx, %r12d
-	movswl	%r8w, %r13d
+	movswl	%di, %r13d
 	imull	%r13d, %r12d
 	imull	$-218038272, %r12d, %r13d
 	sarl	$16, %r13d
@@ -23474,7 +23474,7 @@ L_poly_basemul$3:
 	addl	%r12d, %edx
 	sarl	$16, %edx
 	movswl	%r9w, %r12d
-	movswl	%di, %r13d
+	movswl	%r8w, %r13d
 	imull	%r13d, %r12d
 	imull	$-218038272, %r12d, %r13d
 	sarl	$16, %r13d
@@ -24319,5 +24319,5 @@ G$jzetas:
 	.byte	 66,   8, 121,  12, 194,   4, 202,   7, 151,   9, 220,   0,  94,   8, 134,   6
 	.byte	 96,   8,   7,   7,   3,   8,  26,   3,  27,   7, 171,   9, 155,   9, 222,   1
 	.byte	149,  12, 205,  11, 228,   3, 223,   3, 190,   3,  77,   7, 242,   5,  92,   6
-	.ident	"Jasmin Compiler 2026.03.0"
+	.ident	"Jasmin Compiler 2026.03.1"
 	.section	".note.GNU-stack", "", %progbits
