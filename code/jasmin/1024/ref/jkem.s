@@ -1393,13 +1393,13 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$389:
 	movq	$0, %r8
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$387
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$388:
-	movw	(%rcx,%r8,2), %r9w
-	movswl	%r9w, %r14d
-	imull	$20159, %r14d, %r14d
-	sarl	$26, %r14d
-	imull	$3329, %r14d, %r14d
-	subw	%r14w, %r9w
-	movw	%r9w, (%rcx,%r8,2)
+	movw	(%rcx,%r8,2), %r11w
+	movswl	%r11w, %r9d
+	imull	$20159, %r9d, %r9d
+	sarl	$26, %r9d
+	imull	$3329, %r9d, %r9d
+	subw	%r9w, %r11w
+	movw	%r11w, (%rcx,%r8,2)
 	incq	%r8
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$387:
 	cmpq	$256, %r8
@@ -1416,13 +1416,13 @@ Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$385:
 	movq	$0, %r8
 	jmp 	Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$383
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$384:
-	movw	(%rcx,%r8,2), %r9w
-	movswl	%r9w, %r14d
-	imull	$20159, %r14d, %r14d
-	sarl	$26, %r14d
-	imull	$3329, %r14d, %r14d
-	subw	%r14w, %r9w
-	movw	%r9w, (%rcx,%r8,2)
+	movw	(%rcx,%r8,2), %r11w
+	movswl	%r11w, %r9d
+	imull	$20159, %r9d, %r9d
+	sarl	$26, %r9d
+	imull	$3329, %r9d, %r9d
+	subw	%r9w, %r11w
+	movw	%r11w, (%rcx,%r8,2)
 	incq	%r8
 Ljade_kem_mlkem_mlkem1024_amd64_ref_dec$383:
 	cmpq	$256, %r8
@@ -28513,10 +28513,10 @@ L_poly_sub$1:
 	movq	$0, %rdi
 	jmp 	L_poly_sub$2
 L_poly_sub$3:
-	movw	(%rdx,%rdi,2), %r9w
+	movw	(%rdx,%rdi,2), %r11w
 	movw	(%rsi,%rdi,2), %r8w
-	subw	%r8w, %r9w
-	movw	%r9w, (%rcx,%rdi,2)
+	subw	%r8w, %r11w
+	movw	%r11w, (%rcx,%rdi,2)
 	incq	%rdi
 L_poly_sub$2:
 	cmpq	$256, %rdi
@@ -28528,40 +28528,40 @@ L_poly_ntt$1:
 	movq	$128, %rdi
 	jmp 	L_poly_ntt$4
 L_poly_ntt$5:
-	movq	$0, %r10
+	movq	$0, %r9
 	jmp 	L_poly_ntt$6
 L_poly_ntt$7:
 	incq	%rsi
-	movw	(%rdx,%rsi,2), %r8w
-	movq	%r10, %r9
-	addq	%rdi, %r10
+	movw	(%rdx,%rsi,2), %bx
+	movq	%r9, %r8
+	addq	%rdi, %r9
 	jmp 	L_poly_ntt$8
 L_poly_ntt$9:
-	movw	(%rcx,%r9,2), %r11w
-	movw	%r11w, %bx
-	movq	%r9, %rbp
+	movw	(%rcx,%r8,2), %r10w
+	movw	%r10w, %r11w
+	movq	%r8, %rbp
 	addq	%rdi, %rbp
 	movw	(%rcx,%rbp,2), %r12w
 	movswl	%r12w, %r13d
-	movswl	%r8w, %r12d
+	movswl	%bx, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %r12d
 	sarl	$16, %r12d
 	imull	$-3329, %r12d, %r14d
 	addl	%r13d, %r14d
 	sarl	$16, %r14d
-	subw	%r14w, %bx
-	addw	%r11w, %r14w
-	movw	%bx, (%rcx,%rbp,2)
-	movw	%r14w, (%rcx,%r9,2)
-	incq	%r9
+	subw	%r14w, %r11w
+	addw	%r10w, %r14w
+	movw	%r11w, (%rcx,%rbp,2)
+	movw	%r14w, (%rcx,%r8,2)
+	incq	%r8
 L_poly_ntt$8:
-	cmpq	%r10, %r9
+	cmpq	%r9, %r8
 	jb  	L_poly_ntt$9
-	movq	%r9, %r10
-	addq	%rdi, %r10
+	movq	%r8, %r9
+	addq	%rdi, %r9
 L_poly_ntt$6:
-	cmpq	$256, %r10
+	cmpq	$256, %r9
 	jb  	L_poly_ntt$7
 	shrq	$1, %rdi
 L_poly_ntt$4:
@@ -28570,13 +28570,13 @@ L_poly_ntt$4:
 	movq	$0, %r8
 	jmp 	L_poly_ntt$2
 L_poly_ntt$3:
-	movw	(%rcx,%r8,2), %r9w
-	movswl	%r9w, %r14d
-	imull	$20159, %r14d, %r14d
-	sarl	$26, %r14d
-	imull	$3329, %r14d, %r14d
-	subw	%r14w, %r9w
-	movw	%r9w, (%rcx,%r8,2)
+	movw	(%rcx,%r8,2), %r11w
+	movswl	%r11w, %r9d
+	imull	$20159, %r9d, %r9d
+	sarl	$26, %r9d
+	imull	$3329, %r9d, %r9d
+	subw	%r9w, %r11w
+	movw	%r11w, (%rcx,%r8,2)
 	incq	%r8
 L_poly_ntt$2:
 	cmpq	$256, %r8
@@ -28591,39 +28591,39 @@ L_poly_invntt$5:
 	movq	$0, %r10
 	jmp 	L_poly_invntt$6
 L_poly_invntt$7:
-	movw	(%rdx,%rsi,2), %bx
+	movw	(%rdx,%rsi,2), %r8w
 	incq	%rsi
-	movq	%r10, %r8
+	movq	%r10, %r9
 	addq	%rdi, %r10
 	jmp 	L_poly_invntt$8
 L_poly_invntt$9:
-	movw	(%rcx,%r8,2), %r9w
-	movq	%r8, %rbp
+	movw	(%rcx,%r9,2), %r11w
+	movq	%r9, %rbp
 	addq	%rdi, %rbp
-	movw	(%rcx,%rbp,2), %r11w
-	movw	%r11w, %r12w
-	addw	%r9w, %r12w
+	movw	(%rcx,%rbp,2), %bx
+	movw	%bx, %r12w
+	addw	%r11w, %r12w
 	movswl	%r12w, %r14d
 	imull	$20159, %r14d, %r14d
 	sarl	$26, %r14d
 	imull	$3329, %r14d, %r14d
 	subw	%r14w, %r12w
-	movw	%r12w, (%rcx,%r8,2)
-	subw	%r11w, %r9w
-	movswl	%r9w, %r13d
-	movswl	%bx, %r12d
+	movw	%r12w, (%rcx,%r9,2)
+	subw	%bx, %r11w
+	movswl	%r11w, %r13d
+	movswl	%r8w, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %r12d
 	sarl	$16, %r12d
-	imull	$-3329, %r12d, %r9d
-	addl	%r13d, %r9d
-	sarl	$16, %r9d
-	movw	%r9w, (%rcx,%rbp,2)
-	incq	%r8
+	imull	$-3329, %r12d, %r11d
+	addl	%r13d, %r11d
+	sarl	$16, %r11d
+	movw	%r11w, (%rcx,%rbp,2)
+	incq	%r9
 L_poly_invntt$8:
-	cmpq	%r10, %r8
+	cmpq	%r10, %r9
 	jb  	L_poly_invntt$9
-	movq	%r8, %r10
+	movq	%r9, %r10
 	addq	%rdi, %r10
 L_poly_invntt$6:
 	cmpq	$256, %r10
@@ -28636,8 +28636,8 @@ L_poly_invntt$4:
 	movq	$0, %r8
 	jmp 	L_poly_invntt$2
 L_poly_invntt$3:
-	movw	(%rcx,%r8,2), %r9w
-	movswl	%r9w, %r13d
+	movw	(%rcx,%r8,2), %r11w
+	movswl	%r11w, %r13d
 	movswl	%dx, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %esi
@@ -28730,26 +28730,26 @@ L_poly_getnoise$4:
 	jmp 	L_poly_getnoise$2
 L_poly_getnoise$3:
 	movb	56(%rsp,%rdx), %sil
-	movb	%sil, %r9b
-	andb	$85, %r9b
+	movb	%sil, %r11b
+	andb	$85, %r11b
 	shrb	$1, %sil
 	andb	$85, %sil
-	addb	%r9b, %sil
-	movb	%sil, %r9b
-	andb	$3, %r9b
+	addb	%r11b, %sil
+	movb	%sil, %r11b
+	andb	$3, %r11b
 	movb	%sil, %r8b
 	shrb	$2, %r8b
 	andb	$3, %r8b
-	subb	%r8b, %r9b
-	movsbw	%r9b, %r9w
+	subb	%r8b, %r11b
+	movsbw	%r11b, %r9w
 	movw	%r9w, (%rax,%rdx,4)
-	movb	%sil, %r9b
-	shrb	$4, %r9b
-	andb	$3, %r9b
+	movb	%sil, %r11b
+	shrb	$4, %r11b
+	andb	$3, %r11b
 	shrb	$6, %sil
 	andb	$3, %sil
-	subb	%sil, %r9b
-	movsbw	%r9b, %r9w
+	subb	%sil, %r11b
+	movsbw	%r11b, %r9w
 	movw	%r9w, 2(%rax,%rdx,4)
 	incq	%rdx
 L_poly_getnoise$2:
@@ -30043,8 +30043,8 @@ L_poly_frommont$1:
 	movq	$0, %rdx
 	jmp 	L_poly_frommont$2
 L_poly_frommont$3:
-	movw	(%rax,%rdx,2), %r9w
-	movswl	%r9w, %r13d
+	movw	(%rax,%rdx,2), %r11w
+	movswl	%r11w, %r13d
 	movswl	%cx, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %esi
@@ -31989,30 +31989,29 @@ L_poly_basemul$3:
 	movq	%rdi, %r8
 	shrq	$2, %r8
 	movw	(%rsi,%r8,2), %bx
-	movw	(%rdx,%rdi,2), %r9w
+	movw	(%rdx,%rdi,2), %r11w
 	movw	(%rcx,%rdi,2), %si
 	incq	%rdi
-	movw	(%rdx,%rdi,2), %r11w
+	movw	(%rdx,%rdi,2), %bp
 	movw	(%rcx,%rdi,2), %r8w
 	decq	%rdi
-	movswl	%r11w, %r13d
+	movswl	%bp, %r13d
 	movswl	%r8w, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %r12d
 	sarl	$16, %r12d
-	imull	$-3329, %r12d, %r14d
-	addl	%r13d, %r14d
-	sarl	$16, %r14d
-	movswl	%r14w, %r13d
+	imull	$-3329, %r12d, %r9d
+	addl	%r13d, %r9d
+	sarl	$16, %r9d
+	movswl	%r9w, %r13d
 	movswl	%bx, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %r12d
 	sarl	$16, %r12d
-	imull	$-3329, %r12d, %r14d
-	addl	%r13d, %r14d
-	sarl	$16, %r14d
-	movw	%r14w, %r10w
-	movswl	%r9w, %r13d
+	imull	$-3329, %r12d, %r9d
+	addl	%r13d, %r9d
+	sarl	$16, %r9d
+	movswl	%r11w, %r13d
 	movswl	%si, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %r12d
@@ -32020,16 +32019,16 @@ L_poly_basemul$3:
 	imull	$-3329, %r12d, %r14d
 	addl	%r13d, %r14d
 	sarl	$16, %r14d
-	addw	%r14w, %r10w
-	movswl	%r9w, %r13d
+	addw	%r14w, %r9w
+	movswl	%r11w, %r13d
 	movswl	%r8w, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %r8d
 	sarl	$16, %r8d
-	imull	$-3329, %r8d, %r9d
-	addl	%r13d, %r9d
-	sarl	$16, %r9d
-	movswl	%r11w, %r13d
+	imull	$-3329, %r8d, %r11d
+	addl	%r13d, %r11d
+	sarl	$16, %r11d
+	movswl	%bp, %r13d
 	movswl	%si, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %esi
@@ -32037,22 +32036,22 @@ L_poly_basemul$3:
 	imull	$-3329, %esi, %r14d
 	addl	%r13d, %r14d
 	sarl	$16, %r14d
-	addw	%r14w, %r9w
+	addw	%r14w, %r11w
 	movq	8(%rsp), %rsi
-	movw	%r10w, (%rsi,%rdi,2)
-	incq	%rdi
 	movw	%r9w, (%rsi,%rdi,2)
+	incq	%rdi
+	movw	%r11w, (%rsi,%rdi,2)
 	movq	%rsi, 16(%rsp)
 	negw	%bx
 	incq	%rdi
-	movw	(%rdx,%rdi,2), %r9w
-	movw	(%rcx,%rdi,2), %si
+	movw	(%rdx,%rdi,2), %si
+	movw	(%rcx,%rdi,2), %r8w
 	incq	%rdi
 	movw	(%rdx,%rdi,2), %r11w
-	movw	(%rcx,%rdi,2), %r8w
+	movw	(%rcx,%rdi,2), %r9w
 	decq	%rdi
 	movswl	%r11w, %r13d
-	movswl	%r8w, %r12d
+	movswl	%r9w, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %r12d
 	sarl	$16, %r12d
@@ -32068,8 +32067,8 @@ L_poly_basemul$3:
 	addl	%r13d, %r14d
 	sarl	$16, %r14d
 	movw	%r14w, %r10w
-	movswl	%r9w, %r13d
-	movswl	%si, %r12d
+	movswl	%si, %r13d
+	movswl	%r8w, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %r12d
 	sarl	$16, %r12d
@@ -32077,23 +32076,23 @@ L_poly_basemul$3:
 	addl	%r13d, %r14d
 	sarl	$16, %r14d
 	addw	%r14w, %r10w
-	movswl	%r9w, %r13d
-	movswl	%r8w, %r12d
-	imull	%r12d, %r13d
-	imull	$-218038272, %r13d, %r8d
-	sarl	$16, %r8d
-	imull	$-3329, %r8d, %r9d
-	addl	%r13d, %r9d
-	sarl	$16, %r9d
-	movswl	%r11w, %r13d
-	movswl	%si, %r12d
+	movswl	%si, %r13d
+	movswl	%r9w, %r12d
 	imull	%r12d, %r13d
 	imull	$-218038272, %r13d, %esi
 	sarl	$16, %esi
-	imull	$-3329, %esi, %r14d
-	addl	%r13d, %r14d
-	sarl	$16, %r14d
-	addw	%r14w, %r9w
+	imull	$-3329, %esi, %r9d
+	addl	%r13d, %r9d
+	sarl	$16, %r9d
+	movswl	%r11w, %r13d
+	movswl	%r8w, %r12d
+	imull	%r12d, %r13d
+	imull	$-218038272, %r13d, %esi
+	sarl	$16, %esi
+	imull	$-3329, %esi, %r11d
+	addl	%r13d, %r11d
+	sarl	$16, %r11d
+	addw	%r11w, %r9w
 	movq	16(%rsp), %rsi
 	movw	%r10w, (%rsi,%rdi,2)
 	incq	%rdi
@@ -32757,9 +32756,9 @@ L_pround_ref$1:
 	andnq	%r11, %r13, %r14
 	xorq	%r12, %r14
 	movq	%r14, 24(%rax)
-	andnq	%rbx, %r11, %r14
-	xorq	%r13, %r14
-	movq	%r14, 32(%rax)
+	andnq	%rbx, %r11, %r11
+	xorq	%r13, %r11
+	movq	%r11, 32(%rax)
 	movq	24(%r15), %r11
 	xorq	%r9, %r11
 	rolq	$28, %r11
@@ -32787,9 +32786,9 @@ L_pround_ref$1:
 	andnq	%r11, %r13, %r14
 	xorq	%r12, %r14
 	movq	%r14, 64(%rax)
-	andnq	%rbx, %r11, %r14
-	xorq	%r13, %r14
-	movq	%r14, 72(%rax)
+	andnq	%rbx, %r11, %r11
+	xorq	%r13, %r11
+	movq	%r11, 72(%rax)
 	movq	8(%r15), %r11
 	xorq	%rdi, %r11
 	rolq	$1, %r11
@@ -32817,9 +32816,9 @@ L_pround_ref$1:
 	andnq	%r11, %r13, %r14
 	xorq	%r12, %r14
 	movq	%r14, 104(%rax)
-	andnq	%rbx, %r11, %r14
-	xorq	%r13, %r14
-	movq	%r14, 112(%rax)
+	andnq	%rbx, %r11, %r11
+	xorq	%r13, %r11
+	movq	%r11, 112(%rax)
 	movq	32(%r15), %r11
 	xorq	%r10, %r11
 	rolq	$27, %r11
@@ -32847,9 +32846,9 @@ L_pround_ref$1:
 	andnq	%r11, %r13, %r14
 	xorq	%r12, %r14
 	movq	%r14, 144(%rax)
-	andnq	%rbx, %r11, %r14
-	xorq	%r13, %r14
-	movq	%r14, 152(%rax)
+	andnq	%rbx, %r11, %r11
+	xorq	%r13, %r11
+	movq	%r11, 152(%rax)
 	movq	16(%r15), %r11
 	xorq	%r8, %r11
 	rolq	$62, %r11
@@ -32931,5 +32930,5 @@ G$jzetas:
 	.byte	 66,   8, 121,  12, 194,   4, 202,   7, 151,   9, 220,   0,  94,   8, 134,   6
 	.byte	 96,   8,   7,   7,   3,   8,  26,   3,  27,   7, 171,   9, 155,   9, 222,   1
 	.byte	149,  12, 205,  11, 228,   3, 223,   3, 190,   3,  77,   7, 242,   5,  92,   6
-	.ident	"Jasmin Compiler 2026.03.0"
+	.ident	"Jasmin Compiler 2026.03.1"
 	.section	".note.GNU-stack", "", %progbits

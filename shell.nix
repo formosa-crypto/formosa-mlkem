@@ -10,10 +10,10 @@ with pkgs;
 
 let jasmin =
   jasmin-compiler.overrideAttrs (o: {
-    version = "2026.03.0";
+    version = "2026.03.1";
     src = fetchurl {
-      url = "https://github.com/jasmin-lang/jasmin/releases/download/v2026.03.0/jasmin-compiler-v2026.03.0.tar.bz2";
-      hash = "sha256-3sYqPNDNQs/pbsZLPNOWHg6KCfuSzrZBdc/7VP3lDkA=";
+      url = "https://github.com/jasmin-lang/jasmin/releases/download/v2026.03.1/jasmin-compiler-v2026.03.1.tar.bz2";
+      hash = "sha256-eOn5KWNAPx7Z+VMm8mclUyxDlW8Q/MR9EayUxmojb1I=";
     };
   })
 ; in
