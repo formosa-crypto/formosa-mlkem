@@ -94,7 +94,8 @@ fn __crypto_kem_dec_jazz(
   reg u64 cnd;
 
   () = #spill(shk, ct);
-  zp_ct[0:MLKEM_SYMBYTES] = #copy(sk[MLKEM_SECRETKEYBYTES - MLKEM_SYMBYTES : MLKEM_SYMBYTES]);
+  reg u256 z = sk.[:u256 MLKEM_SECRETKEYBYTES - MLKEM_SYMBYTES];
+  zp_ct[:u256 0] = z;
 
   buf[0:MLKEM_INDCPA_MSGBYTES] = __indcpa_dec(buf[0:MLKEM_INDCPA_MSGBYTES], ct, sk[0:MLKEM_POLYVECBYTES]);
 

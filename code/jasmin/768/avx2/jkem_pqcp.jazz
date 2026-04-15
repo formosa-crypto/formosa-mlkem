@@ -17164,9 +17164,10 @@ fn __crypto_kem_dec_jazz (#[spill_to_mmx] reg mut ptr u8[MLKEM_SYMBYTES] shk,
                          reg const ptr u8[MLKEM_SECRETKEYBYTES] sk) -> 
 (reg mut ptr u8[MLKEM_SYMBYTES]) {
   #spill(shk, ct); /* :k */
+  reg u256 z;
+  z = sk.[#unaligned :u256 MLKEM_SECRETKEYBYTES - MLKEM_SYMBYTES]; /* u256 */
   stack u8[MLKEM_SYMBYTES + MLKEM_CIPHERTEXTBYTES] zp_ct;
-  zp_ct[0 : MLKEM_SYMBYTES] =
-    #copy_64(sk[MLKEM_SECRETKEYBYTES - MLKEM_SYMBYTES : MLKEM_SYMBYTES]);
+  zp_ct[:u256 0] = z; /* u256 */
   stack u8[2 * MLKEM_SYMBYTES] buf;
   #[inline]
   buf[0 : MLKEM_INDCPA_MSGBYTES] =

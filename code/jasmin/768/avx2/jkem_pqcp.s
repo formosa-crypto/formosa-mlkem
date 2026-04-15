@@ -22,15 +22,8 @@ jade_kem_mlkem_mlkem768_amd64_avx2_dec:
 	movq	$0, %rax
 	movq	%rdi, %mm1
 	movq	%rsi, %mm2
-	leaq	2368(%rdx), %rax
-	movq	(%rax), %rcx
-	movq	%rcx, 3264(%rsp)
-	movq	8(%rax), %rcx
-	movq	%rcx, 3272(%rsp)
-	movq	16(%rax), %rcx
-	movq	%rcx, 3280(%rsp)
-	movq	24(%rax), %rcx
-	movq	%rcx, 3288(%rsp)
+	vmovdqu	2368(%rdx), %ymm0
+	vmovdqu	%ymm0, 3264(%rsp)
 	movq	%rsp, %rax
 	movq	%rdx, %r8
 	vpbroadcastd	glob_data + 4956(%rip), %ymm0
@@ -10305,9 +10298,9 @@ L_poly_frommont$1:
 	vpmulhw	%ymm0, %ymm3, %ymm3
 	vpsubw	%ymm3, %ymm4, %ymm5
 	vmovdqu	%ymm5, (%rax)
-	vmovdqu	32(%rax), %ymm3
-	vpmulhw	%ymm2, %ymm3, %ymm4
-	vpmullw	%ymm2, %ymm3, %ymm3
+	vmovdqu	32(%rax), %ymm5
+	vpmulhw	%ymm2, %ymm5, %ymm4
+	vpmullw	%ymm2, %ymm5, %ymm3
 	vpmullw	%ymm1, %ymm3, %ymm3
 	vpmulhw	%ymm0, %ymm3, %ymm3
 	vpsubw	%ymm3, %ymm4, %ymm5
@@ -10946,19 +10939,19 @@ L_poly_basemul$1:
 	vpackusdw	%ymm3, %ymm2, %ymm6
 	vpsrld	$16, %ymm7, %ymm7
 	vpsrld	$16, %ymm8, %ymm8
-	vpackusdw	%ymm8, %ymm7, %ymm2
-	vpblendw	$170, %ymm9, %ymm5, %ymm7
+	vpackusdw	%ymm8, %ymm7, %ymm7
+	vpblendw	$170, %ymm9, %ymm5, %ymm2
 	vpblendw	$170, %ymm9, %ymm4, %ymm3
-	vpackusdw	%ymm3, %ymm7, %ymm3
+	vpackusdw	%ymm3, %ymm2, %ymm2
 	vpsrld	$16, %ymm5, %ymm5
 	vpsrld	$16, %ymm4, %ymm4
-	vpackusdw	%ymm4, %ymm5, %ymm4
+	vpackusdw	%ymm4, %ymm5, %ymm3
 	vpmullw	%ymm1, %ymm6, %ymm5
 	vpmulhw	%ymm0, %ymm5, %ymm5
-	vpsubw	%ymm5, %ymm2, %ymm5
-	vpmullw	%ymm1, %ymm3, %ymm6
+	vpsubw	%ymm5, %ymm7, %ymm5
+	vpmullw	%ymm1, %ymm2, %ymm6
 	vpmulhw	%ymm0, %ymm6, %ymm0
-	vpsubw	%ymm0, %ymm4, %ymm4
+	vpsubw	%ymm0, %ymm3, %ymm4
 	vmovdqu	%ymm5, 448(%rcx)
 	vmovdqu	%ymm4, 480(%rcx)
 	ret
@@ -11471,22 +11464,22 @@ L_shake128x4_squeeze3blocks$16:
 	movq	$0, %r12
 	jmp 	L_shake128x4_squeeze3blocks$14
 L_shake128x4_squeeze3blocks$15:
-	vmovdqu	(%r8,%r12,4), %ymm3
-	vmovdqu	32(%r8,%r12,4), %ymm4
+	vmovdqu	(%r8,%r12,4), %ymm2
+	vmovdqu	32(%r8,%r12,4), %ymm3
 	vmovdqu	64(%r8,%r12,4), %ymm0
 	vmovdqu	96(%r8,%r12,4), %ymm1
 	addq	$32, %r12
-	vperm2i128	$32, %ymm0, %ymm3, %ymm2
-	vperm2i128	$32, %ymm1, %ymm4, %ymm5
-	vperm2i128	$49, %ymm0, %ymm3, %ymm0
-	vperm2i128	$49, %ymm1, %ymm4, %ymm1
-	vpunpcklqdq	%ymm5, %ymm2, %ymm3
-	vpunpckhqdq	%ymm5, %ymm2, %ymm2
-	vpunpcklqdq	%ymm1, %ymm0, %ymm4
+	vperm2i128	$32, %ymm0, %ymm2, %ymm4
+	vperm2i128	$32, %ymm1, %ymm3, %ymm5
+	vperm2i128	$49, %ymm0, %ymm2, %ymm0
+	vperm2i128	$49, %ymm1, %ymm3, %ymm1
+	vpunpcklqdq	%ymm5, %ymm4, %ymm2
+	vpunpckhqdq	%ymm5, %ymm4, %ymm5
+	vpunpcklqdq	%ymm1, %ymm0, %ymm3
 	vpunpckhqdq	%ymm1, %ymm0, %ymm1
-	vmovdqu	%ymm3, (%r9,%rbp)
-	vmovdqu	%ymm2, (%r10,%rbp)
-	vmovdqu	%ymm4, (%r11,%rbp)
+	vmovdqu	%ymm2, (%r9,%rbp)
+	vmovdqu	%ymm5, (%r10,%rbp)
+	vmovdqu	%ymm3, (%r11,%rbp)
 	vmovdqu	%ymm1, (%rbx,%rbp)
 	addq	$32, %rbp
 L_shake128x4_squeeze3blocks$14:
@@ -11514,22 +11507,22 @@ L_shake128x4_squeeze3blocks$11:
 	movq	$0, %r12
 	jmp 	L_shake128x4_squeeze3blocks$9
 L_shake128x4_squeeze3blocks$10:
-	vmovdqu	(%r8,%r12,4), %ymm3
-	vmovdqu	32(%r8,%r12,4), %ymm4
+	vmovdqu	(%r8,%r12,4), %ymm2
+	vmovdqu	32(%r8,%r12,4), %ymm3
 	vmovdqu	64(%r8,%r12,4), %ymm0
 	vmovdqu	96(%r8,%r12,4), %ymm1
 	addq	$32, %r12
-	vperm2i128	$32, %ymm0, %ymm3, %ymm2
-	vperm2i128	$32, %ymm1, %ymm4, %ymm5
-	vperm2i128	$49, %ymm0, %ymm3, %ymm0
-	vperm2i128	$49, %ymm1, %ymm4, %ymm1
-	vpunpcklqdq	%ymm5, %ymm2, %ymm3
-	vpunpckhqdq	%ymm5, %ymm2, %ymm2
-	vpunpcklqdq	%ymm1, %ymm0, %ymm4
+	vperm2i128	$32, %ymm0, %ymm2, %ymm4
+	vperm2i128	$32, %ymm1, %ymm3, %ymm5
+	vperm2i128	$49, %ymm0, %ymm2, %ymm0
+	vperm2i128	$49, %ymm1, %ymm3, %ymm1
+	vpunpcklqdq	%ymm5, %ymm4, %ymm2
+	vpunpckhqdq	%ymm5, %ymm4, %ymm5
+	vpunpcklqdq	%ymm1, %ymm0, %ymm3
 	vpunpckhqdq	%ymm1, %ymm0, %ymm1
-	vmovdqu	%ymm3, (%r9,%rbp)
-	vmovdqu	%ymm2, (%r10,%rbp)
-	vmovdqu	%ymm4, (%r11,%rbp)
+	vmovdqu	%ymm2, (%r9,%rbp)
+	vmovdqu	%ymm5, (%r10,%rbp)
+	vmovdqu	%ymm3, (%r11,%rbp)
 	vmovdqu	%ymm1, (%rbx,%rbp)
 	addq	$32, %rbp
 L_shake128x4_squeeze3blocks$9:
@@ -11557,22 +11550,22 @@ L_shake128x4_squeeze3blocks$6:
 	movq	$0, %r12
 	jmp 	L_shake128x4_squeeze3blocks$4
 L_shake128x4_squeeze3blocks$5:
-	vmovdqu	(%r8,%r12,4), %ymm3
-	vmovdqu	32(%r8,%r12,4), %ymm4
+	vmovdqu	(%r8,%r12,4), %ymm2
+	vmovdqu	32(%r8,%r12,4), %ymm3
 	vmovdqu	64(%r8,%r12,4), %ymm0
 	vmovdqu	96(%r8,%r12,4), %ymm1
 	addq	$32, %r12
-	vperm2i128	$32, %ymm0, %ymm3, %ymm2
-	vperm2i128	$32, %ymm1, %ymm4, %ymm5
-	vperm2i128	$49, %ymm0, %ymm3, %ymm0
-	vperm2i128	$49, %ymm1, %ymm4, %ymm1
-	vpunpcklqdq	%ymm5, %ymm2, %ymm3
-	vpunpckhqdq	%ymm5, %ymm2, %ymm2
-	vpunpcklqdq	%ymm1, %ymm0, %ymm4
+	vperm2i128	$32, %ymm0, %ymm2, %ymm4
+	vperm2i128	$32, %ymm1, %ymm3, %ymm5
+	vperm2i128	$49, %ymm0, %ymm2, %ymm0
+	vperm2i128	$49, %ymm1, %ymm3, %ymm1
+	vpunpcklqdq	%ymm5, %ymm4, %ymm2
+	vpunpckhqdq	%ymm5, %ymm4, %ymm5
+	vpunpcklqdq	%ymm1, %ymm0, %ymm3
 	vpunpckhqdq	%ymm1, %ymm0, %ymm1
-	vmovdqu	%ymm3, (%r9,%rbp)
-	vmovdqu	%ymm2, (%r10,%rbp)
-	vmovdqu	%ymm4, (%r11,%rbp)
+	vmovdqu	%ymm2, (%r9,%rbp)
+	vmovdqu	%ymm5, (%r10,%rbp)
+	vmovdqu	%ymm3, (%r11,%rbp)
 	vmovdqu	%ymm1, (%rbx,%rbp)
 	addq	$32, %rbp
 L_shake128x4_squeeze3blocks$4:
@@ -11880,22 +11873,22 @@ L_shake256x4_A128__A32_A1$6:
 	movq	$0, %rax
 	jmp 	L_shake256x4_A128__A32_A1$4
 L_shake256x4_A128__A32_A1$5:
-	vmovdqu	(%r8,%rax,4), %ymm3
-	vmovdqu	32(%r8,%rax,4), %ymm4
+	vmovdqu	(%r8,%rax,4), %ymm2
+	vmovdqu	32(%r8,%rax,4), %ymm3
 	vmovdqu	64(%r8,%rax,4), %ymm0
 	vmovdqu	96(%r8,%rax,4), %ymm1
 	addq	$32, %rax
-	vperm2i128	$32, %ymm0, %ymm3, %ymm2
-	vperm2i128	$32, %ymm1, %ymm4, %ymm5
-	vperm2i128	$49, %ymm0, %ymm3, %ymm0
-	vperm2i128	$49, %ymm1, %ymm4, %ymm1
-	vpunpcklqdq	%ymm5, %ymm2, %ymm3
-	vpunpckhqdq	%ymm5, %ymm2, %ymm2
-	vpunpcklqdq	%ymm1, %ymm0, %ymm4
+	vperm2i128	$32, %ymm0, %ymm2, %ymm4
+	vperm2i128	$32, %ymm1, %ymm3, %ymm5
+	vperm2i128	$49, %ymm0, %ymm2, %ymm0
+	vperm2i128	$49, %ymm1, %ymm3, %ymm1
+	vpunpcklqdq	%ymm5, %ymm4, %ymm2
+	vpunpckhqdq	%ymm5, %ymm4, %ymm5
+	vpunpcklqdq	%ymm1, %ymm0, %ymm3
 	vpunpckhqdq	%ymm1, %ymm0, %ymm1
-	vmovdqu	%ymm3, (%rsi,%rcx)
-	vmovdqu	%ymm2, (%r10,%rcx)
-	vmovdqu	%ymm4, (%r11,%rcx)
+	vmovdqu	%ymm2, (%rsi,%rcx)
+	vmovdqu	%ymm5, (%r10,%rcx)
+	vmovdqu	%ymm3, (%r11,%rcx)
 	vmovdqu	%ymm1, (%rbx,%rcx)
 	addq	$32, %rcx
 L_shake256x4_A128__A32_A1$4:
@@ -12578,21 +12571,21 @@ L_nttunpack$1:
 	vperm2i128	$32, %ymm6, %ymm7, %ymm5
 	vperm2i128	$49, %ymm6, %ymm7, %ymm8
 	vperm2i128	$32, %ymm13, %ymm9, %ymm1
-	vperm2i128	$49, %ymm13, %ymm9, %ymm12
+	vperm2i128	$49, %ymm13, %ymm9, %ymm3
 	vperm2i128	$32, %ymm0, %ymm10, %ymm13
 	vperm2i128	$49, %ymm0, %ymm10, %ymm6
-	vpunpcklqdq	%ymm1, %ymm2, %ymm3
+	vpunpcklqdq	%ymm1, %ymm2, %ymm0
 	vpunpckhqdq	%ymm1, %ymm2, %ymm7
-	vpunpcklqdq	%ymm12, %ymm4, %ymm9
-	vpunpckhqdq	%ymm12, %ymm4, %ymm4
-	vpunpcklqdq	%ymm13, %ymm5, %ymm0
+	vpunpcklqdq	%ymm3, %ymm4, %ymm9
+	vpunpckhqdq	%ymm3, %ymm4, %ymm4
+	vpunpcklqdq	%ymm13, %ymm5, %ymm2
 	vpunpckhqdq	%ymm13, %ymm5, %ymm1
 	vpunpcklqdq	%ymm6, %ymm8, %ymm5
 	vpunpckhqdq	%ymm6, %ymm8, %ymm6
-	vmovsldup	%ymm0, %ymm2
-	vpblendd	$170, %ymm2, %ymm3, %ymm10
-	vpsrlq	$32, %ymm3, %ymm2
-	vpblendd	$170, %ymm0, %ymm2, %ymm2
+	vmovsldup	%ymm2, %ymm15
+	vpblendd	$170, %ymm15, %ymm0, %ymm10
+	vpsrlq	$32, %ymm0, %ymm3
+	vpblendd	$170, %ymm2, %ymm3, %ymm2
 	vmovsldup	%ymm1, %ymm0
 	vpblendd	$170, %ymm0, %ymm7, %ymm3
 	vpsrlq	$32, %ymm7, %ymm7

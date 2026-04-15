@@ -9685,6 +9685,7 @@ module M = {
   proc __crypto_kem_dec_jazz (shk:W8.t Array32.t, ct:W8.t Array1088.t,
                               sk:W8.t Array2400.t) : W8.t Array32.t = {
     var aux:W8.t Array32.t;
+    var z:W256.t;
     var zp_ct:W8.t Array1120.t;
     var buf:W8.t Array64.t;
     var k:W256.t;
@@ -9696,36 +9697,13 @@ module M = {
     kr <- witness;
     zp_ct <- witness;
     (* Erased call to spill *)
+    z <-
+    (get256_direct (WArray2400.init8 (fun i => sk.[i]))
+    ((((3 * 384) + ((3 * 384) + 32)) + (2 * 32)) - 32));
     zp_ct <-
     (Array1120.init
-    (fun i => (if (0 <= i < (0 + 32)) then (Array32.init
-                                           (fun i => (get8
-                                                     (WArray32.init64
-                                                     (fun i => (copy_64
-                                                               (Array4.init
-                                                               (fun i => 
-                                                               (get64
-                                                               (
-                                                               WArray32.init8
-                                                               (fun i => 
-                                                               (Array32.init
-                                                               (fun i => 
-                                                               sk.[((
-                                                                    (
-                                                                    (
-                                                                    (3 * 384) +
-                                                                    (
-                                                                    (3 * 384) +
-                                                                    32)) +
-                                                                    (2 * 32)) -
-                                                                    32) +
-                                                                   i)])
-                                                               ).[i])) 
-                                                               i)))).[
-                                                               i])
-                                                     ) i))
-                                           ).[(i - 0)] else zp_ct.[i]))
-    );
+    (WArray1120.get8
+    (WArray1120.set256 (WArray1120.init8 (fun i => zp_ct.[i])) 0 z)));
     aux <@ __indcpa_dec ((Array32.init (fun i => buf.[(0 + i)])), ct,
     (Array1152.init (fun i => sk.[(0 + i)])));
     buf <-
