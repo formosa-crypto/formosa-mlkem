@@ -9687,6 +9687,7 @@ module M = {
     var aux:W8.t Array32.t;
     var zp_ct:W8.t Array1120.t;
     var buf:W8.t Array64.t;
+    var k:W256.t;
     var kr:W8.t Array64.t;
     var ctc:W8.t Array1088.t;
     var cnd:W64.t;
@@ -9730,31 +9731,12 @@ module M = {
     buf <-
     (Array64.init
     (fun i => (if (0 <= i < (0 + 32)) then aux.[(i - 0)] else buf.[i])));
+    k <-
+    (get256_direct (WArray2400.init8 (fun i => sk.[i]))
+    ((3 * 384) + ((3 * 384) + 32)));
     buf <-
     (Array64.init
-    (fun i => (if (32 <= i < (32 + 32)) then (Array32.init
-                                             (fun i => (get8
-                                                       (WArray32.init64
-                                                       (fun i => (copy_64
-                                                                 (Array4.init
-                                                                 (fun i => 
-                                                                 (get64
-                                                                 (
-                                                                 WArray32.init8
-                                                                 (fun i => 
-                                                                 (
-                                                                 Array32.init
-                                                                 (fun i => 
-                                                                 sk.[
-                                                                 (((3 * 384) +
-                                                                  ((3 * 384) +
-                                                                  32)) +
-                                                                 i)])).[
-                                                                 i])) 
-                                                                 i)))).[
-                                                                 i])
-                                                       ) i))
-                                             ).[(i - 32)] else buf.[i]))
+    (WArray64.get8 (WArray64.set256 (WArray64.init8 (fun i => buf.[i])) 1 k))
     );
     kr <@ _sha3_512A_A64 (kr, buf);
     ctc <@ __indcpa_enc (ctc, (Array32.init (fun i => buf.[(0 + i)])),

@@ -17172,8 +17172,10 @@ fn __crypto_kem_dec_jazz (#[spill_to_mmx] reg mut ptr u8[MLKEM_SYMBYTES] shk,
   buf[0 : MLKEM_INDCPA_MSGBYTES] =
     __indcpa_dec(buf[0 : MLKEM_INDCPA_MSGBYTES], ct,
                  sk[0 : MLKEM_POLYVECBYTES]);
-  buf[MLKEM_SYMBYTES : MLKEM_SYMBYTES] =
-    #copy_64(sk[MLKEM_INDCPA_SECRETKEYBYTES + MLKEM_INDCPA_PUBLICKEYBYTES : MLKEM_SYMBYTES]);
+  reg u256 k;
+  k =
+    sk.[#unaligned :u256 MLKEM_INDCPA_SECRETKEYBYTES + MLKEM_INDCPA_PUBLICKEYBYTES]; /* u256 */
+  buf[:u256 1] = k; /* u256 */
   stack u8[2 * MLKEM_SYMBYTES] kr;
   kr = _sha3_512A_A64(kr, buf);
   stack u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctc;
