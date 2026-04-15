@@ -5,7 +5,7 @@ from Jasmin require import JModel_x86.
 import SLH64.
 
 require import
-Array4 Array5 Array8 Array24 Array25 Array32 Array33 Array34 Array64 Array128
+Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array64 Array128
 Array136 Array148 Array168 Array256 Array300 Array384 Array768 Array960
 Array1088 Array1152 Array1184 Array2304 Array2400 WArray20 WArray32 WArray33
 WArray34 WArray40 WArray64 WArray128 WArray168 WArray192 WArray200 WArray256
@@ -3213,71 +3213,15 @@ module M = {
                                                          coins:W8.t Array64.t) : 
   W8.t Array1184.t * W8.t Array2400.t * W64.t = {
     var r:W64.t;
-    var rd:W8.t Array64.t;
-    var pk:W8.t Array1184.t;
-    var pkp:W8.t Array1184.t;
-    var sk:W8.t Array2400.t;
-    var skp:W8.t Array2400.t;
-    var rdp:W8.t Array64.t;
     var  _0:W64.t;
     var  _1:bool;
     var  _2:bool;
     var  _3:bool;
     var  _4:bool;
     var  _5:bool;
-    pk <- witness;
-    pkp <- witness;
-    rd <- witness;
-    rdp <- witness;
-    sk <- witness;
-    skp <- witness;
      _0 <- (init_msf);
-    (* Erased call to spill *)
-    (* Erased call to spill *)
-    rd <-
-    (Array64.init
-    (fun i => (get8
-              (WArray64.init64
-              (fun i => (copy_64
-                        (Array8.init
-                        (fun i => (get64
-                                  (WArray64.init8 (fun i => coins.[i])) 
-                                  i))
-                        )).[i])
-              ) i))
-    );
-    pkp <- pk;
-    skp <- sk;
-    rdp <- rd;
-    (pkp, skp) <@ __crypto_kem_keypair_jazz (pkp, skp, rdp);
-    (* Erased call to unspill *)
-    (* Erased call to unspill *)
-    pk <- pkp;
-    sk <- skp;
-    public_key <-
-    (Array1184.init
-    (fun i => (get8
-              (WArray1184.init64
-              (fun i => (copy_64
-                        (Array148.init
-                        (fun i => (get64 (WArray1184.init8 (fun i => pk.[i]))
-                                  i))
-                        )).[i])
-              ) i))
-    );
-    secret_key <-
-    (Array2400.init
-    (fun i => (get8
-              (WArray2400.init64
-              (fun i => (copy_64
-                        (Array300.init
-                        (fun i => (get64 (WArray2400.init8 (fun i => sk.[i]))
-                                  i))
-                        )).[i])
-              ) i))
-    );
-    (* Erased call to spill *)
-    (* Erased call to spill *)
+    (public_key, secret_key) <@ __crypto_kem_keypair_jazz (public_key,
+    secret_key, coins);
     ( _1,  _2,  _3,  _4,  _5, r) <- (set0_64);
     return (public_key, secret_key, r);
   }

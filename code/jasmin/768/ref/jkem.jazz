@@ -13,37 +13,10 @@ export fn jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand(
  -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_SECRETKEYBYTES], reg u64
 {
   reg u64 r;
-  stack u8[MLKEM_PUBLICKEYBYTES] pk;
-  reg ptr u8[MLKEM_PUBLICKEYBYTES] pkp;
-  stack u8[MLKEM_SECRETKEYBYTES] sk;
-  reg ptr u8[MLKEM_SECRETKEYBYTES] skp;
 
-  stack u8[2*MLKEM_SYMBYTES] rd;
-  reg ptr u8[2*MLKEM_SYMBYTES] rdp;
   _ = #init_msf();
 
-  () = #spill(public_key);
-  () = #spill(secret_key);
-
-  rd = #copy(coins);
-
-  pkp = pk;
-  skp = sk;
-  rdp = rd;
-
-  pkp, skp = __crypto_kem_keypair_jazz(pkp, skp, rdp);
-
-  () = #unspill(public_key);
-  () = #unspill(secret_key);
-
-  pk = pkp;
-  sk = skp;
-
-  public_key = #copy(pk);
-  secret_key = #copy(sk);
-
-  () = #spill(public_key);
-  () = #spill(secret_key);
+  public_key, secret_key = __crypto_kem_keypair_jazz(public_key, secret_key, coins);
 
   ?{}, r = #set0();
   return public_key, secret_key, r;
@@ -59,12 +32,16 @@ export fn jade_kem_mlkem_mlkem768_amd64_ref_keypair(
   reg u64 r;
   stack u8[2*MLKEM_SYMBYTES] rd;
   reg ptr u8[2*MLKEM_SYMBYTES] rdp;
-  public_key = public_key;
-  secret_key = secret_key;
-  rd = #randombytes(rd);
+
+  _ = #init_msf();
+
   rdp = rd;
-  public_key,secret_key,r = jade_kem_mlkem_mlkem768_amd64_ref_keypair_derand(public_key,secret_key,rdp);
-  return public_key,secret_key,r;
+  rdp = #randombytes(rdp);
+
+  public_key, secret_key = __crypto_kem_keypair_jazz(public_key, secret_key, rdp);
+
+  ?{}, r = #set0();
+  return public_key, secret_key, r;
 }
 
 #[safety =
