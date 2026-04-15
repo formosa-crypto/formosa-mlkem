@@ -129,7 +129,7 @@ lemma mlkem_kem_correct_enc  :
      k = res{1}.`2
 ].
 proc => /=. sp 0 1.
-seq 6 2 : (#pre /\
+seq 7 2 : (#pre /\
     Array32.init (fun (i : int) => kr{1}.[0 + i]) = _K{2} /\
     Array32.init (fun (i : int) => kr{1}.[32 + i]) = r{2} /\
     Array32.init (fun (i : int) => buf{1}.[i]) = m{2}).
@@ -138,8 +138,9 @@ seq 6 2 : (#pre /\
     
 auto => /> &1 &2;rewrite !tP => pk1 pk2; do split => *.
 + rewrite initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= /G_mhpk;congr;congr;congr.
-   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
-   rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /=.
+     rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
+     rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr.
       + by congr;rewrite tP => *; rewrite pk1.
       + by congr;rewrite tP => *; rewrite pk2.
@@ -147,14 +148,16 @@ auto => /> &1 &2;rewrite !tP => pk1 pk2; do split => *.
 
 + rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= /G_mhpk;congr;congr;
 congr.
-   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
-   rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /=.
+     rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
+     rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr.
       + by congr;rewrite tP => *; rewrite pk1.
       + by congr;rewrite tP => *; rewrite pk2.
 
-+ rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
-   rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
++ rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /=.
+  rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
+  rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
 
 wp; ecall (mlkem_correct_enc_1_avx2 pk{1}) => /=.
 auto => /> &1 &2; rewrite tP => *;do split;1:smt().

@@ -35,7 +35,7 @@ fn __crypto_kem_keypair_jazz(reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg ptr u8[MLK
 
   for i = 0 to MLKEM_SYMBYTES/8
   {
-    t64 = randomnessp[:u64 MLKEM_SYMBYTES/8 + i];
+    t64 = randomnessp[#unaligned:u64 MLKEM_SYMBYTES/8 + i];
     sk.[:u64 ((MLKEM_POLYVECBYTES + MLKEM_PUBLICKEYBYTES + MLKEM_SYMBYTES)/8 + i)*8] = t64;
   }
 
@@ -59,7 +59,8 @@ fn __crypto_kem_enc_jazz(
 
   () = #spill(pk, shk);
 
-  buf[0:MLKEM_SYMBYTES] = #copy(randomnessp);
+  reg u256 b = randomnessp[#unaligned:u256 0];
+  buf[:u256 0] = b;
 
   buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = _sha3_256A_A1184(buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES], pk);
 

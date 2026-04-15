@@ -9633,29 +9633,17 @@ module M = {
                               pk:W8.t Array1184.t, randomnessp:W8.t Array32.t) : 
   W8.t Array1088.t * W8.t Array32.t = {
     var aux:W8.t Array32.t;
+    var b:W256.t;
     var buf:W8.t Array64.t;
     var kr:W8.t Array64.t;
     var k:W256.t;
     buf <- witness;
     kr <- witness;
     (* Erased call to spill *)
+    b <- (get256 (WArray32.init8 (fun i => randomnessp.[i])) 0);
     buf <-
     (Array64.init
-    (fun i => (if (0 <= i < (0 + 32)) then (Array32.init
-                                           (fun i => (get8
-                                                     (WArray32.init64
-                                                     (fun i => (copy_64
-                                                               (Array4.init
-                                                               (fun i => 
-                                                               (get64
-                                                               (
-                                                               WArray32.init8
-                                                               (fun i => 
-                                                               randomnessp.[
-                                                               i])) i)))).[
-                                                               i])
-                                                     ) i))
-                                           ).[(i - 0)] else buf.[i]))
+    (WArray64.get8 (WArray64.set256 (WArray64.init8 (fun i => buf.[i])) 0 b))
     );
     aux <@ _sha3_256A_A1184 ((Array32.init (fun i => buf.[(32 + i)])), pk);
     buf <-
