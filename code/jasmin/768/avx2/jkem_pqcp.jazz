@@ -17114,7 +17114,7 @@ fn __crypto_kem_keypair_jazz (reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk,
   reg u64 t64;
   inline int i;
   for i = 0 to MLKEM_INDCPA_PUBLICKEYBYTES / 8 {
-    t64 = pk[:u64 i]; /* u64 */
+    t64 = pk[#unaligned :u64 i]; /* u64 */
     sk.[#unaligned :u64 (MLKEM_POLYVECBYTES / 8 + i) * 8] = t64; /* u64 */
   }
   sk[MLKEM_POLYVECBYTES + MLKEM_PUBLICKEYBYTES : 32] =
