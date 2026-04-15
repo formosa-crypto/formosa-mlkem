@@ -4187,14 +4187,8 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc$2:
 	call	L_i_poly_compress$1
 Ljade_kem_mlkem_mlkem768_amd64_avx2_enc$1:
 	movq	%mm1, %rsi
-	movq	64(%rsp), %rcx
-	movq	%rcx, (%rsi)
-	movq	72(%rsp), %rcx
-	movq	%rcx, 8(%rsi)
-	movq	80(%rsp), %rcx
-	movq	%rcx, 16(%rsi)
-	movq	88(%rsp), %rcx
-	movq	%rcx, 24(%rsi)
+	vmovdqu	64(%rsp), %ymm0
+	vmovdqu	%ymm0, (%rsi)
 	xorl	%eax, %eax
 	movq	12960(%rsp), %rbx
 	movq	12968(%rsp), %rbp
@@ -6642,14 +6636,8 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$2:
 	call	L_i_poly_compress$1
 Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$1:
 	movq	%mm1, %rsi
-	movq	64(%rsp), %rax
-	movq	%rax, (%rsi)
-	movq	72(%rsp), %rax
-	movq	%rax, 8(%rsi)
-	movq	80(%rsp), %rax
-	movq	%rax, 16(%rsi)
-	movq	88(%rsp), %rax
-	movq	%rax, 24(%rsi)
+	vmovdqu	64(%rsp), %ymm0
+	vmovdqu	%ymm0, (%rsi)
 	xorl	%eax, %eax
 	movq	12960(%rsp), %rbx
 	movq	12968(%rsp), %rbp
