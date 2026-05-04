@@ -368,12 +368,12 @@ skip => &hr.
 rewrite /signed_bound1024_cxq /signed_bound_cxq /lift_array1024 /lift_array256 /=.
 move => [#] ->-> 2?.
 do split; 1..2: by move => *; rewrite !initiE //= /#.
-move => [#] H H0 ?? res1 [#] resb1 resv1.
+move => [#] H H0 res1 [#] resb1 resv1.
 do split.
 + by move => k kb; move : (resb1 k kb); rewrite !initiE  //= !Array1024.initiE  /#.
 + by move => k kb; move : (resb1 k kb); rewrite !initiE  //= /#.
 
-move => [#]  vsofar bsofar ?? res2 [#] res2b res2v.
+move => [#]  vsofar bsofar res2 [#] res2b res2v.
 rewrite !land_foo.
 do split.
 + move => k kb; rewrite !initiE  /=1:/# !Array1024.initiE  /= 1:/#.
@@ -462,10 +462,7 @@ wp;ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[256 + i]
 wp;ecall (poly_reduce_corr_h (lift_array256 (Array256.init (fun i => r.[i])))).
   
 skip=>  &hr; rewrite /lift_array256 /lift_array1024 => ->.
-rewrite !land_foo; split => /=.
-
-+ rewrite tP => k kb; rewrite !mapiE //= !initiE //= !Array1024.initiE  /=.
-
+rewrite !land_foo; split => //=.
 
 move => res1 [#] res1v res1b res2 [#] res2v res2b res3 [#]  res3v res3b res4 [#]  res4v res4b.
 

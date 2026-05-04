@@ -793,14 +793,11 @@ cfold ^t0_1<-; swap ^shuffle_0_1<- @^shuffle_0<- & +1.
 
   (* FIXME! ADD TACTIC THAT USES NEW CIRCUIT TACTIC TO SOLVE THIS  *)
  
-proc change  (* [
+proc change circuit [
   (shf0_0_16 shf0_1_16 : W128.t)
   (f0_0 f0_1 : W128.t)
-] *) [^shuffle_0<- +5] 
-: [
-  (shf0_0_16 shf0_1_16 : W128.t)
-  (f0_0 f0_1 : W128.t)
-] {
+] ^shuffle_0<- +5
+{
   f0_0 <- extract_256_128 f0 0;
   f0_1 <- extract_256_128 f0 128;
   shf0_0_16 <- VPUNPCKL_16u8 shf0_0 (VPINC_8u8 shf0_0);
@@ -810,7 +807,6 @@ proc change  (* [
   f0_1      <- VPSHUFB_128 f0_1 shf0_1_16;
   f0 <- Mlkem_filters_bindings.concat_2u128 f0_0 f0_1;
 }.
-circuit.
 
 swap ^f0_0<- @^good0_0<-.
 swap [^shf0_0_16<- .. ^shf0_0_16<- & +1] @^good0_0<- & +2.

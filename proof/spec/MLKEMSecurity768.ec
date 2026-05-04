@@ -1175,7 +1175,7 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
   auto => /> &1 &2; split; first smt().
   move=> v1 m i v2 => ??????; split; last smt().
   apply eq_vectorP => k kb;smt(setvE getvE).
- wp; seq 2 2: (={rho,noise1,noise2} /\ _N{2} = 6 /\
+ wp; seq 1 2: (={rho,noise1,noise2} /\ _N{2} = 6 /\
            forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
   while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ noise1{1}=noise1{2} /\

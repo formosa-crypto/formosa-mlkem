@@ -247,7 +247,7 @@ wp;ecall (mlkem_correct_enc pk{1}).
 wp;ecall {1} (sha_g buf{1}).
 wp;ecall {1} (pkH_sha pk{1}).
 
-seq 11 0 : (#pre /\ Array32.init (fun i => buf{1}.[i]) = coins{2} /\ s_shk{1} = shk{1} /\ s_pk{1} = pk{1}); last first.
+seq 9 0 : (#pre /\ Array32.init (fun i => buf{1}.[i]) = coins{2} /\ s_shk{1} = shk{1} /\ s_pk{1} = pk{1}); last first.
 
 auto => /> &1 &2;rewrite !tP => ??;do split.
 + move => i *;rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# initiE /#.

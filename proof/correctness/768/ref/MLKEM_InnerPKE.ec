@@ -85,37 +85,37 @@ proc sample_noise2_jasmin(noiseseed:W8.t Array32.t) : W16.t Array768.t * W16.t A
     noise1 <- witness;
     noise2 <- witness;
     nonce <- (W8.of_int 0);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[0*256 + i_0])),
+    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[i_0])),
     noiseseed, nonce);
     noise1 <- Array768.init
             (fun i => if 0 <= i < 256 then aux.[i] else noise1.[i]);
     nonce <- (W8.of_int 1);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[1*256 + i_0])),
+    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[256 + i_0])),
     noiseseed, nonce);
     noise1 <- Array768.init
             (fun i => if 256 <= i < 512 then aux.[i-256]
             else noise1.[i]);
     nonce <- (W8.of_int 2);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[(2 * 256) + i_0])),
+    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise1.[512 + i_0])),
     noiseseed, nonce);
     noise1 <- Array768.init
             (fun i => if 512 <= i < 768
             then aux.[i-512] else noise1.[i]);
     nonce <- (W8.of_int 3);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[0*256 + i_0])),
+    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[i_0])),
     noiseseed, nonce);
     noise2 <- Array768.init
          (fun i => if 0 <= i < 256 then aux.[i] else noise2.[i]);
     nonce <- (W8.of_int 4);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[1*256 + i_0])),
+    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[256 + i_0])),
     noiseseed, nonce);
     noise2 <- Array768.init
          (fun i => if 256 <= i < 512 then aux.[i-256] else noise2.[i]);
     nonce <- (W8.of_int 5);
-    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[(2 * 256) + i_0])),
+    aux <@Jkem768.M._poly_getnoise ((Array256.init (fun i_0 => noise2.[512 + i_0])),
     noiseseed, nonce);
     noise2 <- Array768.init
-         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         (fun i => if 512 <= i < 768 then aux.[i-512]
          else noise2.[i]);
     return (noise1,noise2);
 }
@@ -213,12 +213,12 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array1152.t, seed : W
     skpv <@Jkem768.M.__polyvec_ntt (skpv);
     e <@Jkem768.M.__polyvec_ntt (e);
 
-    aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[0 + i_0])),skpv);
-    pkpv <- Array768.init (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else pkpv.[i]);
-    aux <@ Aux.inner_product((Array768.init (fun i_0 => a.[3*256 + i_0])),skpv);
-    pkpv <- Array768.init (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else pkpv.[i]);
-    aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[(2 * (3 * 256)) + i_0])), skpv);
-    pkpv <- Array768.init (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)] else pkpv.[i]);
+    aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[i_0])),skpv);
+    pkpv <- Array768.init (fun i => if 0 <= i < 256 then aux.[i] else pkpv.[i]);
+    aux <@ Aux.inner_product((Array768.init (fun i_0 => a.[768 + i_0])),skpv);
+    pkpv <- Array768.init (fun i => if 256 <= i < 512 then aux.[i-256] else pkpv.[i]);
+    aux <@ Aux.inner_product ((Array768.init (fun i_0 => a.[1536 + i_0])), skpv);
+    pkpv <- Array768.init (fun i => if 512 <= i < 768 then aux.[i-512] else pkpv.[i]);
 
     pkpv <@Jkem768.M.__polyvec_add2 (pkpv,e);
     pkpv <@Jkem768.M.__polyvec_reduce (pkpv);
@@ -297,19 +297,19 @@ proc indcpa_keypair_jazz (pk : W8.t Array1184.t, sk : W8.t Array1152.t, seed : W
 
     bp <- witness;
 
-    aux <@Jkem768.M.__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[0*(3*256) + i_0])),
+    aux <@Jkem768.M.__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[i_0])),
     sp_0);
     bp <- Array768.init
-          (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else bp.[i]);
-    aux <@Jkem768.M.__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[1*(3*256) + i_0])),
+          (fun i => if 0 <= i < 256 then aux.[i] else bp.[i]);
+    aux <@Jkem768.M.__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[768 + i_0])),
     sp_0);
     bp <- Array768.init
-          (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else bp.[i]);
-    aux <@Jkem768.M.__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[(2 * (3*256)) + i_0])),
+          (fun i => if 256 <= i < 512 then aux.[i-256] else bp.[i]);
+    aux <@Jkem768.M.__polyvec_pointwise_acc ((Array768.init (fun i_0 => at.[1536 + i_0])),
     sp_0);
     bp <- Array768.init
-          (fun i => if (2 * 256) <= i < (2 * 256) + 256
-          then aux.[i-(2 * 256)] else bp.[i]);
+          (fun i => if 512 <= i < 768
+          then aux.[i-512] else bp.[i]);
 
     v <- witness;
     v <@Jkem768.M.__polyvec_pointwise_acc (pkpv, sp_0);
@@ -951,9 +951,6 @@ transitivity {1} {s_noiseseed <- noiseseed; (sp_0,ep,epp) <@ AuxMLKEM.sample_noi
 
 swap {1} 14 2;  unroll for {1} ^while. 
 inline {2} AuxMLKEM.iredcompr; sim.
-wp;conseq />. sim.
-wp;conseq />. sim.
-wp;conseq />. sim.
 qed.
 
 (**** MORE AUX ****)
@@ -1028,7 +1025,7 @@ swap {2} [6..7] -5.
 seq 2 2 : (#pre /\ a{2} = lift_matrix a{1} /\
             pos_bound2304_cxq a{1} 0 2304 2).
 + inline AuxMLKEM.__gen_matrix; conseq />.
-  seq 6 3 : (a0{1}=a{2}); last by auto => />;  smt(matrix_unlift).
+  seq 6 2 : (a0{1}=a{2}); last by auto => />;  smt(matrix_unlift).
   while (i0{1} = i{2} /\ 0<=i0{1}<=kvec /\ seed0{1}=rho{2} /\ !trans{1} /\
          forall ii jj, 0<=ii<i0{1} => 0<= jj <3 => (a0{1}.[ii,jj] = a{2}.[ii,jj])%Matrix); last  first.
           auto => />; smt(eq_matrixP).
@@ -1388,7 +1385,7 @@ seq 1 8 : (#pre /\ rv{2} = lift_polyvec sp_0{1} /\
 + inline AuxMLKEM.sample_noise3_spec AuxMLKEM.sample_noise2_spec. 
   wp; call(_: true); 1: by sim.
   conseq />; 1: by smt().
-  seq 9 8 : (noise1{1}=rv{2} /\ noise2{1} = e1{2} /\ _N0{1} = _N{2} /\ 
+  seq 9 7 : (noise1{1}=rv{2} /\ noise2{1} = e1{2} /\ _N0{1} = _N{2} /\ 
              noiseseed1{1} = coins{2}); 
     1: by  sp 2 0; conseq />; sim; auto => />.
   by auto => />;  smt(vector_unlift poly_unlift).

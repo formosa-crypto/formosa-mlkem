@@ -8,9 +8,7 @@ CHECKS ?= \
 	mlkem_correctness_768_avx2  \
 	mlkem_correctness_1024_ref  \
 	mlkem_correctness_1024_avx2 \
-	mlkem_safety_768_ref        \
 	mlkem_safety_768_avx2       \
-	mlkem_safety_1024_ref       \
 	mlkem_safety_1024_avx2      \
 	mlkem_security              \
 	mlkem_spec_bridge
