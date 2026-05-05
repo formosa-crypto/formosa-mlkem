@@ -6,12 +6,12 @@ import SLH64.
 
 require import
 Array1 Array2 Array4 Array5 Array6 Array7 Array8 Array16 Array24 Array25
-Array32 Array33 Array64 Array128 Array160 Array196 Array256 Array384 Array400
-Array536 Array1024 Array1410 Array1536 Array1568 Array1600 Array2048
-Array2144 Array3168 Array4096 WArray1 WArray2 WArray4 WArray8 WArray16
-WArray32 WArray33 WArray64 WArray128 WArray160 WArray192 WArray200 WArray224
-WArray256 WArray384 WArray512 WArray536 WArray800 WArray1410 WArray1536
-WArray1568 WArray1600 WArray2048 WArray2144 WArray3168 WArray8192.
+Array32 Array33 Array64 Array128 Array160 Array256 Array384 Array400 Array536
+Array1024 Array1410 Array1536 Array1568 Array1600 Array2048 Array2144
+Array3168 Array4096 WArray1 WArray2 WArray4 WArray8 WArray16 WArray32
+WArray33 WArray64 WArray128 WArray160 WArray192 WArray200 WArray224 WArray256
+WArray384 WArray512 WArray536 WArray800 WArray1410 WArray1536 WArray1568
+WArray1600 WArray2048 WArray2144 WArray3168 WArray8192.
 
 abbrev gen_matrix_indexes =
 ((Array64.of_list witness)
@@ -9719,6 +9719,7 @@ module M = {
   proc __crypto_kem_dec_jazz (shk:W8.t Array32.t, ct:W8.t Array1568.t,
                               sk:W8.t Array3168.t) : W8.t Array32.t = {
     var aux:W8.t Array32.t;
+    var inc:int;
     var z:W256.t;
     var zp_ct:W8.t Array1600.t;
     var buf:W8.t Array64.t;
@@ -9726,6 +9727,8 @@ module M = {
     var kr:W8.t Array64.t;
     var ctc:W8.t Array1568.t;
     var cnd:W64.t;
+    var j:int;
+    var c:W256.t;
     buf <- witness;
     ctc <- witness;
     kr <- witness;
@@ -9756,26 +9759,17 @@ module M = {
     (Array32.init (fun i => kr.[(32 + i)])));
     (* Erased call to unspill *)
     cnd <@ __verify (ct, ctc);
-    zp_ct <-
-    (Array1600.init
-    (fun i => (if (32 <= i < (32 + 1568)) then (Array1568.init
-                                               (fun i => (get8
-                                                         (WArray1568.init64
-                                                         (fun i => (copy_64
-                                                                   (
-                                                                   Array196.init
-                                                                   (fun i => 
-                                                                   (get64
-                                                                   (
-                                                                   WArray1568.init8
-                                                                   (fun i => 
-                                                                   ct.[
-                                                                   i])) 
-                                                                   i)))).[
-                                                                   i])
-                                                         ) i))
-                                               ).[(i - 32)] else zp_ct.[i]))
-    );
+    inc <- (((4 * 352) + 160) %/ 32);
+    j <- 0;
+    while ((j < inc)) {
+      c <- (get256 (WArray1568.init8 (fun i => ct.[i])) j);
+      zp_ct <-
+      (Array1600.init
+      (WArray1600.get8
+      (WArray1600.set256 (WArray1600.init8 (fun i => zp_ct.[i]))
+      ((32 %/ 32) + j) c)));
+      j <- (j + 1);
+    }
     (* Erased call to unspill *)
     shk <@ _shake256_A32__A1600 (shk, zp_ct);
     shk <@ __cmov (shk, (Array32.init (fun i => kr.[(0 + i)])), cnd);

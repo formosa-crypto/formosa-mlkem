@@ -17222,7 +17222,12 @@ fn __crypto_kem_dec_jazz (#[spill_to_mmx] reg mut ptr u8[MLKEM_SYMBYTES] shk,
   reg u64 cnd;
   #[inline]
   cnd = __verify(ct, ctc);
-  zp_ct[MLKEM_SYMBYTES : MLKEM_CIPHERTEXTBYTES] = #copy_64(ct);
+  inline int j;
+  for j = 0 to MLKEM_CIPHERTEXTBYTES / 32 {
+    reg u256 c;
+    c = ct[#unaligned :u256 j]; /* u256 */
+    zp_ct[:u256 MLKEM_SYMBYTES / 32 + j] = c; /* u256 */
+  }
   #unspill(shk); /* :k */
   shk = _shake256_A32__A1600(shk, zp_ct);
   #[inline]

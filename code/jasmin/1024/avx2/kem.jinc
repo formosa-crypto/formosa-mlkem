@@ -119,8 +119,11 @@ fn __crypto_kem_dec_jazz(
 
   // No need for pointer arithmetic, but we will need to do some copying then as reg ptr = reg ptr is a noop
   // And concating both zp and ctp to make the SHAKE function easier to implement, read and understand
-
-  zp_ct[MLKEM_SYMBYTES:MLKEM_CIPHERTEXTBYTES] = #copy(ct);
+  inline int j;
+  for j = 0 to MLKEM_CIPHERTEXTBYTES / 32 {
+    reg u256 c = ct[#unaligned:u256 j];
+    zp_ct[:u256 (MLKEM_SYMBYTES / 32) + j] = c;
+  }
 
   /* fixme: should this be done in memory? */
   () = #unspill(shk);
