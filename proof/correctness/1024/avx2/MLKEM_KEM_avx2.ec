@@ -318,7 +318,7 @@ lemma mlkem_kem_correct_dec  :
        c1 = Array1408.init(fun i => ct{1}.[i]) /\
        c2 = Array160.init(fun i => ct{1}.[i + 1408])
        ==> ={res}].
-proc => /=. sp 0 1. swap {1} [4..5] 7.
+proc => /=. sp 0 1. swap {1} [4..6] 7.
 
 seq 4 1 : (#pre /\ aux{1} = m{2}); 
   1: by call (mlkem_correct_dec); 1: by auto => /> /#.
@@ -407,10 +407,9 @@ do split.
     rewrite !tP => H k kb.
     rewrite (H k kb) !initiE 1,2:/# /=.
     rewrite /J; congr; congr;congr;congr.
-    + congr;rewrite tP => kk kkb; rewrite !initiE 1..3:/# /= ifF 1:/# initiE 1:/# /=kkb /= initiE 1:/#.
-      clear -kkb.
-      rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => i Hi.
-    rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# initiE 1:/# /= /#.
+    + congr;rewrite tP => kk kkb; rewrite !initiE 1..3:/# /= ifF 1:/# initiE 1:/# /=kkb /=.
+      rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
+      rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# /= initiE /#.
     + congr;rewrite tP => kk kkb; rewrite !initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /=.
       clear -kkb cphv1.
       rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
