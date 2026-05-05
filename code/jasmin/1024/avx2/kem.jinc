@@ -71,7 +71,8 @@ fn __crypto_kem_enc_jazz(
 
   () = #unspill(shk);
 
-  shk = #copy(kr[0:MLKEM_SYMBYTES]);
+  reg u256 k = kr[:u256 0];
+  shk[#unaligned:u256 0] = k;
 
   return ct, shk;
 }

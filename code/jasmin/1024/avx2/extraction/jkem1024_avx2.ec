@@ -9690,6 +9690,7 @@ module M = {
     var aux:W8.t Array32.t;
     var buf:W8.t Array64.t;
     var kr:W8.t Array64.t;
+    var k:W256.t;
     buf <- witness;
     kr <- witness;
     (* Erased call to spill *)
@@ -9720,20 +9721,10 @@ module M = {
     ct <@ __indcpa_enc (ct, (Array32.init (fun i => buf.[(0 + i)])), 
     pk, (Array32.init (fun i => kr.[(32 + i)])));
     (* Erased call to unspill *)
+    k <- (get256 (WArray64.init8 (fun i => kr.[i])) 0);
     shk <-
     (Array32.init
-    (fun i => (get8
-              (WArray32.init64
-              (fun i => (copy_64
-                        (Array4.init
-                        (fun i => (get64
-                                  (WArray32.init8
-                                  (fun i => (Array32.init
-                                            (fun i => kr.[(0 + i)])).[
-                                            i])
-                                  ) i))
-                        )).[i])
-              ) i))
+    (WArray32.get8 (WArray32.set256 (WArray32.init8 (fun i => shk.[i])) 0 k))
     );
     return (ct, shk);
   }

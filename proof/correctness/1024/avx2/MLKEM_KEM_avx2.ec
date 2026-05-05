@@ -162,8 +162,9 @@ congr.
 wp; ecall (mlkem_correct_enc_1_avx2 pk{1}) => /=.
 auto => /> &1 &2; rewrite tP => *;do split;1:smt().
 move => ? r0 [r111 r12] /= [#]; rewrite !tP => *;do split;1,2:smt().
-move => *;rewrite !initiE 1,2:/# /= /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
-   rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#. 
+move => *;rewrite !initiE 1,2:/# /= /get8 initiE 1:/# /= ifT 1://.
+rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
+rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
 qed.
 
 require import StdOrder. 

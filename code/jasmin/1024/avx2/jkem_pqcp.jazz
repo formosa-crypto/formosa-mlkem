@@ -17179,7 +17179,9 @@ fn __crypto_kem_enc_jazz (reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
     __indcpa_enc(ct, buf[0 : MLKEM_INDCPA_MSGBYTES], pk,
                  kr[MLKEM_SYMBYTES : MLKEM_SYMBYTES]);
   #unspill(shk); /* :k */
-  shk = #copy_64(kr[0 : MLKEM_SYMBYTES]);
+  reg u256 k;
+  k = kr[:u256 0]; /* u256 */
+  shk[#unaligned :u256 0] = k; /* u256 */
   return ct, shk;
 }
 
