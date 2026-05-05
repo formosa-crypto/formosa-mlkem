@@ -6,8 +6,8 @@ import SLH64.
 
 require import
 Array1 Array2 Array4 Array5 Array6 Array7 Array8 Array16 Array24 Array25
-Array32 Array33 Array64 Array128 Array136 Array256 Array384 Array400 Array536
-Array768 Array960 Array1024 Array1088 Array1120 Array1152 Array1184 Array2048
+Array32 Array33 Array64 Array128 Array256 Array384 Array400 Array536 Array768
+Array960 Array1024 Array1088 Array1120 Array1152 Array1184 Array2048
 Array2144 Array2304 Array2400 WArray1 WArray2 WArray4 WArray8 WArray16
 WArray32 WArray33 WArray64 WArray128 WArray160 WArray192 WArray200 WArray224
 WArray256 WArray384 WArray512 WArray536 WArray800 WArray960 WArray1088
@@ -9633,28 +9633,17 @@ module M = {
                               pk:W8.t Array1184.t, randomnessp:W8.t Array32.t) : 
   W8.t Array1088.t * W8.t Array32.t = {
     var aux:W8.t Array32.t;
+    var b:W256.t;
     var buf:W8.t Array64.t;
     var kr:W8.t Array64.t;
+    var k:W256.t;
     buf <- witness;
     kr <- witness;
     (* Erased call to spill *)
+    b <- (get256 (WArray32.init8 (fun i => randomnessp.[i])) 0);
     buf <-
     (Array64.init
-    (fun i => (if (0 <= i < (0 + 32)) then (Array32.init
-                                           (fun i => (get8
-                                                     (WArray32.init64
-                                                     (fun i => (copy_64
-                                                               (Array4.init
-                                                               (fun i => 
-                                                               (get64
-                                                               (
-                                                               WArray32.init8
-                                                               (fun i => 
-                                                               randomnessp.[
-                                                               i])) i)))).[
-                                                               i])
-                                                     ) i))
-                                           ).[(i - 0)] else buf.[i]))
+    (WArray64.get8 (WArray64.set256 (WArray64.init8 (fun i => buf.[i])) 0 b))
     );
     aux <@ _sha3_256A_A1184 ((Array32.init (fun i => buf.[(32 + i)])), pk);
     buf <-
@@ -9665,96 +9654,49 @@ module M = {
     ct <@ __indcpa_enc (ct, (Array32.init (fun i => buf.[(0 + i)])), 
     pk, (Array32.init (fun i => kr.[(32 + i)])));
     (* Erased call to unspill *)
+    k <- (get256 (WArray64.init8 (fun i => kr.[i])) 0);
     shk <-
     (Array32.init
-    (fun i => (get8
-              (WArray32.init64
-              (fun i => (copy_64
-                        (Array4.init
-                        (fun i => (get64
-                                  (WArray32.init8
-                                  (fun i => (Array32.init
-                                            (fun i => kr.[(0 + i)])).[
-                                            i])
-                                  ) i))
-                        )).[i])
-              ) i))
+    (WArray32.get8 (WArray32.set256 (WArray32.init8 (fun i => shk.[i])) 0 k))
     );
     return (ct, shk);
   }
   proc __crypto_kem_dec_jazz (shk:W8.t Array32.t, ct:W8.t Array1088.t,
                               sk:W8.t Array2400.t) : W8.t Array32.t = {
     var aux:W8.t Array32.t;
+    var inc:int;
+    var z:W256.t;
     var zp_ct:W8.t Array1120.t;
     var buf:W8.t Array64.t;
+    var k:W256.t;
     var kr:W8.t Array64.t;
     var ctc:W8.t Array1088.t;
     var cnd:W64.t;
+    var j:int;
+    var c:W256.t;
     buf <- witness;
     ctc <- witness;
     kr <- witness;
     zp_ct <- witness;
     (* Erased call to spill *)
+    z <-
+    (get256_direct (WArray2400.init8 (fun i => sk.[i]))
+    ((((3 * 384) + ((3 * 384) + 32)) + (2 * 32)) - 32));
     zp_ct <-
     (Array1120.init
-    (fun i => (if (0 <= i < (0 + 32)) then (Array32.init
-                                           (fun i => (get8
-                                                     (WArray32.init64
-                                                     (fun i => (copy_64
-                                                               (Array4.init
-                                                               (fun i => 
-                                                               (get64
-                                                               (
-                                                               WArray32.init8
-                                                               (fun i => 
-                                                               (Array32.init
-                                                               (fun i => 
-                                                               sk.[((
-                                                                    (
-                                                                    (
-                                                                    (3 * 384) +
-                                                                    (
-                                                                    (3 * 384) +
-                                                                    32)) +
-                                                                    (2 * 32)) -
-                                                                    32) +
-                                                                   i)])
-                                                               ).[i])) 
-                                                               i)))).[
-                                                               i])
-                                                     ) i))
-                                           ).[(i - 0)] else zp_ct.[i]))
-    );
+    (WArray1120.get8
+    (WArray1120.set256 (WArray1120.init8 (fun i => zp_ct.[i])) 0 z)));
     aux <@ __indcpa_dec ((Array32.init (fun i => buf.[(0 + i)])), ct,
     (Array1152.init (fun i => sk.[(0 + i)])));
     buf <-
     (Array64.init
     (fun i => (if (0 <= i < (0 + 32)) then aux.[(i - 0)] else buf.[i])));
+    k <-
+    (get256_direct (WArray2400.init8 (fun i => sk.[i]))
+    ((3 * 384) + ((3 * 384) + 32)));
     buf <-
     (Array64.init
-    (fun i => (if (32 <= i < (32 + 32)) then (Array32.init
-                                             (fun i => (get8
-                                                       (WArray32.init64
-                                                       (fun i => (copy_64
-                                                                 (Array4.init
-                                                                 (fun i => 
-                                                                 (get64
-                                                                 (
-                                                                 WArray32.init8
-                                                                 (fun i => 
-                                                                 (
-                                                                 Array32.init
-                                                                 (fun i => 
-                                                                 sk.[
-                                                                 (((3 * 384) +
-                                                                  ((3 * 384) +
-                                                                  32)) +
-                                                                 i)])).[
-                                                                 i])) 
-                                                                 i)))).[
-                                                                 i])
-                                                       ) i))
-                                             ).[(i - 32)] else buf.[i]))
+    (WArray64.get8 (WArray64.set256 (WArray64.init8 (fun i => buf.[i])) 1 k))
     );
     kr <@ _sha3_512A_A64 (kr, buf);
     ctc <@ __indcpa_enc (ctc, (Array32.init (fun i => buf.[(0 + i)])),
@@ -9762,26 +9704,17 @@ module M = {
     (Array32.init (fun i => kr.[(32 + i)])));
     (* Erased call to unspill *)
     cnd <@ __verify (ct, ctc);
-    zp_ct <-
-    (Array1120.init
-    (fun i => (if (32 <= i < (32 + 1088)) then (Array1088.init
-                                               (fun i => (get8
-                                                         (WArray1088.init64
-                                                         (fun i => (copy_64
-                                                                   (
-                                                                   Array136.init
-                                                                   (fun i => 
-                                                                   (get64
-                                                                   (
-                                                                   WArray1088.init8
-                                                                   (fun i => 
-                                                                   ct.[
-                                                                   i])) 
-                                                                   i)))).[
-                                                                   i])
-                                                         ) i))
-                                               ).[(i - 32)] else zp_ct.[i]))
-    );
+    inc <- (((3 * 320) + 128) %/ 32);
+    j <- 0;
+    while ((j < inc)) {
+      c <- (get256 (WArray1088.init8 (fun i => ct.[i])) j);
+      zp_ct <-
+      (Array1120.init
+      (WArray1120.get8
+      (WArray1120.set256 (WArray1120.init8 (fun i => zp_ct.[i]))
+      ((32 %/ 32) + j) c)));
+      j <- (j + 1);
+    }
     (* Erased call to unspill *)
     shk <@ _shake256_A32__A1120 (shk, zp_ct);
     shk <@ __cmov (shk, (Array32.init (fun i => kr.[(0 + i)])), cnd);

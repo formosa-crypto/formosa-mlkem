@@ -16882,7 +16882,7 @@ fn __indcpa_keypair (#[spill_to_mmx] reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk,
   reg u64 t64;
   inline int i;
   for i = 0 to MLKEM_SYMBYTES / 8 {
-    t64 = randomnessp[:u64 i]; /* u64 */
+    t64 = randomnessp[#unaligned :u64 i]; /* u64 */
     inbuf[:u64 i] = t64; /* u64 */
   }
   inbuf[32] = (8u) MLKEM_K; /* u8 */
@@ -17121,7 +17121,7 @@ fn __crypto_kem_keypair_jazz (reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk,
     _sha3_256A_A1184(sk[MLKEM_POLYVECBYTES + MLKEM_PUBLICKEYBYTES : 32], pk);
   randomnessp = s_randomnessp; /* u8[MLKEM_SYMBYTES * 2] */
   for i = 0 to MLKEM_SYMBYTES / 8 {
-    t64 = randomnessp[:u64 MLKEM_SYMBYTES / 8 + i]; /* u64 */
+    t64 = randomnessp[#unaligned :u64 MLKEM_SYMBYTES / 8 + i]; /* u64 */
     sk.[#unaligned :u64 ((MLKEM_POLYVECBYTES + MLKEM_PUBLICKEYBYTES + MLKEM_SYMBYTES) / 8 + i) * 8] =
       t64; /* u64 */
   }
@@ -17138,8 +17138,10 @@ fn __crypto_kem_enc_jazz (reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
                          reg const ptr u8[MLKEM_SYMBYTES] randomnessp) -> 
 (reg mut ptr u8[MLKEM_CIPHERTEXTBYTES], reg mut ptr u8[MLKEM_SYMBYTES]) {
   #spill(pk, shk); /* :k */
+  reg u256 b;
+  b = randomnessp[#unaligned :u256 0]; /* u256 */
   stack u8[MLKEM_SYMBYTES * 2] buf;
-  buf[0 : MLKEM_SYMBYTES] = #copy_64(randomnessp);
+  buf[:u256 0] = b; /* u256 */
   buf[MLKEM_SYMBYTES : MLKEM_SYMBYTES] =
     _sha3_256A_A1184(buf[MLKEM_SYMBYTES : MLKEM_SYMBYTES], pk);
   stack u8[MLKEM_SYMBYTES * 2] kr;
@@ -17150,7 +17152,9 @@ fn __crypto_kem_enc_jazz (reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
     __indcpa_enc(ct, buf[0 : MLKEM_INDCPA_MSGBYTES], pk,
                  kr[MLKEM_SYMBYTES : MLKEM_SYMBYTES]);
   #unspill(shk); /* :k */
-  shk = #copy_64(kr[0 : MLKEM_SYMBYTES]);
+  reg u256 k;
+  k = kr[:u256 0]; /* u256 */
+  shk[#unaligned :u256 0] = k; /* u256 */
   return ct, shk;
 }
 
@@ -17164,16 +17168,19 @@ fn __crypto_kem_dec_jazz (#[spill_to_mmx] reg mut ptr u8[MLKEM_SYMBYTES] shk,
                          reg const ptr u8[MLKEM_SECRETKEYBYTES] sk) -> 
 (reg mut ptr u8[MLKEM_SYMBYTES]) {
   #spill(shk, ct); /* :k */
+  reg u256 z;
+  z = sk.[#unaligned :u256 MLKEM_SECRETKEYBYTES - MLKEM_SYMBYTES]; /* u256 */
   stack u8[MLKEM_SYMBYTES + MLKEM_CIPHERTEXTBYTES] zp_ct;
-  zp_ct[0 : MLKEM_SYMBYTES] =
-    #copy_64(sk[MLKEM_SECRETKEYBYTES - MLKEM_SYMBYTES : MLKEM_SYMBYTES]);
+  zp_ct[:u256 0] = z; /* u256 */
   stack u8[2 * MLKEM_SYMBYTES] buf;
   #[inline]
   buf[0 : MLKEM_INDCPA_MSGBYTES] =
     __indcpa_dec(buf[0 : MLKEM_INDCPA_MSGBYTES], ct,
                  sk[0 : MLKEM_POLYVECBYTES]);
-  buf[MLKEM_SYMBYTES : MLKEM_SYMBYTES] =
-    #copy_64(sk[MLKEM_INDCPA_SECRETKEYBYTES + MLKEM_INDCPA_PUBLICKEYBYTES : MLKEM_SYMBYTES]);
+  reg u256 k;
+  k =
+    sk.[#unaligned :u256 MLKEM_INDCPA_SECRETKEYBYTES + MLKEM_INDCPA_PUBLICKEYBYTES]; /* u256 */
+  buf[:u256 1] = k; /* u256 */
   stack u8[2 * MLKEM_SYMBYTES] kr;
   kr = _sha3_512A_A64(kr, buf);
   stack u8[MLKEM_INDCPA_CIPHERTEXTBYTES] ctc;
@@ -17186,7 +17193,12 @@ fn __crypto_kem_dec_jazz (#[spill_to_mmx] reg mut ptr u8[MLKEM_SYMBYTES] shk,
   reg u64 cnd;
   #[inline]
   cnd = __verify(ct, ctc);
-  zp_ct[MLKEM_SYMBYTES : MLKEM_CIPHERTEXTBYTES] = #copy_64(ct);
+  inline int j;
+  for j = 0 to MLKEM_CIPHERTEXTBYTES / 32 {
+    reg u256 c;
+    c = ct[#unaligned :u256 j]; /* u256 */
+    zp_ct[:u256 MLKEM_SYMBYTES / 32 + j] = c; /* u256 */
+  }
   #unspill(shk); /* :k */
   shk = _shake256_A32__A1120(shk, zp_ct);
   #[inline]
