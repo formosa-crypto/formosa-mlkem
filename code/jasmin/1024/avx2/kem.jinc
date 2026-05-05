@@ -100,8 +100,8 @@ fn __crypto_kem_dec_jazz(
 
   // we do not need to do pointer arithmetic here
 
-  /* fixme: should loads be 256-bits long? */
-  buf[MLKEM_SYMBYTES:MLKEM_SYMBYTES] = #copy(sk[MLKEM_INDCPA_SECRETKEYBYTES + MLKEM_INDCPA_PUBLICKEYBYTES:MLKEM_SYMBYTES]);
+  reg u256 k = sk.[:u256 MLKEM_INDCPA_SECRETKEYBYTES + MLKEM_INDCPA_PUBLICKEYBYTES];
+  buf[:u256 1] = k;
 
   //kr = _sha3_512_64(kr, buf);
   kr = _sha3_512A_A64(kr, buf);

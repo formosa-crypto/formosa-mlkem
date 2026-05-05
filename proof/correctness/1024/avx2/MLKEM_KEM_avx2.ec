@@ -318,28 +318,28 @@ lemma mlkem_kem_correct_dec  :
        c1 = Array1408.init(fun i => ct{1}.[i]) /\
        c2 = Array160.init(fun i => ct{1}.[i + 1408])
        ==> ={res}].
-proc => /=. sp 0 1. swap {1} [4..5] 6.
+proc => /=. sp 0 1. swap {1} [4..5] 7.
 
 seq 4 1 : (#pre /\ aux{1} = m{2}); 
   1: by call (mlkem_correct_dec); 1: by auto => /> /#.
 
-seq 3 1 : (#pre /\ 
+seq 4 1 : (#pre /\
            (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k] = _K{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k+32] = r{2}.[k])).
 ecall {1} (sha3_512A_A64_ph buf{1}).
 + auto => /> &1 &2; rewrite !tP => buf bvl bvh ; do split.
-  +  move => k kbl kbh; rewrite initiE 1:/# /= ifF 1:/# initiE 1:/# /#. 
+  + by move => k kbl kbh; rewrite initiE 1:/# /= ifF 1:/# /get8 !initiE 1..2:/# /= ifT.
   + move => k kbl kbh; rewrite initiE 1:/# /= kbh /= /G_mhpk; congr; congr;congr.
-    + rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifF 1: /# initiE /#.
-    rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifT 1: /# initiE 1:/# /= initiE 1:/# /=.
-    rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
-    rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+    + by rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifF 1:/# /get8 !initiE 1..2:/# /= ifT.
+    rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifT 1: /# initiE 1:/# /=.
+    rewrite /get256_direct /pack32_t /(\bits8) wordP => j hj.
+    rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# /= initiE /#.
   + move => k kbl kbh; rewrite initiE 1:/# /= ifF 1:/# /= /G_mhpk; congr; congr;congr.
-    + rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifF 1: /# initiE /#.
-    rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifT 1: /# initiE 1:/# /= initiE 1:/# /=.
-    rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
-    rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+    + rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifF 1: /# /get8 !initiE /#.
+    rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifT 1: /# initiE 1:/# /=.
+    rewrite /get256_direct /pack32_t /(\bits8) wordP => j hj.
+    rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# /= initiE /#.
 
 swap {2} 1 1.
 
