@@ -132,7 +132,7 @@ lemma mlkem_kem_correct_enc  :
      k = res{1}.`2
 ].
 proc => /=;sp 0 1.
-seq 6 2 : (#pre /\
+seq 7 2 : (#pre /\
     Array32.init (fun (i : int) => kr{1}.[0 + i]) = _K{2} /\
     Array32.init (fun (i : int) => kr{1}.[32 + i]) = r{2} /\
     Array32.init (fun (i : int) => buf{1}.[i]) = m{2}).
@@ -141,8 +141,9 @@ seq 6 2 : (#pre /\
     
 auto => /> &1 &2;rewrite !tP => pk1 pk2; do split => *.
 + rewrite initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= /G_mhpk;congr;congr;congr.
-   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
-   rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /=.
+     rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
+     rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1568_32 get_of_list 1:/#;congr;congr;congr.
       + by congr; rewrite tP => i hi; rewrite pk1.
       + by congr; rewrite tP => i hi; rewrite pk2.
@@ -150,20 +151,23 @@ auto => /> &1 &2;rewrite !tP => pk1 pk2; do split => *.
 
 + rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= /G_mhpk;congr;congr;
 congr.
-   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
-   rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /=.
+     rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
+     rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1568_32 get_of_list 1:/#;congr;congr;congr.
       + by congr;rewrite tP => i hi; rewrite pk1.
       + by congr;rewrite tP => i hi; rewrite pk2.
 
-+ rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
-   rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
++ rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /=.
+  rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
+  rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
 
 wp; ecall (mlkem_correct_enc_1_avx2 pk{1}) => /=.
 auto => /> &1 &2; rewrite tP => *;do split;1:smt().
 move => ? r0 [r111 r12] /= [#]; rewrite !tP => *;do split;1,2:smt().
-move => *;rewrite !initiE 1,2:/# /= /get8 initiE 1:/# /= initiE 1:/# /= /get64_direct wordP => *.
-   rewrite /pack8_t /= /(\bits8) initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#. 
+move => *;rewrite !initiE 1,2:/# /= /get8 initiE 1:/# /= ifT 1://.
+rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
+rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
 qed.
 
 require import StdOrder. 
@@ -318,28 +322,28 @@ lemma mlkem_kem_correct_dec  :
        c1 = Array1408.init(fun i => ct{1}.[i]) /\
        c2 = Array160.init(fun i => ct{1}.[i + 1408])
        ==> ={res}].
-proc => /=. sp 0 1. swap {1} [4..5] 6.
+proc => /=. sp 0 1. swap {1} [4..6] 7.
 
 seq 4 1 : (#pre /\ aux{1} = m{2}); 
   1: by call (mlkem_correct_dec); 1: by auto => /> /#.
 
-seq 3 1 : (#pre /\ 
+seq 4 1 : (#pre /\
            (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k] = _K{2}.[k]) /\
            (forall k, 0<=k<32 => kr{1}.[k+32] = r{2}.[k])).
 ecall {1} (sha3_512A_A64_ph buf{1}).
 + auto => /> &1 &2; rewrite !tP => buf bvl bvh ; do split.
-  +  move => k kbl kbh; rewrite initiE 1:/# /= ifF 1:/# initiE 1:/# /#. 
+  + by move => k kbl kbh; rewrite initiE 1:/# /= ifF 1:/# /get8 !initiE 1..2:/# /= ifT.
   + move => k kbl kbh; rewrite initiE 1:/# /= kbh /= /G_mhpk; congr; congr;congr.
-    + rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifF 1: /# initiE /#.
-    rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifT 1: /# initiE 1:/# /= initiE 1:/# /=.
-    rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
-    rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+    + by rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifF 1:/# /get8 !initiE 1..2:/# /= ifT.
+    rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifT 1: /# initiE 1:/# /=.
+    rewrite /get256_direct /pack32_t /(\bits8) wordP => j hj.
+    rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# /= initiE /#.
   + move => k kbl kbh; rewrite initiE 1:/# /= ifF 1:/# /= /G_mhpk; congr; congr;congr.
-    + rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifF 1: /# initiE /#.
-    rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifT 1: /# initiE 1:/# /= initiE 1:/# /=.
-    rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
-    rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
+    + rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifF 1: /# /get8 !initiE /#.
+    rewrite tP => i ib; rewrite initiE 1:/# /= initiE  1:/# /= ifT 1: /# initiE 1:/# /=.
+    rewrite /get256_direct /pack32_t /(\bits8) wordP => j hj.
+    rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# /= initiE /#.
 
 swap {2} 1 1.
 
@@ -398,30 +402,48 @@ seq 1 0 : (#pre /\
 ecall {1} (cmov_correct shk{1} (Array32.init (fun (i : int) => kr{1}.[0 + i])) cnd{1}).
 wp;ecall{1} (shake256_A32_A1600_ph zp_ct{1}).
 
+while{1} (inc = 49 /\ 0 <= j <= 49 /\
+ (forall i, 0 <= i < 32 => zp_ct.[i] = sk.[3136 + i]) /\
+ forall i, 0 <= i < j * 32 => zp_ct.[32 + i] = ct.[i]){1} (49 - j){1}.
++ move => &m z; auto => /> &hr jlo _ Hsk Hct jhi; do split; 1..2:smt().
+  + move => i ilo ihi.
+    rewrite initiE 1:/# /get8 /set256_direct WArray1600.WArray1600.initE ifT 1:/# /=.
+    rewrite ifF 1:/# WArray1600.WArray1600.initE ifT /#.
+  + move => i ilo ihi.
+    rewrite initiE 1:/# /get8 /set256_direct WArray1600.WArray1600.initE ifT 1:/# /=.
+    case: (i < j{hr} * 32) => ?.
+    + rewrite ifF 1:/# WArray1600.WArray1600.initE ifT /#.
+    rewrite ifT 1:/#.
+    rewrite /(\bits8) /get256_direct /pack32_t wordP => k hk.
+    rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# /= initiE /#.
+  + smt().
+
 + auto => /> &1 &2; rewrite  !tP =>??.
   have ->/= : (cph{2} = (cph{2}.`1,cph{2}.`2)) by smt(). 
   move =>[#]; rewrite !tP => cphv1 cphv2 ? Hkr1 ?ceq cdif.
-do split. 
+split; first split.
++ move => i ilo ihi.
+  rewrite initiE 1:/# /get8 /set256_direct WArray1600.WArray1600.initE ifT 1:/# /= ilo ihi /=.
+  rewrite /(\bits8) /get256_direct /pack32_t wordP => k hk.
+  rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# /= initiE /#.
++ smt().
+move => jL zp_ctL; split; first smt().
+move => A B C.
+have ? : jL = 49.
++ clear -A B C; smt().
+clear A B C; subst.
+move => eq_zp_ct_sk eq_zp_ct_ct.
+split.
 + move => badc back c0 c1.
   +  move : (c1 (cdif badc)).
     rewrite !tP => H k kb.
     rewrite (H k kb) !initiE 1,2:/# /=.
     rewrite /J; congr; congr;congr;congr.
-    + congr;rewrite tP => kk kkb; rewrite !initiE 1..3:/# /= ifF 1:/# initiE 1:/# /=kkb /= initiE 1:/#.
-      clear -kkb.
-      rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => i Hi.
-    rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# initiE 1:/# /= /#.
-    + congr;rewrite tP => kk kkb; rewrite !initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /=.
-      clear -kkb cphv1.
-      rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
-    rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-    rewrite cphv1 1:// initiE 1:// /#.
+    + congr; rewrite tP => kk kkb; rewrite !initiE 1..2:// /#.
+    + congr;rewrite tP => kk kkb; rewrite !initiE 1:// /=.
+      by rewrite (cphv1 _ kkb) initiE 1:// eq_zp_ct_ct 1:/#.
 
-  rewrite tP => kk kkb; rewrite !initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /=.
-      clear -kkb cphv2.
-      rewrite /get8 initiE 1:/# /= initiE 1:/# /= /get64 /(\bits8) wordP => *.
-    rewrite initiE 1:/# /= /init8 /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
-    rewrite cphv2 1:// initiE 1:// /= /#.
+  rewrite tP => kk kkb; rewrite !initiE 1:// /= (cphv2 _ kkb) initiE 1:// /#.
 
 move => goodc  back c0 c1.
   + move : (c0 (ceq goodc)).
