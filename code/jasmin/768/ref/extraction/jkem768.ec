@@ -6,11 +6,10 @@ import SLH64.
 
 require import
 Array4 Array5 Array24 Array25 Array32 Array33 Array34 Array64 Array128
-Array136 Array148 Array168 Array256 Array300 Array384 Array768 Array960
-Array1088 Array1152 Array1184 Array2304 Array2400 WArray20 WArray32 WArray33
-WArray34 WArray40 WArray64 WArray128 WArray168 WArray192 WArray200 WArray256
-WArray384 WArray512 WArray960 WArray1088 WArray1152 WArray1184 WArray1536
-WArray2400 WArray4608.
+Array168 Array256 Array384 Array768 Array960 Array1088 Array1152 Array1184
+Array2304 Array2400 WArray20 WArray32 WArray33 WArray34 WArray40 WArray64
+WArray128 WArray168 WArray192 WArray200 WArray256 WArray384 WArray512
+WArray960 WArray1088 WArray1152 WArray1184 WArray1536 WArray2400 WArray4608.
 
 abbrev jzetas_inv =
 ((Array128.of_list witness)
@@ -3102,7 +3101,6 @@ module M = {
     var aux:W8.t Array32.t;
     var inc:int;
     var s_pk:W8.t Array1184.t;
-    var s_shk:W8.t Array32.t;
     var i:int;
     var t64:W64.t;
     var buf:W8.t Array64.t;
@@ -3110,9 +3108,9 @@ module M = {
     buf <- witness;
     kr <- witness;
     s_pk <- witness;
-    s_shk <- witness;
     s_pk <- pk;
-    s_shk <- shk;
+    (* Erased call to spill *)
+    (* Erased call to spill *)
     inc <- (32 %/ 8);
     i <- 0;
     while ((i < inc)) {
@@ -3132,9 +3130,10 @@ module M = {
     );
     kr <@ _sha3_512A_A64 (kr, buf);
     pk <- s_pk;
+    (* Erased call to unspill *)
     ct <@ __indcpa_enc (ct, (Array32.init (fun i_0 => buf.[(0 + i_0)])), 
     pk, (Array32.init (fun i_0 => kr.[(32 + i_0)])));
-    shk <- s_shk;
+    (* Erased call to unspill *)
     inc <- (32 %/ 8);
     i <- 0;
     while ((i < inc)) {
@@ -3151,27 +3150,20 @@ module M = {
                               sk:W8.t Array2400.t) : W8.t Array32.t = {
     var aux:W8.t Array32.t;
     var inc:int;
-    var s_shk:W8.t Array32.t;
-    var s_ct:W8.t Array1088.t;
-    var s_sk:W8.t Array2400.t;
     var buf:W8.t Array64.t;
     var i:int;
     var t64:W64.t;
     var kr:W8.t Array64.t;
     var ctc:W8.t Array1088.t;
     var cnd:W64.t;
-    var s_cnd:W64.t;
     buf <- witness;
     ctc <- witness;
     kr <- witness;
-    s_ct <- witness;
-    s_shk <- witness;
-    s_sk <- witness;
-    s_shk <- shk;
-    s_ct <- ct;
-    s_sk <- sk;
+    (* Erased call to spill *)
+    (* Erased call to spill *)
+    (* Erased call to spill *)
     aux <@ __indcpa_dec ((Array32.init (fun i_0 => buf.[(0 + i_0)])), 
-    ct, (Array1152.init (fun i_0 => s_sk.[(0 + i_0)])));
+    ct, (Array1152.init (fun i_0 => sk.[(0 + i_0)])));
     buf <-
     (Array64.init
     (fun i_0 => (if (0 <= i_0 < (0 + 32)) then aux.[(i_0 - 0)] else buf.[i_0]))
@@ -3180,7 +3172,7 @@ module M = {
     i <- 0;
     while ((i < inc)) {
       t64 <-
-      (get64_direct (WArray2400.init8 (fun i_0 => s_sk.[i_0]))
+      (get64_direct (WArray2400.init8 (fun i_0 => sk.[i_0]))
       ((i + ((((((3 * 384) + ((3 * 384) + 32)) + 32) + 32) - (2 * 32)) %/ 8)) *
       8));
       buf <-
@@ -3191,20 +3183,19 @@ module M = {
       i <- (i + 1);
     }
     kr <@ _sha3_512A_A64 (kr, buf);
+    (* Erased call to unspill *)
     ctc <@ __indcpa_enc (ctc, (Array32.init (fun i_0 => buf.[(0 + i_0)])),
-    (Array1184.init (fun i_0 => s_sk.[((3 * 384) + i_0)])),
+    (Array1184.init (fun i_0 => sk.[((3 * 384) + i_0)])),
     (Array32.init (fun i_0 => kr.[(32 + i_0)])));
-    ct <- s_ct;
+    (* Erased call to unspill *)
     cnd <@ __verify (ct, ctc);
-    s_cnd <- cnd;
-    ct <- s_ct;
-    shk <- s_shk;
+    (* Erased call to unspill *)
+    (* Erased call to unspill *)
     shk <@ _shake256_A32__A1120 (shk,
     (Array32.init
-    (fun i_0 => s_sk.[((((((3 * 384) + ((3 * 384) + 32)) + 32) + 32) - 32) +
-                      i_0)])
+    (fun i_0 => sk.[((((((3 * 384) + ((3 * 384) + 32)) + 32) + 32) - 32) +
+                    i_0)])
     ), ct);
-    cnd <- s_cnd;
     shk <@ __cmov (shk, (Array32.init (fun i_0 => kr.[(0 + i_0)])), cnd);
     return shk;
   }
@@ -3231,86 +3222,15 @@ module M = {
                                                      coins:W8.t Array32.t) : 
   W8.t Array1088.t * W8.t Array32.t * W64.t = {
     var r:W64.t;
-    var pk:W8.t Array1184.t;
-    var rd:W8.t Array32.t;
-    var ct:W8.t Array1088.t;
-    var ctp:W8.t Array1088.t;
-    var pkp:W8.t Array1184.t;
-    var shk:W8.t Array32.t;
-    var shkp:W8.t Array32.t;
-    var rdp:W8.t Array32.t;
     var  _0:W64.t;
     var  _1:bool;
     var  _2:bool;
     var  _3:bool;
     var  _4:bool;
     var  _5:bool;
-    ct <- witness;
-    ctp <- witness;
-    pk <- witness;
-    pkp <- witness;
-    rd <- witness;
-    rdp <- witness;
-    shk <- witness;
-    shkp <- witness;
      _0 <- (init_msf);
-    (* Erased call to spill *)
-    (* Erased call to spill *)
-    pk <-
-    (Array1184.init
-    (fun i => (get8
-              (WArray1184.init64
-              (fun i => (copy_64
-                        (Array148.init
-                        (fun i => (get64
-                                  (WArray1184.init8 (fun i => public_key.[i])
-                                  ) i))
-                        )).[i])
-              ) i))
-    );
-    rd <-
-    (Array32.init
-    (fun i => (get8
-              (WArray32.init64
-              (fun i => (copy_64
-                        (Array4.init
-                        (fun i => (get64
-                                  (WArray32.init8 (fun i => coins.[i])) 
-                                  i))
-                        )).[i])
-              ) i))
-    );
-    ctp <- ct;
-    pkp <- pk;
-    shkp <- shk;
-    rdp <- rd;
-    (ctp, shkp) <@ __crypto_kem_enc_jazz (ctp, shkp, pkp, rdp);
-    (* Erased call to unspill *)
-    (* Erased call to unspill *)
-    ct <- ctp;
-    shk <- shkp;
-    ciphertext <-
-    (Array1088.init
-    (fun i => (get8
-              (WArray1088.init64
-              (fun i => (copy_64
-                        (Array136.init
-                        (fun i => (get64 (WArray1088.init8 (fun i => ct.[i]))
-                                  i))
-                        )).[i])
-              ) i))
-    );
-    shared_secret <-
-    (Array32.init
-    (fun i => (get8
-              (WArray32.init64
-              (fun i => (copy_64
-                        (Array4.init
-                        (fun i => (get64 (WArray32.init8 (fun i => shk.[i]))
-                                  i))
-                        )).[i])
-              ) i))
-    );
+    (ciphertext, shared_secret) <@ __crypto_kem_enc_jazz (ciphertext,
+    shared_secret, public_key, coins);
     ( _1,  _2,  _3,  _4,  _5, r) <- (set0_64);
     return (ciphertext, shared_secret, r);
   }
@@ -3319,67 +3239,15 @@ module M = {
                                               secret_key:W8.t Array2400.t) : 
   W8.t Array32.t * W64.t = {
     var r:W64.t;
-    var ct:W8.t Array1088.t;
-    var sk:W8.t Array2400.t;
-    var ctp:W8.t Array1088.t;
-    var shk:W8.t Array32.t;
-    var shkp:W8.t Array32.t;
-    var skp:W8.t Array2400.t;
     var  _0:W64.t;
     var  _1:bool;
     var  _2:bool;
     var  _3:bool;
     var  _4:bool;
     var  _5:bool;
-    ct <- witness;
-    ctp <- witness;
-    shk <- witness;
-    shkp <- witness;
-    sk <- witness;
-    skp <- witness;
      _0 <- (init_msf);
-    (* Erased call to spill *)
-    ct <-
-    (Array1088.init
-    (fun i => (get8
-              (WArray1088.init64
-              (fun i => (copy_64
-                        (Array136.init
-                        (fun i => (get64
-                                  (WArray1088.init8 (fun i => ciphertext.[i])
-                                  ) i))
-                        )).[i])
-              ) i))
-    );
-    sk <-
-    (Array2400.init
-    (fun i => (get8
-              (WArray2400.init64
-              (fun i => (copy_64
-                        (Array300.init
-                        (fun i => (get64
-                                  (WArray2400.init8 (fun i => secret_key.[i])
-                                  ) i))
-                        )).[i])
-              ) i))
-    );
-    ctp <- ct;
-    shkp <- shk;
-    skp <- sk;
-    shkp <@ __crypto_kem_dec_jazz (shkp, ctp, skp);
-    (* Erased call to unspill *)
-    shk <- shkp;
-    shared_secret <-
-    (Array32.init
-    (fun i => (get8
-              (WArray32.init64
-              (fun i => (copy_64
-                        (Array4.init
-                        (fun i => (get64 (WArray32.init8 (fun i => shk.[i]))
-                                  i))
-                        )).[i])
-              ) i))
-    );
+    shared_secret <@ __crypto_kem_dec_jazz (shared_secret, ciphertext,
+    secret_key);
     ( _1,  _2,  _3,  _4,  _5, r) <- (set0_64);
     return (shared_secret, r);
   }

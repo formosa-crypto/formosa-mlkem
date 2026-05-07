@@ -25,7 +25,7 @@ fn __indcpa_keypair(reg mut ptr u8[MLKEM_PUBLICKEYBYTES] pk, reg mut ptr u8[MLKE
 
   for i = 0 to MLKEM_SYMBYTES/8
   {
-    t64 = randomnessp[:u64 i];
+    t64 = randomnessp[#unaligned:u64 i];
     inbuf[:u64 i] = t64;
   }
   inbuf[32] = MLKEM_K;
