@@ -34,14 +34,14 @@ lemma mlkem_kem_correct_kg  :
 proc => /=.
 
 
-swap {1} 1 15.
-swap {1} 6 15.
+swap {1} 1 12.
+swap {1} 5 11.
 sp 0 2.
-seq 5 0 : #pre; 1: by auto.
+seq 4 0 : #pre; 1: by auto.
 
 wp => /=.
 
-seq 15 1 :
+seq 11 1 :
  (
   kgs{2} = coins{2}.`1 /\ z{2} = coins{2}.`2 /\ H_pk pk{2} = h_pk{1} /\
   coins{2}.`1 = Array32.init (fun (i0 : int) => randomnessp{1}.[i0]) /\
@@ -75,7 +75,7 @@ while {1} (inc{1} = 4 /\
     + move => *;rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=;smt(Array32.initiE).
     + by smt(). 
     + move => k ??;rewrite initiE 1:/# /=get8_set64_directE 1,2:/#.
-      case ((392 + i{1}) * 8 <= k + 3136 < (392 + i{1}) * 8 + 8).
+      case (8 * (392 + i{1}) <= k + 3136 < 8 * (392 + i{1}) + 8).
       + rewrite /get64_direct /(\bits8) /= wordP => *. 
         rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /=  initiE 1:/# /= /#. 
       move => ?; rewrite /get8 initiE 1:/# /= /#.
@@ -84,7 +84,7 @@ auto => /> &1 &2 *; do split;1..6:smt().
 move => i sk *; do split => *;1: smt(). 
 by rewrite tP => *; rewrite initiE /# /=. 
 
-seq 13 1 : (
+seq 9 1 : (
 kgs{2} = coins{2}.`1 /\
   z{2} = coins{2}.`2 /\
   H_pk pk{2} = h_pk{1} /\
@@ -119,7 +119,7 @@ while {1} (
     + by move => *;rewrite initiE 1:/# /= initiE 1:/# /= get8_set64_directE 1,2:/# ifF 1:/# /init8 /get8 initiE 1:/# /=;smt(Array32.initiE).
     + by smt(). 
     + move => k ??;rewrite initiE 1:/# /=get8_set64_directE 1,2:/#.
-      case ( (388 + i{hr}) * 8 <= k + 3104 < (388 + i{hr}) * 8 + 8).
+      case (8 * (388 + i{hr}) <= k + 3104 < 8 * (388 + i{hr}) + 8).
       + rewrite /get64_direct /(\bits8) /= wordP => *. 
         rewrite initiE 1:/# /= /pack8_t initiE 1:/# /=  initiE 1:/# /=  initiE 1:/# /= /#. 
       move => ?; rewrite /get8 initiE 1:/# /= /#.
@@ -128,7 +128,7 @@ auto => /> &1 &2 *; do split; 1..5:smt().
 move => i sk *; do split => *;1: smt(). 
 rewrite tP => kk*; smt(Array32.initiE). 
 
-seq 9 1 : 
+seq 7 1 :
 (
 kgs{2} = coins{2}.`1 /\
   z{2} = coins{2}.`2 /\
@@ -143,7 +143,7 @@ kgs{2} = coins{2}.`1 /\
 
 wp; ecall{1} (pkH_sha pk{1});wp;auto => /> &1 &2 /#.
 
-sp; seq 3 1 : (#{/~s_skp{1} = sk{1}}pre /\
+sp; seq 2 1 : (#pre /\
   sk{2} = Array1536.init(fun i => sk{1}.[i]) /\
   pk{2}.`1 = Array1536.init(fun i => pk{1}.[i])  /\
   pk{2}.`2 = Array32.init(fun i => pk{1}.[i+1536])).
@@ -225,7 +225,7 @@ lemma mlkem_kem_correct_enc :
      k = res{1}.`2
 ].
 proc => /=.
-seq 15 4 : (#[/1:-2]post /\
+seq 9 4 : (#[/1:-2]post /\
       (forall k, 0<=k<32 => kr{1}.[k]=_K{2}.[k])); last first.
 + while {1} (#pre
       /\ inc{1} = 4 
@@ -248,7 +248,7 @@ wp;ecall (mlkem_correct_enc pk{1}).
 wp;ecall {1} (sha_g buf{1}).
 wp;ecall {1} (pkH_sha pk{1}).
 
-seq 9 0 : (#pre /\ Array32.init (fun i => buf{1}.[i]) = coins{2} /\ s_shk{1} = shk{1} /\ s_pk{1} = pk{1}); last first.
+seq 5 0 : (#pre /\ Array32.init (fun i => buf{1}.[i]) = coins{2}); last first.
 
 auto => /> &1 &2;rewrite !tP => ??;do split.
 + move => i *;rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# initiE /#.
@@ -256,13 +256,13 @@ auto => /> &1 &2;rewrite !tP => ??;do split.
   + rewrite tP => k *; rewrite initiE 1:/# /= initiE 1:/# /=ifF 1:/# initiE /#.
   rewrite tP => k *; rewrite initiE 1:/# /= initiE 1:/# /=ifT 1:/# initiE 1:/# /= /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr;congr; rewrite tP => *;  smt(Array1536.initiE Array32.initiE Array1536.tP Array32.tP).
   + smt().
-+ move => ???? rr cph1 cph2; do split;1,2: smt().
++ move => *; do split; 1,2: smt().
   move => k*.
   rewrite /G_mhpk initiE 1:/# /= ifT 1:/#;congr;congr;congr. 
   + rewrite tP => kk *; rewrite initiE 1:/# /= initiE 1:/# /=ifF 1:/# initiE /#.
   rewrite tP => kk *; rewrite /H_pk initiE 1:/# /= initiE 1:/# /=ifT 1:/# initiE 1:/# /= /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr;congr; rewrite tP => *;  smt(Array1536.initiE Array32.initiE Array1536.tP Array32.tP).
 
-seq 4 0 :#pre; 1: by auto.
+seq 2 0 :#pre; 1: by auto.
 sp;conseq />.
   while {1} (0<=i{1}<=inc{1} /\ inc{1} = 4 /\ randomnessp{1} = coins{2} /\  (forall k, 0<=k<i{1}*8 => randomnessp{1}.[k] = buf{1}.[k])) (inc{1} - i{1}); last first.
   + auto => /> &1 &2 *; split; 1: by smt().  
@@ -433,9 +433,9 @@ lemma mlkem_kem_correct_dec :
        ==> 
      ={res}
 ].
-proc => /=. sp 0 1. swap {1} 8 8. 
+proc => /=. sp 0 1.
 
-seq 6 0: #pre; 1: by auto.
+seq 3 0: #pre; 1: by auto.
 sp;
 seq 1 1 : (#pre /\ aux{1} =  m{2}); 
   1: by call (mlkem_correct_dec); 1: by auto => /> /#.
@@ -457,7 +457,7 @@ wp; conseq (_: _ ==>
     rewrite tP => i ib; rewrite initiE //= /#.
     by rewrite tP => i ib; rewrite !initiE  /#. 
   
-while {1} (0<=i{1}<=4 /\ inc{1} = 4  /\ s_sk{1} = sk{1} /\
+while {1} (0<=i{1}<=4 /\ inc{1} = 4  /\
              (forall (k : int), 32 <= k && k < 32 + 8*i{1} => buf{1}.[k] = sk{1}.[3104 + k - 32]) /\
              forall (k : int), 0 <= k && k < 32 => buf{1}.[k] = aux{1}.[k]) (4 - i{1}); last first. 
   + auto => /> &1 &2 ?? /=.
@@ -485,7 +485,7 @@ swap {2} 1 1.
 seq 1 1 : (#pre /\ 
            ctc{1} = Array1568.init (fun i => if i < 1408 then c{2}.`1.[i] else c{2}.`2.[i-1408])). 
 + wp;ecall (mlkem_correct_enc 
-   (Array1568.init  (fun (i_0 : int) => s_sk{1}.[4 * 384 + i_0]))).
+   (Array1568.init  (fun (i_0 : int) => sk{1}.[4 * 384 + i_0]))).
   auto => /> &1 &2 /=;rewrite  !tP => ??????; do split. 
   + by move => i ib; rewrite initiE /= /#.
   + by move => i ib; rewrite initiE /= /#. 
@@ -499,7 +499,7 @@ seq 1 1 : (#pre /\
  + rewrite H0;  smt(Array1408.initiE Array160.initiE).
   have ? := H1 (i-1408); smt(Array1408.initiE Array160.initiE).
 
-sp 2 0; seq 1 0 : (#pre /\ 
+seq 1 0 : (#pre /\
                   (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\
                   (c{2}  <> cph{2} => cnd{1} = W64.of_int 1)).
 +  conseq (_: _ ==> (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\
@@ -517,7 +517,7 @@ sp 2 0; seq 1 0 : (#pre /\
      by move => ibb; rewrite ceq cphv2 1: /# initiE /= /#. 
    move => neq;rewrite Hdiff. 
    pose cc := (Array1568.init (fun (i1 : int) => if i1 < 1408 then c{2}.`1.[i1] else c{2}.`2.[i1 - 1408])).
-   have : exists i0, 0<= i0 < 1568 /\ cc.[i0] <> s_ct{1}.[i0]; last by smt().
+   have : exists i0, 0<= i0 < 1568 /\ cc.[i0] <> ct{1}.[i0]; last by smt().
    case (c{2}.`1 <> cph{2}.`1).
    + move => neq1. rewrite tP in neq1.   
      have [k kb] : exists k, 0<=k<1408 /\ c{2}.`1.[k] <> cph{2}.`1.[k] by smt().
@@ -539,7 +539,7 @@ ecall {1} (cmov_correct shk{1}
    (Array32.init (fun (i_0 : int) => kr{1}.[0 + i_0])) cnd{1}) => /=.
 
 wp;ecall{1} (j_shake
-  (Array32.init  (fun (i_0 : int) =>   s_sk{1}.[4 * 384 + (4 * 384 + 32) + 32 + 32 - 32 + i_0]))
+  (Array32.init  (fun (i_0 : int) =>   sk{1}.[4 * 384 + (4 * 384 + 32) + 32 + 32 - 32 + i_0]))
   ct{1}) => /=.
 
 + auto => /> &1 &2.
