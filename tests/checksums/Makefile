@@ -2,11 +2,6 @@
 
 #----------------------------------------------------------
 
-all: check
-all-extended: check-extended
-
-#----------------------------------------------------------
-
 TESTS ?= 10000
 
 #----------------------------------------------------------
@@ -33,138 +28,69 @@ ALL_EXTENDED := \
 
 #--
 
-ALL_CHECKSMALL := $(addsuffix _checksumsmall,$(ALL))
-ALL_CHECKBIG := $(addsuffix _checksumbig,$(ALL))
-ALL_CHECKVERYBIG := $(addsuffix _checksumverybig,$(ALL))
-ALL := $(ALL_CHECKSMALL) $(ALL_CHECKBIG) $(ALL_CHECKVERYBIG)
+ALL := $(addsuffix _$(TESTS),$(ALL))
 ALL_OUT := $(addsuffix .out,$(ALL))
 
-ALL_EXTENDED_CHECKSMALL := $(addsuffix _checksumsmall,$(ALL_EXTENDED))
-ALL_EXTENDED_CHECKBIG := $(addsuffix _checksumbig,$(ALL_EXTENDED))
-ALL_EXTENDED_CHECKVERYBIG := $(addsuffix _checksumverybig,$(ALL_EXTENDED))
-ALL_EXTENDED := $(ALL_EXTENDED_CHECKSMALL) $(ALL_EXTENDED_CHECKBIG) $(ALL_EXTENDED_CHECKVERYBIG)
+ALL_EXTENDED := $(addsuffix _$(TESTS),$(ALL_EXTENDED))
 ALL_EXTENDED_OUT := $(addsuffix .out,$(ALL_EXTENDED))
 
+#-- TODO: move third_party out of bench
 THIRD_PARTY := $(abspath ../../bench/third_party)
 
 #----------------------------------------------------------
 
-default: check
+default: check-extended
 
 #----------------------------------------------------------
 #-- build formosa
 
 build: $(ALL)
 
-define FORMOSA_768_REF
-bin/formosa-mlkem-768-ref_checksum$(1): src/checksums.c $(SRC)/768/ref/jkem.s | bin/
+define FORMOSA_MLKEM
+bin/formosa-mlkem-$(1)-$(2)_$(TESTS): src/checksums.c $(SRC)/$(1)/$(2)/jkem.s | bin/
 	$(CC) $(CFLAGS) \
 	  -o $$@ \
-	  -I $(SRC)/768/ref/include/ \
-	  -DTESTING_LOOPS=$(2) \
-	  -DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem768_amd64_ref \
-	  -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_ref \
+	  -I $(SRC)/$(1)/$(2)/include/ \
+	  -DTESTING_LOOPS=$(TESTS) \
+	  -DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem$(1)_amd64_$(2) \
+	  -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem$(1)_amd64_$(2) \
 	  src/checksums.c \
-	  $(SRC)/768/ref/jkem.s
+	  $(SRC)/$(1)/$(2)/jkem.s
 endef
 
-define FORMOSA_768_AVX2
-bin/formosa-mlkem-768-avx2_checksum$(1): src/checksums.c $(SRC)/768/avx2/jkem.s | bin/
-	$(CC) $(CFLAGS) \
-	  -o $$@ \
-	  -I $(SRC)/768/avx2/include/ \
-	  -DTESTING_LOOPS=$(2) \
-	  -DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem768_amd64_avx2 \
-	  -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_avx2 \
-	  src/checksums.c \
-	  $(SRC)/768/avx2/jkem.s
-endef
-
-#--
-
-define FORMOSA_1024_REF
-bin/formosa-mlkem-1024-ref_checksum$(1): src/checksums.c $(SRC)/1024/ref/jkem.s | bin/
-	$(CC) $(CFLAGS) \
-	  -o $$@ \
-	  -I $(SRC)/1024/ref/include/ \
-	  -DTESTING_LOOPS=$(2) \
-	  -DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem1024_amd64_ref \
-	  -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_ref \
-	  src/checksums.c \
-	  $(SRC)/1024/ref/jkem.s
-endef
-
-define FORMOSA_1024_AVX2
-bin/formosa-mlkem-1024-avx2_checksum$(1): src/checksums.c $(SRC)/1024/avx2/jkem.s | bin/
-	$(CC) $(CFLAGS) \
-	  -o $$@ \
-	  -I $(SRC)/1024/avx2/include/ \
-	  -DTESTING_LOOPS=$(2) \
-	  -DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem1024_amd64_avx2 \
-	  -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_avx2 \
-	  src/checksums.c \
-	  $(SRC)/1024/avx2/jkem.s
-endef
-
-$(eval $(call FORMOSA_768_REF,small,8))
-$(eval $(call FORMOSA_768_REF,big,64))
-$(eval $(call FORMOSA_768_REF,verybig,$(TESTS)))
-$(eval $(call FORMOSA_768_AVX2,small,8))
-$(eval $(call FORMOSA_768_AVX2,big,64))
-$(eval $(call FORMOSA_768_AVX2,verybig,$(TESTS)))
-
-$(eval $(call FORMOSA_1024_REF,small,8))
-$(eval $(call FORMOSA_1024_REF,big,64))
-$(eval $(call FORMOSA_1024_REF,verybig,$(TESTS)))
-$(eval $(call FORMOSA_1024_AVX2,small,8))
-$(eval $(call FORMOSA_1024_AVX2,big,64))
-$(eval $(call FORMOSA_1024_AVX2,verybig,$(TESTS)))
+$(eval $(call FORMOSA_MLKEM,768,ref))
+$(eval $(call FORMOSA_MLKEM,768,avx2))
+$(eval $(call FORMOSA_MLKEM,1024,ref))
+$(eval $(call FORMOSA_MLKEM,1024,avx2))
 
 #----------------------------------------------------------
 #-- build native
 
-build-extended: $(ALL) $(ALL_EXTENDED)
+build-extended: build $(ALL_EXTENDED)
 
-define NATIVE_768
-bin/native-mlkem-768_checksum$(1): src/checksums.c $(THIRD_PARTY)/mlkem-native/test/build/libmlkem768.a | bin/
+define NATIVE_MLKEM
+bin/native-mlkem-$(1)_$(TESTS): src/checksums.c $(THIRD_PARTY)/mlkem-native/test/build/libmlkem$(1).a | bin/
 	$(CC) $(CFLAGS) \
 	  -o $$@ \
-	  -I $(THIRD_PARTY)/bindings/mlkem-native-768/ \
-	  -DTESTING_LOOPS=$(2) \
-		-DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM768 \
-		-DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM768 \
+	  -I $(THIRD_PARTY)/bindings/mlkem-native-$(1)/ \
+	  -DTESTING_LOOPS=$(TESTS) \
+		-DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM$(1) \
+		-DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM$(1) \
 	  src/checksums.c \
-	  $(THIRD_PARTY)/mlkem-native/test/build/libmlkem768.a
+	  $(THIRD_PARTY)/mlkem-native/test/build/libmlkem$(1).a
 endef
 
-define NATIVE_1024
-bin/native-mlkem-1024_checksum$(1): src/checksums.c $(THIRD_PARTY)/mlkem-native/test/build/libmlkem1024.a | bin/
-	$(CC) $(CFLAGS) \
-	  -o $$@ \
-	  -I $(THIRD_PARTY)/bindings/mlkem-native-1024/ \
-	  -DTESTING_LOOPS=$(2) \
-		-DJADE_NAMESPACE=PQCP_MLKEM_NATIVE_MLKEM1024 \
-		-DJADE_NAMESPACE_LC=PQCP_MLKEM_NATIVE_MLKEM1024 \
-	  src/checksums.c \
-	  $(THIRD_PARTY)/mlkem-native/test/build/libmlkem1024.a
-endef
+$(eval $(call NATIVE_MLKEM,768))
+$(eval $(call NATIVE_MLKEM,1024))
 
-$(eval $(call NATIVE_768,small,8))
-$(eval $(call NATIVE_768,big,64))
-$(eval $(call NATIVE_768,verybig,$(TESTS)))
-$(eval $(call NATIVE_1024,small,8))
-$(eval $(call NATIVE_1024,big,64))
-$(eval $(call NATIVE_1024,verybig,$(TESTS)))
+MLKEM_NATIVE_STAMP := $(THIRD_PARTY)/mlkem-native/test/build/.mlkem-native-built
 
-.NOTPARALLEL: $(THIRD_PARTY)/mlkem-native/test/build/libmlkem768.a
-$(THIRD_PARTY)/mlkem-native/test/build/libmlkem768.a:
-	$(MAKE) -C $(THIRD_PARTY)/mlkem-native/ build OPT=1 AUTO=1
+$(THIRD_PARTY)/mlkem-native/test/build/libmlkem768.a: $(MLKEM_NATIVE_STAMP)
+$(THIRD_PARTY)/mlkem-native/test/build/libmlkem1024.a: $(MLKEM_NATIVE_STAMP)
 
-.NOTPARALLEL: $(THIRD_PARTY)/mlkem-native/test/build/libmlkem1024.a
-$(THIRD_PARTY)/mlkem-native/test/build/libmlkem1024.a:
-	$(MAKE) -C $(THIRD_PARTY)/mlkem-native/ build OPT=1 AUTO=1
-
-
+$(MLKEM_NATIVE_STAMP):
+	$(MAKE) -C $(THIRD_PARTY)/mlkem-native build OPT=1 AUTO=1
+	touch $@
 
 #----------------------------------------------------------
 #-- run and check
@@ -172,40 +98,27 @@ $(THIRD_PARTY)/mlkem-native/test/build/libmlkem1024.a:
 run: $(ALL_OUT)
 
 check: run
-	@for t in small big verybig; do \
-		(cmp --silent bin/formosa-mlkem-768-avx2_checksum$$t.out bin/formosa-mlkem-768-ref_checksum$$t.out \
+	@(cmp --silent bin/formosa-mlkem-768-avx2_$(TESTS).out bin/formosa-mlkem-768-ref_$(TESTS).out \
 		 && echo -n "OK - ") || echo -n "ERROR - "; \
-		echo "bin/formosa-mlkem-768-avx2_checksum$$t.out / bin/formosa-mlkem-768-ref_checksum$$t.out"; \
+		echo "bin/formosa-mlkem-768-avx2_$(TESTS).out / bin/formosa-mlkem-768-ref_$(TESTS).out"; \
 		\
-		(cmp --silent bin/formosa-mlkem-1024-avx2_checksum$$t.out bin/formosa-mlkem-1024-ref_checksum$$t.out \
+	(cmp --silent bin/formosa-mlkem-1024-avx2_$(TESTS).out bin/formosa-mlkem-1024-ref_$(TESTS).out \
 		 && echo -n "OK - ") || echo -n "ERROR - "; \
-		echo "bin/formosa-mlkem-1024-avx2_checksum$$t.out / bin/formosa-mlkem-1024-ref_checksum$$t.out"; \
-	done;
+		echo "bin/formosa-mlkem-1024-avx2_$(TESTS).out / bin/formosa-mlkem-1024-ref_$(TESTS).out";
 
 #----------------------------------------------------------
 #-- run-extended and check-extended
 
-run-extended: $(ALL_OUT) $(ALL_EXTENDED_OUT)
+run-extended: run $(ALL_EXTENDED_OUT)
 
-check-extended: run-extended
-	@for t in small big verybig; do \
-		(cmp --silent bin/formosa-mlkem-768-avx2_checksum$$t.out bin/formosa-mlkem-768-ref_checksum$$t.out \
+check-extended: check run-extended
+	@(cmp --silent bin/formosa-mlkem-768-avx2_$(TESTS).out bin/native-mlkem-768_$(TESTS).out \
 		 && echo -n "OK - ") || echo -n "ERROR - "; \
-		echo "bin/formosa-mlkem-768-avx2_checksum$$t.out / bin/formosa-mlkem-768-ref_checksum$$t.out"; \
+		echo "bin/formosa-mlkem-768-avx2_$(TESTS).out / bin/native-mlkem-768_$(TESTS).out"; \
 		\
-		(cmp --silent bin/formosa-mlkem-1024-avx2_checksum$$t.out bin/formosa-mlkem-1024-ref_checksum$$t.out \
+		(cmp --silent bin/formosa-mlkem-1024-avx2_$(TESTS).out bin/native-mlkem-1024_$(TESTS).out \
 		 && echo -n "OK - ") || echo -n "ERROR - "; \
-		echo "bin/formosa-mlkem-1024-avx2_checksum$$t.out / bin/formosa-mlkem-1024-ref_checksum$$t.out"; \
-		\
-		\
-		(cmp --silent bin/formosa-mlkem-768-avx2_checksum$$t.out bin/native-mlkem-768_checksum$$t.out \
-		 && echo -n "OK - ") || echo -n "ERROR - "; \
-		echo "bin/formosa-mlkem-768-avx2_checksum$$t.out / bin/native-mlkem-768_checksum$$t.out"; \
-		\
-		(cmp --silent bin/formosa-mlkem-1024-avx2_checksum$$t.out bin/native-mlkem-1024_checksum$$t.out \
-		 && echo -n "OK - ") || echo -n "ERROR - "; \
-		echo "bin/formosa-mlkem-1024-avx2_checksum$$t.out / bin/native-mlkem-1024_checksum$$t.out"; \
-	done;
+		echo "bin/formosa-mlkem-1024-avx2_$(TESTS).out / bin/native-mlkem-1024_$(TESTS).out"; \
 
 bin/%.out: bin/%
 	./$< > $@
@@ -223,3 +136,5 @@ clean:
 echo-vars:
 	@echo "ALL: $(ALL)"
 	@echo "ALL_OUT: $(ALL_OUT)"
+	@echo "ALL_EXTENDED: $(ALL_EXTENDED)"
+	@echo "ALL_EXTENDED_OUT: $(ALL_EXTENDED_OUT)"
