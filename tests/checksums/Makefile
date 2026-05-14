@@ -99,12 +99,12 @@ run: $(ALL_OUT)
 
 check: run
 	@(cmp --silent bin/formosa-mlkem-768-avx2_$(TESTS).out bin/formosa-mlkem-768-ref_$(TESTS).out \
-		 && echo -n "OK - ") || echo -n "ERROR - "; \
-		echo "bin/formosa-mlkem-768-avx2_$(TESTS).out / bin/formosa-mlkem-768-ref_$(TESTS).out"; \
+		 && echo -n "OK - ") || (echo -n "ERROR - "; \
+		echo "bin/formosa-mlkem-768-avx2_$(TESTS).out / bin/formosa-mlkem-768-ref_$(TESTS).out"; exit 1) \
 		\
 	(cmp --silent bin/formosa-mlkem-1024-avx2_$(TESTS).out bin/formosa-mlkem-1024-ref_$(TESTS).out \
-		 && echo -n "OK - ") || echo -n "ERROR - "; \
-		echo "bin/formosa-mlkem-1024-avx2_$(TESTS).out / bin/formosa-mlkem-1024-ref_$(TESTS).out";
+		 && echo -n "OK - ") || (echo -n "ERROR - "; \
+		echo "bin/formosa-mlkem-1024-avx2_$(TESTS).out / bin/formosa-mlkem-1024-ref_$(TESTS).out"; exit 1)
 
 #----------------------------------------------------------
 #-- run-extended and check-extended
@@ -113,12 +113,12 @@ run-extended: run $(ALL_EXTENDED_OUT)
 
 check-extended: check run-extended
 	@(cmp --silent bin/formosa-mlkem-768-avx2_$(TESTS).out bin/native-mlkem-768_$(TESTS).out \
-		 && echo -n "OK - ") || echo -n "ERROR - "; \
-		echo "bin/formosa-mlkem-768-avx2_$(TESTS).out / bin/native-mlkem-768_$(TESTS).out"; \
+		 && echo -n "OK - ") || (echo -n "ERROR - "; \
+		echo "bin/formosa-mlkem-768-avx2_$(TESTS).out / bin/native-mlkem-768_$(TESTS).out"; exit 1) \
 		\
 		(cmp --silent bin/formosa-mlkem-1024-avx2_$(TESTS).out bin/native-mlkem-1024_$(TESTS).out \
-		 && echo -n "OK - ") || echo -n "ERROR - "; \
-		echo "bin/formosa-mlkem-1024-avx2_$(TESTS).out / bin/native-mlkem-1024_$(TESTS).out"; \
+		 && echo -n "OK - ") || (echo -n "ERROR - "; \
+		echo "bin/formosa-mlkem-1024-avx2_$(TESTS).out / bin/native-mlkem-1024_$(TESTS).out"; exit 1) \
 
 bin/%.out: bin/%
 	./$< > $@
