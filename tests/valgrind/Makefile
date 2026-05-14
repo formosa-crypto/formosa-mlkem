@@ -40,14 +40,14 @@ default: check
 build: $(ALL)
 
 define FORMOSA_MLKEM
-bin/formosa-mlkem-$(1)-$(2)_$(TESTS): src/memory.c $(SRC)/$(1)/$(2)/jkem.s $(RANDOM_BYTES)/librandombytes1.a | bin/
+bin/formosa-mlkem-$(1)-$(2)_$(TESTS): src/valgrind.c $(SRC)/$(1)/$(2)/jkem.s $(RANDOM_BYTES)/librandombytes1.a | bin/
 	$(CC) $(CFLAGS) \
 	  -o $$@ \
 	  -I $(SRC)/$(1)/$(2)/include/ \
 	  -DTESTS=$(TESTS) \
 	  -DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem$(1)_amd64_$(2) \
 	  -DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem$(1)_amd64_$(2) \
-	  src/memory.c \
+	  src/valgrind.c \
 	  $(RANDOM_BYTES)/librandombytes1.a \
 	  $(SRC)/$(1)/$(2)/jkem.s
 endef
@@ -69,6 +69,7 @@ check: run
 	@if ls bin/*.error >/dev/null 2>&1; then \
 		echo -n "ERROR - "; \
 		ls bin/*.error; \
+		exit 1; \
 	else \
 		echo "OK - no *.error files"; \
 	fi

@@ -11,7 +11,7 @@
 // ////////////////////////////////////////////////////////////////////////////
 // api
 #ifndef JADE_NAMESPACE
-#error "memory.c requires the macro JADE_NAMESPACE to be defined. \
+#error "valgrind.c requires the macro JADE_NAMESPACE to be defined. \
         - for instance, -DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem_amd64_avx2"
 #endif
 
