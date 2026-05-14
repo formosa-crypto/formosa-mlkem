@@ -58,7 +58,7 @@ int main(void)
   uint8_t *enc_random_coins;
   size_t t;
   
-  public_key = malloc(mlkem_PUBLICKEYBYTES-1);
+  public_key = malloc(mlkem_PUBLICKEYBYTES);
   secret_key = malloc(mlkem_SECRETKEYBYTES);
   shared_secret_a = malloc(mlkem_BYTES);
   ciphertext = malloc(mlkem_CIPHERTEXTBYTES);
