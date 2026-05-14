@@ -535,7 +535,7 @@ void test(unsigned char*,state *);
 
 state* preallocate(void)
 {
-  state *s = calloc(sizeof(state), 1);
+  state *s = calloc(1, sizeof(state));
   return s;
 }
 
