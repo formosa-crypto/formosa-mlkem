@@ -1,79 +1,92 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-BIN_DIR="./bench/bin"
-TARGETS_768=("test_jasmin_768_ref" "test_jasmin_768_avx2")
-TARGETS_1024=("test_jasmin_1024_ref" "test_jasmin_1024_avx2")
+set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 
-set -e
+cd "$REPO_ROOT"
 
-SHA_FILE_768="$BIN_DIR/test_mlkem_native_768.sha"
-if [ ! -f "$SHA_FILE_768" ]; then
-    echo "ERROR: Expected SHA file not found: $SHA_FILE_768" >&2
+if [[ $# -lt 1 ]]; then
+    echo "Usage: $0 <number of tests>" >&2
     exit 1
 fi
-EXPECTED_SHA_768=$(tail -n 1 "$SHA_FILE_768" | tr -d '\r\n')
 
+TESTS="$1"
 
-SHA_FILE_1024="$BIN_DIR/test_mlkem_native_1024.sha"
-if [ ! -f "$SHA_FILE_1024" ]; then
-    echo "ERROR: Expected SHA file not found: $SHA_FILE_1024" >&2
+if ! [[ "$TESTS" =~ ^[0-9]+$ ]]; then
+    echo "Error: argument must be a positive integer" >&2
     exit 1
 fi
-EXPECTED_SHA_1024=$(tail -n 1 "$SHA_FILE_1024" | tr -d '\r\n')
 
+BIN_DIR="./tests/checksums/bin"
 
-echo "## MLKEM Implementation Checksum Comparison" >> "$GITHUB_STEP_SUMMARY"
-echo '| **Implementation** | **Result** |' >> "$GITHUB_STEP_SUMMARY"
-echo '| :--- | :---: |' >> "$GITHUB_STEP_SUMMARY"
+TARGETS_768=(
+    "formosa-mlkem-768-ref"
+    "formosa-mlkem-768-avx2"
+    "native-mlkem-768"
+)
+
+TARGETS_1024=(
+    "formosa-mlkem-1024-ref"
+    "formosa-mlkem-1024-avx2"
+    "native-mlkem-1024"
+)
+
+SUMMARY_FILE="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
+
+echo "## MLKEM Implementation Checksum Comparison" >> "$SUMMARY_FILE"
+echo "" >> "$SUMMARY_FILE"
+echo "| **Parameter set** | **Implementation** | **Result** |" >> "$SUMMARY_FILE"
+echo "| :--- | :--- | :---: |" >> "$SUMMARY_FILE"
 
 FAILURE_COUNT=0
 
+check_group() {
+    local PARAM_SET="$1"
+    shift
 
-for BASENAME in "${TARGETS_768[@]}"; do
-    SHA_FILE="$BIN_DIR/$BASENAME.sha"
+    local EXPECTED_CHECKSUM=""
+    local REFERENCE_TARGET=""
+    local BASENAME
+    local CHECKSUM_FILE
+    local ACTUAL_CHECKSUM
+    local STATUS
 
-    if [ -f "$SHA_FILE" ]; then
-        ACTUAL_SHA=$(tail -n 1 "$SHA_FILE" | tr -d '\r\n')
-    else
-        echo "| **$BASENAME** | ❓ |" >> "$GITHUB_STEP_SUMMARY"
-        FAILURE_COUNT=$((FAILURE_COUNT + 1))
-        continue
-    fi
-    
-    if [ "$ACTUAL_SHA" == "$EXPECTED_SHA_768" ]; then
-        STATUS="✅"
-    else
-        STATUS="❌"
-        FAILURE_COUNT=$((FAILURE_COUNT + 1))
-    fi
-    echo "| **$BASENAME** | $STATUS |" >> "$GITHUB_STEP_SUMMARY"
-done
+    for BASENAME in "$@"; do
+        CHECKSUM_FILE="$BIN_DIR/${BASENAME}_${TESTS}.out"
 
-for BASENAME in "${TARGETS_1024[@]}"; do
-    SHA_FILE="$BIN_DIR/$BASENAME.sha"
+        if [[ ! -f "$CHECKSUM_FILE" ]]; then
+            echo "| **$PARAM_SET** | **$BASENAME** | ❓ missing |" >> "$SUMMARY_FILE"
+            FAILURE_COUNT=$((FAILURE_COUNT + 1))
+            continue
+        fi
 
-    if [ -f "$SHA_FILE" ]; then
-        ACTUAL_SHA=$(tail -n 1 "$SHA_FILE" | tr -d '\r\n')
-    else
-        echo "| **$BASENAME** | ❓ |" >> "$GITHUB_STEP_SUMMARY"
-        FAILURE_COUNT=$((FAILURE_COUNT + 1))
-        continue
-    fi
-    
-    if [ "$ACTUAL_SHA" == "$EXPECTED_SHA_1024" ]; then
-        STATUS="✅"
-    else
-        STATUS="❌"
-        FAILURE_COUNT=$((FAILURE_COUNT + 1))
-    fi
-    echo "| **$BASENAME** | $STATUS |" >> "$GITHUB_STEP_SUMMARY"
-done
+        ACTUAL_CHECKSUM="$(tail -n 1 "$CHECKSUM_FILE" | tr -d '\r\n')"
+
+        if [[ -z "$EXPECTED_CHECKSUM" ]]; then
+            EXPECTED_CHECKSUM="$ACTUAL_CHECKSUM"
+            REFERENCE_TARGET="$BASENAME"
+            STATUS="✅ (used as reference)"
+        elif [[ "$ACTUAL_CHECKSUM" == "$EXPECTED_CHECKSUM" ]]; then
+            STATUS="✅"
+        else
+            STATUS="❌ differs from $REFERENCE_TARGET"
+            FAILURE_COUNT=$((FAILURE_COUNT + 1))
+        fi
+
+        echo "| **$PARAM_SET** | **$BASENAME** | $STATUS |" >> "$SUMMARY_FILE"
+    done
+}
+
+check_group "ML-KEM-768" "${TARGETS_768[@]}"
+check_group "ML-KEM-1024" "${TARGETS_1024[@]}"
 
 echo "---"
-if [ "$FAILURE_COUNT" -gt 0 ]; then
-    echo "Summary: $FAILURE_COUNT implementation(s) FAILED checksum validation. Job is failing."
+
+if [[ "$FAILURE_COUNT" -gt 0 ]]; then
+    echo "Summary: $FAILURE_COUNT implementation(s) failed checksum validation."
     exit 1
 else
-    echo "Summary: All required Jasmin implementations matched the mlkem-native checksums."
+    echo "Summary: all implementations matched within their ML-KEM parameter set."
 fi

@@ -9,9 +9,12 @@
 [submodule "code/kyber"]
 	path = code/kyber
 	url = https://github.com/pq-crystals/kyber.git
-[submodule "bench/src/mlkem-native"]
-	path = bench/src/mlkem-native
+[submodule "bench/third_party/mlkem-native"]
+	path = bench/third_party/mlkem-native
 	url = https://github.com/pq-code-package/mlkem-native.git
 [submodule "jasmin"]
 	path = jasmin
 	url = https://gitlab.com/jasmin-lang/jasmin-compiler.git
+[submodule "bench/third_party/mlkem-libjade"]
+	path = bench/third_party/mlkem-libjade
+	url = https://github.com/pq-code-package/mlkem-libjade.git
