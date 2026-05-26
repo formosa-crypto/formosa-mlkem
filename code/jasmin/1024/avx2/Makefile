@@ -14,15 +14,12 @@ OS     := $(shell uname -s)
 default:
 	@true
 
-keccak_test: test/test_keccak test/test_oldkeccak 
+keccak_test: test/test_keccak
 
 JINC = kem.jinc ../../common/avx2/params.jinc params.jinc ../../common/avx2/consts.jinc ../../common/avx2/verify.jinc ../../common/avx2/reduce.jinc \
        ../../common/avx2/polyvec.jinc polyvec.jinc ../../common/avx2/poly.jinc poly.jinc indcpa.jinc gen_matrix.jinc ../../common/avx2/mlkem_keccak_avx2.jinc
 
 test/test_keccak: test/test_keccak.c test/test_keccak_ref.s test/test_keccak_avx2.s
-	$(CC) $(CFLAGS) -o $@ $^
-
-test/test_oldkeccak: test/test_keccak.c test/test_keccak_oldref.s test/test_keccak_oldavx2.s
 	$(CC) $(CFLAGS) -o $@ $^
 
 jkem.s: $(JINC) jkem.jazz
