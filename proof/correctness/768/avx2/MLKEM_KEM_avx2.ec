@@ -5,12 +5,10 @@ from JazzEC require import Jkem768_avx2.
 from JazzEC require import Array1152 Array32 Array960 Array1184 Array1152 Array64 Array128 Array160 Array2400 WArray2400 WArray1184 WArray64 Array1600 Array1088 WArray1088 Array1120 Array136.
 from Jasmin require import JModel.
 
-from CryptoSpecs require import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE768 MLKEM768 Correctness768.
+from Spec require import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE768 MLKEM768 Correctness768.
 import Serialization768 Symmetric768 VecMat768.
-require import Fq MLKEM_Poly MLKEM_PolyVec MLKEM_InnerPKE MLKEM_InnerPKE_avx2 MLKEMFCLib.
-
-import MLKEM_Poly.
-import MLKEM_PolyVec.
+require import Fq MLKEM_InnerPKE_avx2_new MLKEMFCLib.
+import MLKEMFCLib768.
 
 require import MLKEM_keccak_avx2.
 

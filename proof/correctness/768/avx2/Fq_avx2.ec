@@ -5,12 +5,18 @@ from JazzEC require import Array16 WArray512 WArray32 WArray16.
 
 require import W16extra.
 
-require import Fq MLKEM_Poly MLKEMFCLib.
+require import Fq MLKEMFCLib.
+import MLKEMFCLib768.
 require import AVX2_Ops MLKEM_Poly_avx2_prevec.
 require import Montgomery16.
 
-import Fq MLKEM_Poly.
+import Fq.
 import SignedReductions.
+
+(* relocated from ref's MLKEM_Poly.ec (pure Zq/Montgomery fact). *)
+from Spec require import GFq.
+import Zq.
+lemma rrinvcoeff : incoeff R * incoeff 169 = Zq.one by rewrite -incoeffM -eq_incoeff; apply RRinv.
 
 theory Fq_avx2.
 
@@ -49,7 +55,7 @@ module MLKEM_avx2_encdec = {
 
     i <- 0;
     while(i < 16) {
-      t <@Jkem768.M.__barrett_reduce(r.[i]);
+      t <@ Fq.FQMUL_AVX.__barrett_reduce(r.[i]);
       r.[i] <- t;
       i <- i + 1;
     }
@@ -686,7 +692,7 @@ have -> : Pr[Mprevec.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m : true] = 1%
 byphoare => //; apply fqmulx16_ll.
 qed.
 
-from CryptoSpecs require import GFq Correctness768.
+from Spec require import GFq Correctness768.
 import Zq.
 
 lemma compress_avx2_impl_small (a: W16.t):

@@ -2,15 +2,16 @@ require import AllCore IntDiv List.
 
 from Jasmin require import JModel.
 
-from CryptoSpecs require import JWordList.
+require import JWordList.
 from CryptoSpecs require import FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
 
 from Keccak require import Keccakf1600_ref.
 
 from CryptoSpecs require export Keccak1600_Spec Keccakf1600_Spec.
 
-from CryptoSpecs require import Symmetric.
+from Spec require import Symmetric.
 require import MLKEMFCLib.
+import MLKEMFCLib768.
 
 from JazzEC require import Jkem768_avx2 WArray200.
 
@@ -20,37 +21,7 @@ from JazzEC require import Jkem768_avx2 WArray200.
 (****************************************************************************)
 (****************************************************************************)
 from Keccak require import Keccak1600_avx2.
-
-equiv state_init_avx2_eq:
- M.__state_init_avx2 ~ Keccak1600_Jazz.M.__state_init_avx2
- : ={arg} ==> ={res}
- by sim.
-
-equiv addratebit_avx2_eq:
- M.__addratebit_avx2 ~ Keccak1600_Jazz.M.__addratebit_avx2
- : ={arg} ==> ={res}
- by sim.
-
-(****************************************************************************)
-(****************************************************************************)
-from Keccak require import Keccak1600_avx2.
-
-(****************************************************************************)
-(****************************************************************************)
 from Keccak require import Keccak1600_avx2x4.
-
-equiv state_init_avx2x4_eq:
- M.__state_init_avx2x4 ~ Keccak1600_Jazz.M.__state_init_avx2x4
- : ={arg} ==> ={res}
- by sim.
-
-equiv addratebit_avx2x4_eq:
- M.__addratebit_avx2x4 ~ Keccak1600_Jazz.M.__addratebit_avx2x4
- : ={arg} ==> ={res}
- by sim.
-
-(****************************************************************************)
-(****************************************************************************)
 
 from Keccak require import Keccakf1600_avx2 Keccakf1600_avx2x4.
 from JazzEC require import WArray1152.

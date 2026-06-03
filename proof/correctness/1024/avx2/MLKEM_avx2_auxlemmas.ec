@@ -6,10 +6,9 @@ from JazzEC require import Array1024 Array400 Array384 Array256 Array128 Array64
 from JazzEC require import WArray2048 WArray1536 WArray512 WArray32 WArray16.
 
 require import W16extra AVX2_Ops MLKEMFCLib.
-from CryptoSpecs require import GFq.
+import MLKEMFCLib1024.
+from Spec require import GFq.
 
-require import MLKEM_Poly.
-import MLKEM_Poly.
 import Zq.
 
 op lift2poly (p: W256.t): W16.t Array16.t =

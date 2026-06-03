@@ -5,13 +5,14 @@ from Jasmin require import JModel.
 from JazzEC require import WArray512 WArray256 WArray128 WArray8 WArray2 WArray32.
 from JazzEC require import Array2 Array8 Array16 Array25 Array32 Array33 Array128 Array136 Array768 Array960 Array1024 Array1088 Array2304 Array2144 Array536 Array256.
 
-require import MLKEM_InnerPKE NTT_avx2 MLKEMFCLib AVX2_Ops NTT_AVX_Fq MLKEM_Poly_avx2_vec.
+require import MLKEM_W16_Rep NTT_avx2 MLKEMFCLib AVX2_Ops NTT_AVX_Fq MLKEM_Poly_avx2_vec.
+import MLKEMFCLib768.
 
 require import MLKEM_keccak_avx2.
 
 import NTT_Avx2.
 
-from JazzEC require import Jkem768_avx2 Jkem768.
+from JazzEC require import Jkem768_avx2.
 
 import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE768 MLKEM768 Fq Correctness768.
 import Symmetric768 Serialization768 VecMat768 PolyMat.
@@ -275,66 +276,12 @@ module HmoduleLow = {
    }
 }.
 
-equiv Hmodule_connection :
-   HmoduleLow.__gen_matrix ~ AuxMLKEM.__gen_matrix :
-    ={arg} ==> ={res}.
-proc. 
-case (trans{1});last first.
-+ rcondf{1} 1; 1: by auto.
-  inline {1} 1;wp. 
-  conseq (: _ ==> ={a}) => //.  
-  while (0<=i{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i} /\ !trans{1} /\
-         (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat);
-   last by auto => />;smt(eq_matrixP getmE). 
-  wp;conseq />;1:smt().
-  while (0<=i{1}<kvec /\ 0<=j{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i,j} /\ !trans{1} /\
-         (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat /\
-         (forall kk, 0<=kk<j{1} => a{1}.[i{1},kk] = a{2}.[i{1},kk])%PolyMat);
-   last by auto => />;smt(getmE). 
-   inline XOF.init; sp;wp. 
-   exlim rho{2}, i0{2}, j0{2}  => _rho _i _j.
-   call {2} (parse_sem (SHAKE128_ABSORB_34 _rho (W8.of_int _i) (W8.of_int _j)) _rho (W8.of_int _i) (W8.of_int _j)).
-   auto => /> &1 &2 a1 ?????H H0?;do split;1,2: smt(). 
-   + move => kk jj ????.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = i{2} /\ jj = j{2}); 1: by smt().
-     move => ?;case (kk < i{2});
-      1: by move => ?;move : (H kk jj _ _);  smt().
-     move => ?;move : (H0 jj _); smt().
-   + move => kk ??.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = j{2}); 1: by smt().
-     by move => ?;move : (H0 kk _); smt().
-rcondt{1} 1; 1: by auto.
-inline {1} 1;wp. 
-conseq (: _ ==> ={a}) => //.  
-while (0<=i{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i} /\ trans{1} /\
-       (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat);
- last by auto => />;smt(eq_matrixP getmE). 
-wp;conseq />;1:smt().
-while (0<=i{1}<kvec /\ 0<=j{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i,j} /\ trans{1} /\
-       (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat /\
-       (forall kk, 0<=kk<j{1} => a{1}.[i{1},kk] = a{2}.[i{1},kk])%PolyMat);
- last by auto => />;smt(getmE). 
- inline XOF.init; sp;wp. 
- exlim rho{2}, i0{2}, j0{2}  => _rho _i _j.
- call {2} (parse_sem (SHAKE128_ABSORB_34 _rho (W8.of_int _i) (W8.of_int _j)) _rho (W8.of_int _i) (W8.of_int _j)).
-   auto => /> &1 &2 a1 ?????H H0?;do split;1,2: smt(). 
-   + move => kk jj ????.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = i{2} /\ jj = j{2}); 1: by smt().
-     move => ?;case (kk < i{2});
-      1: by move => ?;move : (H kk jj _ _);  smt().
-     move => ?;move : (H0 jj _); smt().
-   + move => kk ??.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = j{2}); 1: by smt().
-     by move => ?;move : (H0 kk _); smt().
-qed.
+(* `Hmodule_connection` (HmoduleLow ↔ AuxMLKEM) and `genmatrixequiv_aux`
+   (avx2 ↔ AuxMLKEM) deleted -- AuxMLKEM lives in ref-tree
+   `MLKEM_InnerPKE.ec` and pulls ref-Jasmin via its noise/keypair_jazz
+   siblings.  Replacement at end of file:
+   `gen_matrix_avx2_Hmodule_equiv` composes `_gen_matrix_avx2_sem` directly
+   with `Hmodule.gen_matrix` (now defined in Correctness768.ec). *)
 
 phoare Hmodule_low_sem _sd b :
  [  HmoduleLow.__gen_matrix : arg=(_sd,b) ==> res = if b 
@@ -382,7 +329,7 @@ rewrite -getmE; congr.
 smt().
 qed.
 
-from CryptoSpecs require import JWordList EclibExtra.
+require import JWordList EclibExtra.
 from Keccak require import Keccak1600_avx2x4.
 require import MLKEM_keccak_avx2.
 require import Mlkem_filters_bridge.
@@ -1121,50 +1068,73 @@ move => *;rewrite initiE 1:/# /=.
 by rewrite /subarray1024 initiE /#.
 qed.
 
-equiv genmatrixequiv_aux b : 
-    Jkem768_avx2.M._gen_matrix_avx2    ~   AuxMLKEM.__gen_matrix :
+
+(* ============================================================
+   Hmodule.gen_matrix sem + direct avx2 ↔ Hmodule.gen_matrix equiv.
+   Replaces the deleted Hmodule_connection + genmatrixequiv_aux chain
+   that routed through AuxMLKEM (ref-Jasmin-pulling).
+   ============================================================ *)
+
+(* pos_bound part of the deleted ref-tree `matrix_unlift` -- local copy. *)
+lemma matrix_unlift_pos_bound a :
+  pos_bound2304_cxq (unlift_matrix a) 0 2304 2.
+proof.
+rewrite /unlift_matrix /pos_bound2304_cxq => k kb; rewrite initiE //=.
+rewrite /smod /=; smt(Zq.rg_asint).
+qed.
+
+phoare Hmodule_gen_matrix_sem _sd b :
+ [Hmodule.gen_matrix : arg = (_sd, b) ==>
+    res = if b then unlift_matrix (trmx (sampleA _sd))
+               else unlift_matrix (sampleA _sd) ] = 1%r.
+proof.
+proc; case trans; last first.
++ rcondf 1;1: by auto.
+  by call (sampleA_sem _sd); auto => />.
+rcondt 1;1: by auto.
+call (sampleAT_sem _sd); auto => />.
+qed.
+
+equiv gen_matrix_avx2_Hmodule_equiv b :
+    Jkem768_avx2.M._gen_matrix_avx2 ~ Hmodule.gen_matrix :
  rho{1} = seed{2} /\ transposed{1} = (of_int (b2i b))%W64 /\ trans{2} = b ==>
-res{1} = nttunpackm res{2} /\ pos_bound2304_cxq res{1} 0 2304 2 /\ pos_bound2304_cxq res{2} 0 2304 2.
-proc* => //.
-transitivity {2} { r <@ HmoduleLow.__gen_matrix(seed,trans); }
-    (rho{1} = seed{2} /\ transposed{1} = (W64.of_int (b2i b)) /\ trans{2} = b ==> 
-     r{1} = nttunpackm r{2} /\ pos_bound2304_cxq r{1} 0 2304 2 /\ pos_bound2304_cxq r{2} 0 2304 2)
-    (={seed,trans} ==> ={r});1,2:smt();last by call Hmodule_connection => />.
-ecall {2} (Hmodule_low_sem seed{2} trans{2}) => /=.
+ res{1} = nttunpackm res{2} /\ pos_bound2304_cxq res{1} 0 2304 2 /\ pos_bound2304_cxq res{2} 0 2304 2.
+proc *.
+ecall {2} (Hmodule_gen_matrix_sem seed{2} trans{2}) => /=.
 ecall {1} (_gen_matrix_avx2_sem rho{1} trans{2}) => /=.
 auto => /> &1;split;1:smt().
-split; 2: by smt(matrix_unlift).
+split; 2: by smt(matrix_unlift_pos_bound).
 rewrite /nttunpack /nttunpackm.
 rewrite /pos_bound2304_cxq => k kb.
 case b => Hb.
-+ rewrite !initiE 1:/# /=. 
-  case (0<= k < 768).  
++ rewrite !initiE 1:/# /=.
+  case (0<= k < 768).
   + move => kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix (trmx (sampleA seed{1}))) 0))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
-   by smt(matrix_unlift).
-  case (768<= k < 1536).  
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
+   by smt(matrix_unlift_pos_bound).
+  case (768<= k < 1536).
   + move => ? kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix (trmx (sampleA seed{1}))) 1))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
-   by smt(matrix_unlift).
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
+   by smt(matrix_unlift_pos_bound).
   move => ??; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix (trmx (sampleA seed{1}))) 2))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
-   by smt(matrix_unlift).
-+ rewrite !initiE 1:/# /=. 
-  case (0<= k < 768).  
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
+   by smt(matrix_unlift_pos_bound).
++ rewrite !initiE 1:/# /=.
+  case (0<= k < 768).
   + move => kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix ( (sampleA seed{1}))) 0))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
-   by smt(matrix_unlift).
-  case (768<= k < 1536).  
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
+   by smt(matrix_unlift_pos_bound).
+  case (768<= k < 1536).
   + move => ? kbb; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix ( (sampleA seed{1}))) 1))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
-   by smt(matrix_unlift).
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
+   by smt(matrix_unlift_pos_bound).
   move => ??; have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
    (nttunpackv (subarray768 (unlift_matrix ( (sampleA seed{1}))) 2))); last by smt(Array768.allP).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.  
-   by smt(matrix_unlift).
+   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
+   by smt(matrix_unlift_pos_bound).
 qed.

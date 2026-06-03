@@ -16,14 +16,12 @@ idirs = Keccak:formosa-keccak/proof/amd64/avx2
 idirs = JazzEC:formosa-keccak/proof/amd64/extracted
 
 
-idirs = CryptoSpecs:crypto-specs/arrays
-idirs = CryptoSpecs:crypto-specs/common
-rdirs = CryptoSpecs:crypto-specs/fips202
-rdirs = CryptoSpecs:crypto-specs/ml-kem
+idirs = CryptoSpecs:formosa-keccak/submodules/crypto-specs/common
+rdirs = CryptoSpecs:formosa-keccak/submodules/crypto-specs/fips202
 
-idirs = JazzEC:crypto-specs/arrays
-idirs = JazzEC:crypto-specs/common
-idirs = JazzEC:code/jasmin/768/ref/extraction
-idirs = JazzEC:code/jasmin/1024/ref/extraction
+idirs = Spec:proof/spec
+idirs = Spec:proof/spec/properties
+
+idirs = JazzEC:proof/arrays
 idirs = JazzEC:code/jasmin/768/avx2/extraction
 idirs = JazzEC:code/jasmin/1024/avx2/extraction

@@ -5,14 +5,14 @@ from JazzEC require import Array256 Array128  Array16.
 from JazzEC require import Array256 Array128 Array32 Array16 Array1024 Array4096.
 
 require import MLKEMFCLib.
-require import MLKEM_PolyVec.
+import MLKEMFCLib1024.
+require import MLKEM_W16_Rep.
 require import NTT_Fq.
 require import AVX2_Ops.
 
-from CryptoSpecs require import GFq Rq Serialization VecMat Correctness1024.
+from Spec require import GFq Rq Serialization VecMat Correctness1024.
 import VecMat1024 Serialization1024.
 
-import MLKEM_PolyVec.
 import Zq IntOrder BitReverse.
 import PolyVec PolyMat.
 theory NTT_Avx2.
@@ -663,8 +663,6 @@ proof.
   rewrite -iotaredE //=.
 qed.
 
-require import MLKEM_Poly.
-import MLKEM_Poly.
 lemma lift_nttpack v : lift_array256 (nttpack v) = nttpack (lift_array256 v).
 proof. 
 rewrite tP => k kb.
@@ -746,7 +744,7 @@ pose a:= nttunpack_idx.[k].
 rewrite initiE //= mapiE //=. smt(nttunpack_bnd Array256.allP).
 qed.
 
-from JazzEC require import Jkem1024_avx2 Jkem1024.
+from JazzEC require import Jkem1024_avx2.
 require import NTT_AVX_Fq NTT_AVX_j.
 
 lemma perm_ntt_nttpackE ['a] (p: 'a Array256.t):
@@ -908,7 +906,7 @@ wp;call (poly_invntt_avx2_corr (Array256.init (fun (i : int) => _r.[0 + i]))).
 
 skip =>  &m [#] /= H_r Hb.
 
-rewrite !land_foo.
+rewrite !andaE.
 do split. 
 + move :Hb; rewrite /signed_bound_cxq /signed_bound1024_cxq => Hb; rewrite lift_nttpack /= lift_array_256_1024 /= nttpack_subarray1024 H_r tP => k kb.
   rewrite initiE 1:/# !mapiE 1,2:/# /= initiE /#. 
@@ -923,7 +921,7 @@ do split.
 
 move => [#] H5 H6 r0.
 rewrite lift_nttpack =>  [#] Hr0 H7. 
-rewrite !land_foo.
+rewrite !andaE.
 do split. 
  + rewrite !lift_array_256_1024_k 1..2:/#; rewrite -H_r; rewrite nttpack_subarray1024_k //.
     by rewrite tP => />i Hi1 Hi2; rewrite !initiE //= /nttpackv /lift_array1024 /map !initiE //= 1..2:/# ifF 1:/# ifF 1:/# ifT 1:/# ifF 1:/# ifF 1:/# ifT 1:/#;congr; congr; rewrite /subarray256 tP => />j Hj1 Hj2; rewrite !initiE //= initiE //= 1:/# !initiE //= 1,2:/#  !initiE //= /#.
@@ -931,7 +929,7 @@ do split.
 
 move => r1.  
 rewrite lift_nttpack =>  [#] Hr1 H8.
-rewrite !land_foo.
+rewrite !andaE.
 do split. 
  + rewrite !lift_array_256_1024_k 1..2:/#; rewrite -H_r; rewrite nttpack_subarray1024_k //.
    rewrite tP => />i Hi1 Hi2; rewrite !initiE //= /nttpackv /lift_array1024 /map !initiE //= 1..2:/# ifF 1:/# ifF 1:/# ifF 1:/# ifF 1:/# ifF 1:/# ifF 1:/# ; congr; congr; rewrite /subarray256 tP => />j Hj1 Hj2; rewrite !initiE //= initiE //= 1:/# initiE //= 1:/# !initiE //= 1,2:/# initiE //= /#.

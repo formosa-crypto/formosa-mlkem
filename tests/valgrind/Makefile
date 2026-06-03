@@ -18,9 +18,7 @@ SRC := $(abspath ../../code/jasmin/)
 
 ALL := \
   bin/formosa-mlkem-768-avx2 \
-  bin/formosa-mlkem-1024-avx2 \
-  bin/formosa-mlkem-768-ref \
-  bin/formosa-mlkem-1024-ref
+  bin/formosa-mlkem-1024-avx2
 
 #--
 
@@ -52,9 +50,7 @@ bin/formosa-mlkem-$(1)-$(2)_$(TESTS): src/valgrind.c $(SRC)/$(1)/$(2)/jkem.s $(R
 	  $(SRC)/$(1)/$(2)/jkem.s
 endef
 
-$(eval $(call FORMOSA_MLKEM,768,ref))
 $(eval $(call FORMOSA_MLKEM,768,avx2))
-$(eval $(call FORMOSA_MLKEM,1024,ref))
 $(eval $(call FORMOSA_MLKEM,1024,avx2))
 
 $(RANDOM_BYTES)/librandombytes1.a:

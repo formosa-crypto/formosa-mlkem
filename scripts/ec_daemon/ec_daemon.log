@@ -1,0 +1,78 @@
+READY [uuid:0]
+<END>
+>>> LOAD "/Users/mbb/Desktop/Repos/formosa-mlkem/proof/correctness/1024/avx2/MLKEM_InnerPKE_avx2_new.ec" 1278
+<<< ERROR [uuid:794]
+/Users/mbb/Desktop/Repos/formosa-mlkem/proof/correctness/1024/avx2/MLKEM_InnerPKE_avx2_new.ec: line 1177 (40-52): no matching operator, named `_.[_]', for the following parameters' type:
+  [1]: W8.t Array33.Array33.t
+  [2]: int
+source: + seq 11 5 : (randomnessp{1} = coins{2} /\
+              rho{2} = (G_coins_ds coins{2}).`1 /\
+              s{2} = (prg_kg_inner coins{2}).`2 /\
+              e{2} = (prg_kg_inner coins{2}).`3 /\
+              inc{1} = 4 /\
+              (forall k, 0 <= k < 32 => inbuf{1}.[k] = randomnessp{1}.[k])).
+Current goal (remaining: 2)
+
+Type variables: <none>
+
+------------------------------------------------------------------------
+&1 (left ) : {inc, i : int, nonce : W8.t, t64, transposed : W64.t,
+             randomnessp, publicseed, noiseseed : W8.t Array32.t,
+             buf : W8.t Array64.t,
+             aux, aux_0, aux_1, aux_2 : W16.t Array256.t,
+             inbuf : W8.t Array33.Array33.t, pk : W8.t Array1568.t,
+             skpv, e, pkpv : W16.t Array1024.t, sk, aux_3 : W8.t Array1536.t,
+             aa : W16.t Array4096.t}
+&2 (right) : {coins, rho : W8.t Array32.t, tv, sv : W8.t Array1536.t,
+             t, s, e : polyvec, a : polymat}
+
+pre = randomnessp{1} = coins{2}
+
+aa <- witness<:W16.t Array4096.t>                              ( 1--)  e <- witness<:polyvec>           
+buf <- witness<:W8.t Array64.t>                                ( 2--)  s <- witness<:polyvec>           
+e <- witness<:W16.t Array1024.t>                               ( 3--)  sv <- witness<:W8.t Array1536.t> 
+inbuf <- witness<:W8.t Array33.Array33.t>                      ( 4--)  tv <- witness<:W8.t Array1536.t> 
+noiseseed <- witness<:W8.t Array32.t>                          ( 5--)  (rho, s, e) <- prg_kg_inner coins
+pkpv <- witness<:W16.t Array1024.t>                            ( 6--)                                   
+publicseed <- witness<:W8.t Array32.t>                         ( 7--)                                   
+skpv <- witness<:W16.t Array1024.t>                            ( 8--)                                   
+inc <- 32 %/ 8                                                 ( 9--)                                   
+i <- 0                                                         (10--)                                   
+while (i < inc) {                                              (11--)                                   
+  t64 <-                                                       (11.1)                                   
+    get64 (init8 (fun (i_0 : int) => randomnessp.[i_0])) i     (    )                                   
+  inbuf <-                                                     (11.2)                                   
+    Array33.Array33.init                                       (    )                                   
+      (get8                                                    (    )                                   
+         (set64 (init8 (fun (i_0 : int) => inbuf.[i_0])) i     (    )                                   
+            t64))                                              (    )                                   
+  i <- i + 1                                                   (11.3)                                   
+}                                                              (11--)                                   
+inbuf <- inbuf.[32 <- of_int 4]                                (12--)                                   
+buf <@ M._sha3_512A_A33(buf, inbuf)                            (13--)                                   
+inc <- 32 %/ 8                                                 (14--)                                   
+i <- 0                                                         (15--)                                   
+while (i < inc) {                                              (16--)                                   
+  t64 <- get64 (init8 (fun (i_0 : int) => buf.[i_0])) i        (16.1)                                   
+  publicseed <-                                                (16.2)                                   
+    init                                                       (    )                                   
+      (get8                                                    (    )                                   
+         (set64 (init8 (fun (i_0 : int) => publicseed.[i_0]))  (    )                                   
+            i t64))                                            (    )                                   
+  t64 <-                                                       (16.3)                                   
+    get64 (init8 (fun (i_0 : int) => buf.[i_0]))               (    )                                   
+      (i + 32 %/ 8)                                            (    )                                   
+  noiseseed <-                                                 (16.4)                                   
+    init                                                       (    )                                   
+      (get8                                                    (    )                                   
+         (set64 (init8 (fun (i_0 : int) => noiseseed.[i_0]))   (    )                                   
+            i t64))                                            (    )                                   
+  i <- i + 1                                                   (16.5)                                   
+}                                                              (16--)                                   
+
+post =
+  randomnessp{1} = coins{2} /\
+  publicseed{1} = rho{2} /\
+  noiseseed{1} = (G_coins_ds coins{2}).`2 /\
+  s{2} = (prg_kg_inner coins{2}).`2 /\ e{2} = (prg_kg_inner coins{2}).`3
+<END>

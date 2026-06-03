@@ -6,11 +6,12 @@ from JazzEC require import WArray512 WArray32 WArray16.
 
 require import W16extra.
 require import AVX2_Ops MLKEM_Poly_avx2_prevec NTT_avx2 Fq_avx2 MLKEM_avx2_auxlemmas.
-require import Fq NTT_Fq MLKEM_Poly MLKEMFCLib.
+require import Fq NTT_Fq MLKEMFCLib.
+import MLKEMFCLib768.
 
-from JazzEC require import Jkem768_avx2 Jkem768.
+from JazzEC require import Jkem768_avx2.
 
-from CryptoSpecs require import GFq Rq Serialization VecMat Correctness768.
+from Spec require import GFq Rq Serialization VecMat Correctness768.
 
 theory MLKEM_PolyAVX.
 
@@ -21,7 +22,6 @@ import Zq.
 import ZModP.
 import Fq_avx2.
 import NTT_Avx2.
-import MLKEM_Poly.
 import Serialization768 VecMat768.
 
 lemma poly_add_corr_h _a _b ab bb :

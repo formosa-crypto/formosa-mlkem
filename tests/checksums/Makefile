@@ -1,4 +1,4 @@
-.PHONY: default build run check clean echo-vars
+.PHONY: default build run check-extended clean echo-vars
 
 #----------------------------------------------------------
 
@@ -18,9 +18,7 @@ SRC := $(abspath ../../code/jasmin/)
 
 ALL := \
   bin/formosa-mlkem-768-avx2 \
-  bin/formosa-mlkem-1024-avx2 \
-  bin/formosa-mlkem-768-ref \
-  bin/formosa-mlkem-1024-ref
+  bin/formosa-mlkem-1024-avx2
 
 ALL_EXTENDED := \
   bin/native-mlkem-768 \
@@ -58,9 +56,7 @@ bin/formosa-mlkem-$(1)-$(2)_$(TESTS): src/checksums.c $(SRC)/$(1)/$(2)/jkem.s | 
 	  $(SRC)/$(1)/$(2)/jkem.s
 endef
 
-$(eval $(call FORMOSA_MLKEM,768,ref))
 $(eval $(call FORMOSA_MLKEM,768,avx2))
-$(eval $(call FORMOSA_MLKEM,1024,ref))
 $(eval $(call FORMOSA_MLKEM,1024,avx2))
 
 #----------------------------------------------------------
@@ -97,20 +93,12 @@ $(MLKEM_NATIVE_STAMP):
 
 run: $(ALL_OUT)
 
-check: run
-	@cmp --silent bin/formosa-mlkem-768-avx2_10000.out bin/formosa-mlkem-768-ref_10000.out \
-		&& echo "OK - bin/formosa-mlkem-768-avx2_10000.out / bin/formosa-mlkem-768-ref_10000.out" \
-		|| { echo "ERROR - bin/formosa-mlkem-768-avx2_10000.out / bin/formosa-mlkem-768-ref_10000.out"; exit 1; }
-	@cmp --silent bin/formosa-mlkem-1024-avx2_10000.out bin/formosa-mlkem-1024-ref_10000.out \
-		&& echo "OK - bin/formosa-mlkem-1024-avx2_10000.out / bin/formosa-mlkem-1024-ref_10000.out" \
-		|| { echo "ERROR - bin/formosa-mlkem-1024-avx2_10000.out / bin/formosa-mlkem-1024-ref_10000.out"; exit 1; }
-
 #----------------------------------------------------------
 #-- run-extended and check-extended
 
 run-extended: run $(ALL_EXTENDED_OUT)
 
-check-extended: check run-extended
+check-extended: run-extended
 	@cmp --silent bin/formosa-mlkem-768-avx2_$(TESTS).out bin/native-mlkem-768_$(TESTS).out \
 		&& echo "OK - bin/formosa-mlkem-768-avx2_$(TESTS).out / bin/native-mlkem-768_$(TESTS).out" \
 		|| { echo "ERROR - bin/formosa-mlkem-768-avx2_$(TESTS).out / bin/native-mlkem-768_$(TESTS).out"; exit 1; }

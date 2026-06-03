@@ -4,8 +4,9 @@ from Jasmin require import JModel.
 from JazzEC require import Array400 Array256 Array128 Array64 Array32 Array16 Array8 Array4.
 from JazzEC require import WArray800 WArray512 WArray128 WArray64 WArray32 WArray16.
 require import AVX2_Ops.
-from JazzEC require import Jkem768 Jkem768_avx2.
+from JazzEC require import Jkem768_avx2.
 require import MLKEM_Poly_avx2_prevec MLKEM_avx2_auxlemmas MLKEMFCLib.
+import MLKEMFCLib768.
 
 module Mvec = {
   proc shuffle8 (a:W256.t, b:W256.t) : W256.t * W256.t = {

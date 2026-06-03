@@ -11,6 +11,7 @@ from Jasmin require import JModel.
 from JazzEC require import Array16 Array128  Array256 Array400.
 
 require import MLKEMFCLib.
+import MLKEMFCLib1024.
 from JazzEC require import Array400 WArray32 WArray800 WArray512.
 
 

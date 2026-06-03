@@ -5,18 +5,45 @@ from Jasmin require import JModel.
 from JazzEC require import WArray512 WArray256 WArray128 WArray8 WArray2 WArray64 WArray32.
 from JazzEC require import Array2 Array8 Array16 Array25 Array32 Array33 Array64 Array128 Array136 Array1024 Array1408 Array1024 Array1536 Array4096 Array2144 Array536 Array256.
 
-require import MLKEM_InnerPKE NTT_avx2 MLKEMFCLib AVX2_Ops NTT_AVX_Fq MLKEM_Poly_avx2_vec.
+require import MLKEM_W16_Rep NTT_avx2 MLKEMFCLib AVX2_Ops NTT_AVX_Fq MLKEM_Poly_avx2_vec.
+import MLKEMFCLib1024.
 
 require import MLKEM_keccak_avx2.
 
 import NTT_Avx2.
 
-from JazzEC require import Jkem1024_avx2 Jkem1024.
+from JazzEC require import Jkem1024_avx2.
 
 import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE1024 MLKEM1024 Fq Correctness1024.
 import Symmetric1024 Serialization1024 VecMat1024 PolyMat.
 import KMatrix.Matrix.
 import MLKEM_PolyAVXVec.
+
+(* Matrix lift/unlift bridge (relocated from ref's MLKEM_InnerPKE.ec).
+   lift_matrix lives in MLKEM_W16_Rep, unlift_matrix in Correctness1024. *)
+lemma matrixcols (m : 'a Array4096.t) (f : 'a -> 'b) i j : 0 <= i < 4 => 0<=j <4 =>
+    Array256.map f (subarray256 ((Array1024.init ((fun (i_0 : int) => m.[j*1024 + i_0])))) i) =
+                      (subarray256 (subarray1024 (map f m) j) i).
+move => ib jb;rewrite /subarray256 /subarray1024 tP => k kb.
+by rewrite mapiE //= !initiE //= !initiE 1,2:/# /= mapiE /#.
+qed.
+
+lemma matrix_unlift a :
+    lift_matrix (unlift_matrix a) = a /\
+    pos_bound4096_cxq (unlift_matrix a) 0 4096 2.
+proof.
+split.
++ rewrite /lift_matrix /unlift_matrix eq_matrixP => i j bounds.
+  rewrite offunmE //= /subarray256 /subarray1024 /lift_array4096 /= tP => k kb.
+  rewrite initiE //= initiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= /to_sint /smod /=.
+  rewrite  !(modz_small _ 65536); 1: smt(Zq.rg_asint).
+  rewrite !(mulzC 1024) !(edivz_eq) 1:/# !(emodz_eq) 1:/# fun_if !Zq.asintK.
+  rewrite !(mulzC 256) !(edivz_eq) 1:/#.
+  rewrite (_: i*1024 = (4*i)*256) 1:/# !modzMDl.
+  by smt(Zq.rg_asint).
+rewrite /unlift_matrix /pos_bound4096_cxq => k kb; rewrite initiE 1:/# /=.
+rewrite /smod /=;smt(Zq.rg_asint qE).
+qed.
 
 (********* MOVED HERE TO AVOID CIRCULAR DEPS ************)
 
@@ -281,67 +308,6 @@ module HmoduleLow = {
    }
 }.
 
-equiv Hmodule_connection :
-   HmoduleLow.__gen_matrix ~ AuxMLKEM.__gen_matrix :
-    ={arg} ==> ={res}.
-proc. 
-case (trans{1});last first.
-+ rcondf{1} 1; 1: by auto.
-  inline {1} 1;wp. 
-  conseq (: _ ==> ={a}) => //.  
-  while (0<=i{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i} /\ !trans{1} /\
-         (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat);
-   last by auto => />;smt(eq_matrixP getmE). 
-  wp;conseq />;1:smt().
-  while (0<=i{1}<kvec /\ 0<=j{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i,j} /\ !trans{1} /\
-         (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat /\
-         (forall kk, 0<=kk<j{1} => a{1}.[i{1},kk] = a{2}.[i{1},kk])%PolyMat);
-   last by auto => />;smt(getmE). 
-   inline XOF.init; sp;wp. 
-   exlim rho{2}, i0{2}, j0{2}  => _rho _i _j.
-   call {2} (parse_sem (SHAKE128_ABSORB_34 _rho (W8.of_int _i) (W8.of_int _j)) _rho (W8.of_int _i) (W8.of_int _j)).
-   auto => /> &1 &2 a1 ?????H H0?;do split;1,2: smt(). 
-   + move => kk jj ????.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = i{2} /\ jj = j{2}); 1: by smt().
-     move => ?;case (kk < i{2});
-      1: by move => ?;move : (H kk jj _ _);  smt().
-     move => ?;move : (H0 jj _); smt().
-   + move => kk ??.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = j{2}); 1: by smt().
-     by move => ?;move : (H0 kk _); smt().
-rcondt{1} 1; 1: by auto.
-inline {1} 1;wp. 
-conseq (: _ ==> ={a}) => //.  
-while (0<=i{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i} /\ trans{1} /\
-       (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat);
- last by auto => />;smt(eq_matrixP getmE). 
-wp;conseq />;1:smt().
-while (0<=i{1}<kvec /\ 0<=j{1}<=kvec /\ sd0{1} = seed{2} /\ ={trans,i,j} /\ trans{1} /\
-       (forall kk jj, 0<=kk<i{1} => 0<=jj<kvec => a{1}.[kk,jj] = a{2}.[kk,jj])%PolyMat /\
-       (forall kk, 0<=kk<j{1} => a{1}.[i{1},kk] = a{2}.[i{1},kk])%PolyMat);
- last by auto => />;smt(getmE). 
- inline XOF.init; sp;wp. 
- exlim rho{2}, i0{2}, j0{2}  => _rho _i _j.
- call {2} (parse_sem (SHAKE128_ABSORB_34 _rho (W8.of_int _i) (W8.of_int _j)) _rho (W8.of_int _i) (W8.of_int _j)).
-   auto => /> &1 &2 a1 ?????H H0?;do split;1,2: smt(). 
-   + move => kk jj ????.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = i{2} /\ jj = j{2}); 1: by smt().
-     move => ?;case (kk < i{2});
-      1: by move => ?;move : (H kk jj _ _);  smt().
-     move => ?;move : (H0 jj _); smt().
-   + move => kk ??.  
-     move : H H0;rewrite !setmE !getmE /= => H H0.
-     rewrite !offunmE /=; 1,2:smt().
-     case (kk = j{2}); 1: by smt().
-     by move => ?;move : (H0 kk _); smt().
-qed.
-
 phoare Hmodule_low_sem _sd b :
  [  HmoduleLow.__gen_matrix : arg=(_sd,b) ==> res = if b 
                                              then unlift_matrix (trmx (sampleA _sd)) 
@@ -388,7 +354,7 @@ rewrite -getmE; congr.
 smt().
 qed.
 
-from CryptoSpecs require import JWordList EclibExtra.
+require import JWordList EclibExtra.
 from Keccak require import Keccak1600_avx2x4.
 require import MLKEM_keccak_avx2.
 require import Mlkem_filters_bridge.
@@ -1091,72 +1057,3 @@ move => *;rewrite initiE 1:/# /= initiE 1:/# /= ifT 1:/#.
   + by move => /= ->;rewrite /unlift_matrix !initiE 1,2:/# /=;congr;congr.
 qed.
 
-equiv genmatrixequiv_aux b : 
-    Jkem1024_avx2.M._gen_matrix_avx2    ~   AuxMLKEM.__gen_matrix :
- rho{1} = seed{2} /\ transposed{1} = (of_int (b2i b))%W64 /\ trans{2} = b ==>
-res{1} = nttunpackm res{2} /\ pos_bound4096_cxq res{1} 0 4096 2 /\ pos_bound4096_cxq res{2} 0 4096 2.
-proc* => //.
-transitivity {2} { r <@ HmoduleLow.__gen_matrix(seed,trans); }
-    (rho{1} = seed{2} /\ transposed{1} = (W64.of_int (b2i b)) /\ trans{2} = b ==> 
-     r{1} = nttunpackm r{2} /\ pos_bound4096_cxq r{1} 0 4096 2 /\ pos_bound4096_cxq r{2} 0 4096 2)
-    (={seed,trans} ==> ={r});1,2:smt();last by call Hmodule_connection => />.
-ecall {2} (Hmodule_low_sem seed{2} trans{2}) => /=.
-ecall {1} (_gen_matrix_avx2_sem rho{1} trans{2}) => /=.
-auto => /> &1;split;1:smt().
-split; 2: by smt(matrix_unlift).
-rewrite  /nttunpackm.
-rewrite /pos_bound4096_cxq => k kb.
-case b => Hb.
-+ rewrite !initiE 1:/# /=. 
-  case (0<= k < 1024).  
-  + move => kbb.
-    suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 0)))
-    by move/Array1024.allP => /(_ k kbb).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.    by smt(matrix_unlift).
-
-  case (1024<= k < 2048).  
-  + move => ? kbb; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 1))).
-    move/Array1024.allP => /(_ (k - 1024)) /=; apply; smt().
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.  
-   by smt(matrix_unlift).
- 
-  case (2048<= k < 3072).  
-  + move => ? kbb; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 2))).
-    move/Array1024.allP => /(_ (k - 2048)) /=; smt().
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.     by smt(matrix_unlift).
-
-move => *; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA seed{1}))) 3))).
-    move/Array1024.allP => /(_ (k - 3072)) /=; apply; smt().
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.     by smt(matrix_unlift).
- 
-+ rewrite !initiE 1:/# /=. 
-  case (0<= k < 1024).  
-  + move => kbb.
-    suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 0)))
-    by move/Array1024.allP => /(_ k kbb).
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.    by smt(matrix_unlift).
-
-  case (1024<= k < 2048).  
-  + move => ? kbb; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 1))).
-    move/Array1024.allP => /(_ (k - 1024)) /=; apply; smt().
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.  
-   by smt(matrix_unlift).
- 
-  case (2048<= k < 3072).  
-  + move => ? kbb; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 2))).
-    move/Array1024.allP => /(_ (k - 2048)) /#.
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.     by smt(matrix_unlift).
-
-move => *; suff : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
-   (nttunpackv (subarray1024 (unlift_matrix ( (sampleA seed{1}))) 3))).
-    move/Array1024.allP => /(_ (k - 3072)) /=; apply; smt().
-   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.     by smt(matrix_unlift).
-
-qed.

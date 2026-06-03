@@ -3,34 +3,29 @@ require import AllCore List Int IntDiv CoreMap Real Number.
 from Jasmin require import JModel.
 from JazzEC require import Array4 Array8 Array16 Array32 Array128 Array256 Array1408 Array384 Array400 Array1024 Array1536.
 from JazzEC require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800.
-require import Fq AVX2_Ops W16extra.
-from JazzEC require import Jkem1024_avx2 Jkem1024.
+require import AVX2_Ops W16extra.
+from JazzEC require import Jkem1024_avx2.
 require import MLKEM_PolyVec_avx2_prevec.
 require import MLKEM_Poly_avx2_vec.
 require import MLKEM_Poly_avx2_proof.
 require import MLKEM_Poly_avx2_vec.
 require import Fq_avx2.
-require import MLKEM_PolyVec.
 require import MLKEM_PolyVec_avx2_vec.
 require import NTT_avx2.
 require import MLKEMFCLib.
+import MLKEMFCLib1024.
 require import MLKEM_avx2_auxlemmas.
 
-from CryptoSpecs require import GFq Rq VecMat Serialization Correctness1024.
+from Spec require import GFq Rq VecMat Serialization Correctness1024.
 import Serialization1024 VecMat1024.
 
 theory MLKEM_PolyvecAVX.
 
-import Fq.
-import SignedReductions.
 import MLKEM1024.
 import Zq.
 import MLKEM_PolyAVX.
 import MLKEM_PolyAVXVec.
-import MLKEM_PolyVec.
 import MLKEM_PolyVecAVXVec.
-import MLKEM_Poly.
-import MLKEM_Poly.
 import NTT_Avx2.
 import KMatrix.
 
