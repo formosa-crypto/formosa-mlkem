@@ -9,7 +9,7 @@ require import GFq Rq Serialization Correctness768.
 require import BitEncoding.
 import BitChunking BS2Int.
 (*---*) import IntID.
-import Serialization768.
+import Serialization.
 
 (* FixMe: Move *)
 lemma iteriS_rw ['a] (n : int) (opr : int -> 'a -> 'a) (x : 'a) :

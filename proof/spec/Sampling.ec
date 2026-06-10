@@ -13,7 +13,7 @@ require import Rq.
 
 require import Symmetric. 
 
-module Parse(XOF : XOF_t) = {
+module SampleNTT(XOF : XOF_t) = {
   proc sample() : poly = {
     var j, b168, bi, bi1, bi2, d1, d2,k;
     var aa : poly;
@@ -38,7 +38,7 @@ module Parse(XOF : XOF_t) = {
 }.
 
 
-module CBD2 = {
+module SamplePolyCBD = {
   proc sample(bytes : W8.t Array128.t) : poly = {
     var i,j,a,b;
     var rr : poly;
@@ -59,4 +59,4 @@ module CBD2 = {
   }
 }.
 
-proc op cbd2sample = CBD2.sample. (* The functional lift *)
+proc op samplePolyCBD = SamplePolyCBD.sample. (* The functional lift *)

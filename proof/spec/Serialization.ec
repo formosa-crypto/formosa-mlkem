@@ -1,157 +1,130 @@
 (* General EC imports *)
 require import AllCore IntDiv List.
 
-from Jasmin require import JWord.
+from Jasmin require import JWord JArray.
 
-from JazzEC require import Array32 Array128 Array160 Array256 Array384 Array768 Array960 Array1024 Array1152 Array1408 Array1536.
+from JazzEC require import Array32 Array256 Array384.
 
 import BitEncoding BS2Int BitChunking.
-
 
 (* Imports of "lower-level" MLKEM spec parts *)
 require import GFq.
 import Zq.
 require import Rq.
-
+require import Parameters.
+import MLKEMParams.
 require import VecMat.
+import VecMat.PolyVec VecMat.PolyMat.
 
 type ipoly = int Array256.t.
 op toipoly(p : poly) : ipoly = map asint p.
 op ofipoly(p : ipoly)  : poly = map incoeff p.
 
-(* Encode/Decode Operators as Defined in the MLKEM Spec *)
+(* Encode/Decode Operators as Defined in the MLKEM Spec (variant-independent) *)
 op BytesToBits(bytes : W8.t list) : bool list = flatten (map W8.w2bits bytes).
 op BitsToBytes(bits : bool list) : W8.t list = map W8.bits2w (chunk 8 bits).
-op encode(l : int, ints : int list) : W8.t list = BitsToBytes (flatten (map (int2bs l) ints)).
-op decode(l : int, bytes : W8.t list) : int list = map bs2int (chunk l (BytesToBits (bytes))).
+op ByteEncode(l : int, ints : int list) : W8.t list = BitsToBytes (flatten (map (int2bs l) ints)).
+op ByteDecode(l : int, bytes : W8.t list) : int list = map bs2int (chunk l (BytesToBits (bytes))).
 
-op encode12(a : ipoly) :  W8.t Array384.t = Array384.of_list W8.zero (encode 12 (to_list a)).
-op encode1(a : ipoly) :  W8.t Array32.t = Array32.of_list W8.zero (encode 1 (to_list a)).
+op encode12(a : ipoly) :  W8.t Array384.t = Array384.of_list W8.zero (ByteEncode 12 (to_list a)).
+op encode1(a : ipoly) :  W8.t Array32.t = Array32.of_list W8.zero (ByteEncode 1 (to_list a)).
 
-op decode12(a : W8.t Array384.t) : ipoly = Array256.of_list 0 (decode 12 (to_list a)).
-op decode1(a : W8.t Array32.t) : ipoly =  Array256.of_list 0 (decode 1 (to_list a)).
+op decode12(a : W8.t Array384.t) : ipoly = Array256.of_list 0 (ByteDecode 12 (to_list a)).
+op decode1(a : W8.t Array32.t) : ipoly =  Array256.of_list 0 (ByteDecode 1 (to_list a)).
 
-theory Serialization768.
+(* ------------------------------------------------------------------ *)
+(* Parameterized vector/poly (de)serialization over the global dimension k and
+   the ciphertext compression widths du (vector) / dv (poly).  ipolyvec and the
+   byte outputs are size-(k/du/dv) PolyArray clones; the concrete variant sizes
+   are pinned by the per-variant avx2 prelude axioms (k/du/dv). *)
+(* ------------------------------------------------------------------ *)
 
-import VecMat768 PolyVec PolyMat.
+clone export PolyArray as IPVec with
+  op size <- 256 * kvec
+  proof ge0_size by smt(gt0_k).
 
-type ipolyvec = int Array768.t.
+type ipolyvec = int IPVec.t.
 
-op [a] subarray256(x : 'a Array768.t, i : int) =
-Array256.init (fun k => x.[256*i + k]).
+op [a] subarray256 (x : 'a IPVec.t, i : int) : 'a Array256.t =
+  Array256.init (fun j => x.[256 * i + j]).
 
-op [a] fromarray256(a0 a1 a2 : 'a Array256.t) : 'a Array768.t = 
-  Array768.init (fun k => if 0 <= k < 256
-                        then a0.[k]
-                        else if 256 <= k < 512
-                             then a1.[k-256] 
-                             else a2.[k-512]).   
+(* generic (kvec-wide) gluing: combine the k 256-chunks produced by a
+   function into one IPVec; inverse of subarray256. *)
+op [a] fromarray256 (f : int -> 'a Array256.t) : 'a IPVec.t =
+  IPVec.init (fun idx => (f (idx %/ 256)).[idx %% 256]).
 
-op [a] subarray384(x : 'a Array1152.t, i : int) =
-      Array384.init (fun k => x.[384*i + k]).
+lemma subarray256K (f : int -> 'a Array256.t) i :
+  0 <= i < kvec => subarray256 (fromarray256 f) i = f i.
+proof.
+move=> hi; rewrite /subarray256 /fromarray256; apply Array256.tP => j jb.
+rewrite Array256.initiE 1:/# /= IPVec.initiE 1:/# /=.
+have ->: (256 * i + j) %/ 256 = i by rewrite mulzC divzMDl 1:/# divz_small /#.
+by have ->: (256 * i + j) %% 256 = j by rewrite mulzC modzMDl modz_small /#.
+qed.
 
-op [a] fromarray384(a0 a1 a2 : 'a Array384.t) : 'a Array1152.t = 
-Array1152.init (fun k => if 0 <= k < 384
-                         then a0.[k]
-                         else if 384 <= k < 768
-                         then a1.[k-384] 
-                         else a2.[k-768]).   
+lemma fromarray256K (x : 'a IPVec.t) : fromarray256 (subarray256 x) = x.
+proof.
+rewrite /fromarray256 /subarray256; apply IPVec.tP => i ib.
+rewrite IPVec.initiE 1:ib /= Array256.initiE 1:/# /=.
+by congr; smt(divz_eq).
+qed.
 
-op toipolyvec(p : polyvec) : ipolyvec = map asint (fromarray256 p.[0] p.[1] p.[2]).
+op toipolyvec (p : polyvec) : ipolyvec =
+  IPVec.init (fun idx => asint p.[idx %/ 256].[idx %% 256]).
 
-op ofipolyvec(p : ipolyvec) : polyvec =  
-    zerov.[0 <- map incoeff (subarray256 p 0)]
-         .[1 <- map incoeff (subarray256 p 1)]
-         .[2 <- map incoeff (subarray256 p 2)].
+op ofipolyvec (p : ipolyvec) : polyvec =
+  KVec.init (fun i => map incoeff (subarray256 p i)).
 
-op compress_polyvec(d : int, p : polyvec) : ipolyvec =  
-     map (compress d) (fromarray256 p.[0] p.[1] p.[2]).
+op compress_polyvec (d : int, p : polyvec) : ipolyvec =
+  IPVec.init (fun idx => Compress d p.[idx %/ 256].[idx %% 256]).
 
-op decompress_polyvec(d : int, p : ipolyvec) =  
-    zerov.[0 <- map (decompress d) (subarray256 p 0)]
-         .[1 <- map (decompress d) (subarray256 p 1)]
-         .[2 <- map (decompress d) (subarray256 p 2)].
+op decompress_polyvec (d : int, p : ipolyvec) : polyvec =
+  KVec.init (fun i => map (Decompress d) (subarray256 p i)).
 
+(* poly-level compression encode/decode: width dv (FIPS d_v) *)
+clone export PolyArray as BytesPoly with
+  op size <- 32 * dv
+  proof ge0_size by smt(gt0_dv).
 
-op encode4(a : ipoly) :  W8.t Array128.t = Array128.of_list W8.zero (encode 4 (to_list a)).
+op encode_poly (a : ipoly) : W8.t BytesPoly.t = BytesPoly.of_list W8.zero (ByteEncode dv (to_list a)).
+op decode_poly (a : W8.t BytesPoly.t) : ipoly = Array256.of_list 0 (ByteDecode dv (to_list a)).
 
-op decode4(a : W8.t Array128.t) : ipoly =  Array256.of_list 0 (decode 4 (to_list a)).
+(* vector compression encode/decode: width du (FIPS d_u) *)
+clone export PolyArray as BytesCtVec with
+  op size <- 32 * du * kvec
+  proof ge0_size by smt(gt0_k gt0_du).
 
-op encode10_vec(a :ipolyvec) : W8.t Array960.t =  Array960.of_list W8.zero (encode 10 (to_list a)).
+op encode_vec (a : ipolyvec) : W8.t BytesCtVec.t = BytesCtVec.of_list W8.zero (ByteEncode du (to_list a)).
+op decode_vec (a : W8.t BytesCtVec.t) : ipolyvec = IPVec.of_list 0 (ByteDecode du (to_list a)).
 
-op decode10_vec(a : W8.t Array960.t) : ipolyvec =  Array768.of_list 0 (decode 10 (to_list a)).
+(* public-key vector encode/decode: fixed width 12 *)
+clone export PolyArray as BytesPKVec with
+  op size <- 384 * kvec
+  proof ge0_size by smt(gt0_k).
 
-op encode12_vec(a :ipolyvec) : W8.t Array1152.t = Array1152.of_list W8.zero (encode 12 (to_list a)).
+op encode12_vec (a : ipolyvec) : W8.t BytesPKVec.t = BytesPKVec.of_list W8.zero (ByteEncode 12 (to_list a)).
+op decode12_vec (a : W8.t BytesPKVec.t) : ipolyvec = IPVec.of_list 0 (ByteDecode 12 (to_list a)).
 
-op decode12_vec(a : W8.t Array1152.t) : ipolyvec =  Array768.of_list 0 (decode 12 (to_list a)).
+(* per-poly 384-byte slicing of the packed public-key vector (width 12),
+   and its kvec-wide inverse — analogues of subarray256/fromarray256. *)
+op [a] subarray384 (x : 'a BytesPKVec.t, i : int) : 'a Array384.t =
+  Array384.init (fun j => x.[384 * i + j]).
 
-end Serialization768.
+op [a] fromarray384 (f : int -> 'a Array384.t) : 'a BytesPKVec.t =
+  BytesPKVec.init (fun idx => (f (idx %/ 384)).[idx %% 384]).
 
-theory Serialization1024.
+lemma subarray384K (f : int -> 'a Array384.t) i :
+  0 <= i < kvec => subarray384 (fromarray384 f) i = f i.
+proof.
+move=> hi; rewrite /subarray384 /fromarray384; apply Array384.tP => j jb.
+rewrite Array384.initiE 1:/# /= BytesPKVec.initiE 1:/# /=.
+have ->: (384 * i + j) %/ 384 = i by rewrite mulzC divzMDl 1:/# divz_small /#.
+by have ->: (384 * i + j) %% 384 = j by rewrite mulzC modzMDl modz_small /#.
+qed.
 
-import VecMat1024 PolyVec PolyMat.
-
-type ipolyvec = int Array1024.t.
-
-op [a] subarray256(x : 'a Array1024.t, i : int) =
-Array256.init (fun k => x.[256*i + k]).
-
-op [a] fromarray256(a0 a1 a2 a3 : 'a Array256.t) : 'a Array1024.t = 
-  Array1024.init (fun k => if 0 <= k < 256
-                        then a0.[k]
-                        else if 256 <= k < 512
-                             then a1.[k - 256]
-                             else if 512 <= k < 768
-                                  then a2.[k-512] 
-                                  else a3.[k-768]).   
-
-op [a] subarray384(x : 'a Array1536.t, i : int) =
-      Array384.init (fun k => x.[384*i + k]).
-
-op [a] fromarray384(a0 a1 a2 a3 : 'a Array384.t) : 'a Array1536.t = 
-Array1536.init (fun k => if 0 <= k < 384
-                         then a0.[k]
-                         else if 384 <= k < 768
-                              then a1.[k-384] 
-                              else if 768 <= k < 1152
-                                   then a2.[k-768] 
-                                   else a3.[k-1152]).   
-
-op toipolyvec(p : polyvec) : ipolyvec = map asint (fromarray256 p.[0] p.[1] p.[2] p.[3]).
-
-op ofipolyvec(p : ipolyvec) : polyvec =  
-    zerov.[0 <- map incoeff (subarray256 p 0)]
-         .[1 <- map incoeff (subarray256 p 1)]
-         .[2 <- map incoeff (subarray256 p 2)]
-         .[3 <- map incoeff (subarray256 p 3)].
-
-op compress_polyvec(d : int, p : polyvec) : ipolyvec =  
-     map (compress d) (fromarray256 p.[0] p.[1] p.[2] p.[3]).
-
-op decompress_polyvec(d : int, p : ipolyvec) =  
-    zerov.[0 <- map (decompress d) (subarray256 p 0)]
-         .[1 <- map (decompress d) (subarray256 p 1)]
-         .[2 <- map (decompress d) (subarray256 p 2)]
-         .[3 <- map (decompress d) (subarray256 p 3)].
-
-
-op encode5(a : ipoly) :  W8.t Array160.t =
-   Array160.of_list W8.zero  (encode 5 (to_list a)).
-
-op decode5(a : W8.t Array160.t) : ipoly = 
-   Array256.of_list 0 (decode 5 (to_list a)).
-
-op encode11_vec(a :ipolyvec) : W8.t Array1408.t = 
-   Array1408.of_list W8.zero (encode 11 (to_list a)).
-
-op decode11_vec(a : W8.t Array1408.t) : ipolyvec = 
-   Array1024.of_list 0 (decode 11 (to_list a)).
-
-op encode12_vec(a :ipolyvec) : W8.t Array1536.t = 
-   Array1536.of_list W8.zero (encode 12 (to_list a)).
-
-op decode12_vec(a : W8.t Array1536.t) : ipolyvec = 
-   Array1024.of_list 0 (decode 12 (to_list a)).
-
-end Serialization1024.
-
+lemma fromarray384K (x : 'a BytesPKVec.t) : fromarray384 (subarray384 x) = x.
+proof.
+rewrite /fromarray384 /subarray384; apply BytesPKVec.tP => i ib.
+rewrite BytesPKVec.initiE 1:ib /= Array384.initiE 1:/# /=.
+by congr; smt(divz_eq).
+qed.

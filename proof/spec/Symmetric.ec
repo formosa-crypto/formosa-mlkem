@@ -43,6 +43,7 @@ op SHAKE256_33_128 (x: W8.t Array32.t, tag: W8.t): W8.t Array128.t =
 
 op PRF = SHAKE256_33_128.
 
+require import Serialization.
 
 module type XOF_t = {
   proc init(rho : W8.t Array32.t, i j : int) : unit
@@ -63,24 +64,16 @@ module XOF : XOF_t = {
 }.
 
 
-theory Symmetric768.
+(* Parameterized symmetric layer.  G is variant-independent; H_pk (the FIPS-203
+   H = SHA3-256 over the public key = encoded t-vector ++ rho; named H_pk to avoid
+   clashing with the FO transform's H in the security proof) and J (implicit-reject
+   hash over z ++ ciphertext) are parameterized over Serialization byte sizes. *)
 
 op G_coins = SHA3_512_33_64.
 op G_mhpk  = SHA3_512_64_64.
 
-op H_pk  = SHA3_256_1184_32.
+op H_pk (x : W8.t BytesPKVec.t * W8.t Array32.t) : W8.t Array32.t =
+  Array32.of_list W8.zero (SHA3_256 (to_list x.`1 ++ to_list x.`2)).
 
-op J = SHAKE_256_1120_32.
-
-end Symmetric768.
-
-theory Symmetric1024.
-
-op G_coins = SHA3_512_33_64.
-op G_mhpk  = SHA3_512_64_64.
-
-op H_pk  = SHA3_256_1568_32.
-
-op J = SHAKE_256_1600_32.
-
-end Symmetric1024.
+op J (x : W8.t Array32.t, y : W8.t BytesCtVec.t * W8.t BytesPoly.t) : W8.t Array32.t =
+  Array32.of_list W8.zero (SHAKE256 (to_list x ++ to_list y.`1 ++ to_list y.`2) 32).

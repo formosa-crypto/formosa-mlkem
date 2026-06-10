@@ -4,11 +4,18 @@ from Jasmin require import JWord.
 from JazzEC require import Array25 Array32 Array33 Array64 Array128 Array168 Array256 Array384.
 from JazzEC require import Array768 Array960 Array1024 Array1152.
 
-from Spec require import GFq Rq VecMat Sampling Symmetric Serialization.
-from Spec require import InnerPKE768 MLKEM768 Correctness768 EncDecCorrectness768 MLKEMLib.
+from Spec require import GFq Rq Parameters VecMat Sampling Symmetric Serialization.
+from Spec require import KPKE MLKEM Correctness768 EncDecCorrectness MLKEMLib.
 
 require import MLWE_PKE_Hash.
-import Zq VecMat768 PolyVec PolyMat Symmetric768 Serialization768 InnerPKE768.
+import Zq MLKEMParams VecMat PolyVec PolyMat Symmetric Serialization KPKE.
+
+(* This is the ML-KEM-768 security proof: it is pinned to the kvec=3 variant
+   (its sampler proofs unroll the concrete matrix/noise loops).  There is no
+   1024 security variant.  Mirrors mldsa's per-variant prelude axioms. *)
+axiom kvec_val : kvec = 3.
+axiom du_val   : du = 10.
+axiom dv_val   : dv = 4.
 
 (* Rewriting the Spec in a way that allows applying computational
    assumptions on PRGs, as well as defining operators that
@@ -145,7 +152,7 @@ module CBD2_PRF(PRF : PRF_DEFS.PRF_Oracles) = {
 }.
 
 equiv cbd_correct : 
-  CBD2_PRF(NPRF.PRF).sample ~ CBD2.sample :
+  CBD2_PRF(NPRF.PRF).sample ~ SamplePolyCBD.sample :
   arg{2} = SHAKE256_33_128 NPRF.PRF.k{1} (W8.of_int arg{1}) ==> ={res}
 by proc => /=;inline *;sim;auto.
 
@@ -170,9 +177,9 @@ qed.
 
 lemma cbd2prfsem _k _N :
    phoare [ CBD2_PRF(NPRF.PRF).sample : NPRF.PRF.k = _k /\ arg = _N ==>
-        res = cbd2sample (SHAKE256_33_128 _k (W8.of_int _N)) ] = 1%r.
+        res = samplePolyCBD (SHAKE256_33_128 _k (W8.of_int _N)) ] = 1%r.
 bypr => &m0 [#] kv ->.
-have /=  <- := cbd2sample_opsem &m0 (cbd2sample (SHAKE256_33_128 _k (W8.of_int _N))) (SHAKE256_33_128 _k (W8.of_int _N)).
+have /=  <- := samplePolyCBD_opsem &m0 (samplePolyCBD (SHAKE256_33_128 _k (W8.of_int _N))) (SHAKE256_33_128 _k (W8.of_int _N)).
 by  byequiv (cbd_correct) => /#.
 qed.
 
@@ -234,6 +241,21 @@ module MLKEM_PRGs = {
 
 }.
 
+(* Security-world view of the spec PRGs: same computation, outputs lifted to
+   the algebraic vector the PRG distinguisher games (PRG_KG/PRG_ENC) speak. *)
+module MLKEM_PRGs_alg = {
+  proc prg_kg(coins : W8.t Array32.t) : W8.t Array32.t * KMatrix.vector * KMatrix.vector = {
+    var r;
+    r <@ MLKEM_PRGs.prg_kg(coins);
+    return (r.`1, poly2alg r.`2, poly2alg r.`3);
+  }
+  proc prg_enc(noiseseed : W8.t Array32.t) : KMatrix.vector * KMatrix.vector * poly = {
+    var r;
+    r <@ MLKEM_PRGs.prg_enc(noiseseed);
+    return (poly2alg r.`1, poly2alg r.`2, r.`3);
+  }
+}.
+
 op H(rho : W8.t Array32.t) : polymat = invnttm (sampleA rho).
 
 (* This fixes the definition of H in terms of the MLKEM spec *)
@@ -246,43 +268,91 @@ qed.
 
 op prg_kg_inner(coins :  W8.t Array32.t) : W8.t Array32.t * polyvec * polyvec =
    ((G_coins768 coins).`1, 
-    KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF (G_coins768 coins).`2 (W8.of_int i))),
-    KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF (G_coins768 coins).`2 (W8.of_int (i + 3))))).
+    KVec.init (fun i => samplePolyCBD (Symmetric.PRF (G_coins768 coins).`2 (W8.of_int i))),
+    KVec.init (fun i => samplePolyCBD (Symmetric.PRF (G_coins768 coins).`2 (W8.of_int (i + 3))))).
 
 op prg_enc_inner(coins :  W8.t Array32.t) : polyvec * polyvec * poly =
-   (KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF coins (W8.of_int i))),
-    KMatrix.Vector.offunv (fun i => cbd2sample (Symmetric.PRF coins (W8.of_int (i + 3)))), 
-    cbd2sample (Symmetric.PRF coins (W8.of_int 6))).
+   (KVec.init (fun i => samplePolyCBD (Symmetric.PRF coins (W8.of_int i))),
+    KVec.init (fun i => samplePolyCBD (Symmetric.PRF coins (W8.of_int (i + 3)))), 
+    samplePolyCBD (Symmetric.PRF coins (W8.of_int 6))).
 
 lemma prg_kg_sem _coins : 
    phoare [ MLKEM_PRGs.prg_kg : coins = _coins ==> res = prg_kg_inner _coins ] = 1%r.
-proc.
-unroll for 9; unroll for 7.
-wp;call (cbd2prfsem ((G_coins768 _coins).`2) 5). 
-wp;call (cbd2prfsem ((G_coins768 _coins).`2) 4). 
-wp;call (cbd2prfsem ((G_coins768 _coins).`2) 3). 
-wp;call (cbd2prfsem ((G_coins768 _coins).`2) 2). 
-wp;call (cbd2prfsem ((G_coins768 _coins).`2) 1). 
-wp;call (cbd2prfsem ((G_coins768 _coins).`2) 0). 
-by auto => />; rewrite /prg_kg_inner /= !KMatrix.Vector.eq_vectorP;split;
-    move => i ib;rewrite !setvE /= !KMatrix.Vector.offunvE /= 1,2:/# 
-     !KMatrix.Vector.offunvK /vclamp /= /kvec /= /#.
+proc; sp.
+while (0 <= i <= kvec /\ _N = i + kvec /\ rho = (G_coins768 _coins).`1 /\
+       NPRF.PRF.k = (G_coins768 _coins).`2 /\ noise1 = (prg_kg_inner _coins).`2 /\
+       (forall ii, 0 <= ii < i =>
+          noise2.[ii] = samplePolyCBD (SHAKE256_33_128 ((G_coins768 _coins).`2) (W8.of_int (ii + kvec)))))
+      (kvec - i).
++ move => z; wp; ecall (cbd2prfsem NPRF.PRF.k _N).
+  auto => />; smt(KVec.get_setE gt0_k).
+wp.
+while (0 <= i <= kvec /\ _N = i /\ rho = (G_coins768 _coins).`1 /\
+       NPRF.PRF.k = (G_coins768 _coins).`2 /\ noise2 = witness /\
+       (forall ii, 0 <= ii < i =>
+          noise1.[ii] = samplePolyCBD (SHAKE256_33_128 ((G_coins768 _coins).`2) (W8.of_int ii))))
+      (kvec - i).
++ move => z; wp; ecall (cbd2prfsem NPRF.PRF.k _N).
+  auto => />; smt(KVec.get_setE gt0_k).
+auto => />.
+split; first by smt(gt0_k).
+move => i0 n10.
+split; first by smt(gt0_k).
+move => hex h0 h0l hrho hsig Hn10.
+have Hn10v : n10 = (prg_kg_inner _coins).`2.
++ rewrite /prg_kg_inner /=; apply KVec.ext_eq => k hk.
+  by rewrite KVec.initiE 1:hk /= /PRF; smt().
+split; first by smt(gt0_k).
+move => i1 n20.
+split; first by smt(gt0_k).
+move => hex2 h1 h1l hn10eq Hn20.
+have Hn20v : n20 = (prg_kg_inner _coins).`3.
++ rewrite /prg_kg_inner /=; apply KVec.ext_eq => k hk.
+  by rewrite KVec.initiE 1:hk /= /PRF; smt(kvec_val).
+by rewrite Hn20v /prg_kg_inner /=; smt().
 qed.
 
 lemma prg_enc_sem _coins : 
    phoare [ MLKEM_PRGs.prg_enc : noiseseed = _coins ==> res = prg_enc_inner _coins ] = 1%r.
-proc.
-unroll for 8; unroll for 6.
-wp;call (cbd2prfsem _coins 6). 
-wp;call (cbd2prfsem _coins 5). 
-wp;call (cbd2prfsem _coins 4). 
-wp;call (cbd2prfsem _coins 3). 
-wp;call (cbd2prfsem _coins 2). 
-wp;call (cbd2prfsem _coins 1). 
-wp;call (cbd2prfsem _coins 0). 
-by auto => />; rewrite /prg_enc_inner /= !KMatrix.Vector.eq_vectorP; do split;1,2:
-    move => i ib;rewrite !setvE /= !KMatrix.Vector.offunvE /= 1,2:/# 
-     !KMatrix.Vector.offunvK /vclamp /= /kvec /= /#.
+proc; sp.
+ecall (cbd2prfsem NPRF.PRF.k _N).
+while (0 <= i <= kvec /\ _N = i + kvec /\ NPRF.PRF.k = _coins /\
+       noise1 = (prg_enc_inner _coins).`1 /\
+       (forall ii, 0 <= ii < i =>
+          noise2.[ii] = samplePolyCBD (SHAKE256_33_128 _coins (W8.of_int (ii + kvec)))))
+      (kvec - i).
++ move => z; wp; ecall (cbd2prfsem NPRF.PRF.k _N).
+  auto => />; smt(KVec.get_setE gt0_k).
+wp.
+while (0 <= i <= kvec /\ _N = i /\ NPRF.PRF.k = _coins /\ noise2 = witness /\
+       (forall ii, 0 <= ii < i =>
+          noise1.[ii] = samplePolyCBD (SHAKE256_33_128 _coins (W8.of_int ii))))
+      (kvec - i).
++ move => z; wp; ecall (cbd2prfsem NPRF.PRF.k _N).
+  auto => />; smt(KVec.get_setE gt0_k).
+auto => />.
+split; first by smt(gt0_k).
+move => i0 n10.
+split; first by smt(gt0_k).
+move => hex h0 h0l Hn10.
+have Hn10v : n10 = (prg_enc_inner _coins).`1.
++ rewrite /prg_enc_inner /=; apply KVec.ext_eq => k hk.
+  by rewrite KVec.initiE 1:hk /= /PRF; smt().
+split; first by smt(gt0_k).
+move => i1 n20.
+split; first by smt(gt0_k).
+move => hex2 h1 h1l hn10eq Hn20.
+have Hn20v : n20 = (prg_enc_inner _coins).`2.
++ rewrite /prg_enc_inner /=; apply KVec.ext_eq => k hk.
+  by rewrite KVec.initiE 1:hk /= /PRF; smt(kvec_val).
+by rewrite Hn20v /prg_enc_inner /= /PRF; smt(kvec_val).
+(* losslessness of the two noise whiles (prefix of the trailing e2 call) *)
+while (0 <= i <= kvec) (kvec - i).
++ move => z; wp; ecall (cbd2prfsem NPRF.PRF.k _N); auto => /> /#.
+wp.
+while (0 <= i <= kvec) (kvec - i).
++ move => z; wp; ecall (cbd2prfsem NPRF.PRF.k _N); auto => /> /#.
+auto => />; smt(gt0_k).
 qed.
 
 import KMatrix.
@@ -290,9 +360,8 @@ lemma H_T_sem _seed :
     phoare [ Hmodule.sampleAT : sd = _seed ==> res = nttm (trmx (H _seed)) ] = 1%r.
 conseq (H_sem_equiv)  (H_sem _seed); 1: smt().
 auto => />.
-rewrite /nttm eq_matrixP => i j rng; rewrite mapmE /= !offunmE //= offunmE 1:/# /=.
-congr.
-by rewrite offunmK /mclamp rng.
+apply eq_polymatP => i j Hi Hj.
+by rewrite trmxE 1,2:/# nttmE 1,2:/# nttmE 1,2:/# trmxE 1,2:/#.
 qed.
 
 module InnerPKE_Op = {
@@ -300,7 +369,7 @@ module InnerPKE_Op = {
   (* Spec gives a derandomized enc that matches this code *)
   proc kg_derand(coins: W8.t Array32.t) : pkey * skey = {
      var t,rho;
-     var tv,sv : W8.t Array1152.t;
+     var tv,sv : W8.t BytesPKVec.t;
      var a : polymat;
      var s,e : polyvec;
      e <- witness;
@@ -322,7 +391,7 @@ module InnerPKE_Op = {
       var tv,rho,rv,e1,e2,rhat,u,v,mp,c2,thati;
       var that : polyvec;
       var aT : polymat;
-      var c1 : W8.t Array960.t;
+      var c1 : W8.t BytesCtVec.t;
       aT <- witness;
       c1 <- witness;
       e1 <- witness;
@@ -337,8 +406,8 @@ module InnerPKE_Op = {
       u <- (invnttv (ntt_mmul aT rhat) + e1)%PolyVec;
       mp <- decode1 m;
       v <- invntt (ntt_dotp that rhat) &+ e2 &+ decompress_poly 1 mp; 
-      c1 <- encode10_vec (compress_polyvec 10 u); 
-      c2 <- encode4 (compress_poly 4 v);
+      c1 <- encode_vec (compress_polyvec du u);
+      c2 <- encode_poly (compress_poly dv v);
       return (c1,c2);
   }
 
@@ -348,10 +417,10 @@ module InnerPKE_Op = {
       u <- witness;
       s <- witness;
       (c1,c2) <- cph;
-      ui <- decode10_vec c1;
-      u <- decompress_polyvec 10 ui;
-      vi <- decode4 c2;
-      v <- decompress_poly 4 vi;
+      ui <- decode_vec c1;
+      u <- decompress_polyvec du ui;
+      vi <- decode_poly c2;
+      v <- decompress_poly dv vi;
       si <- decode12_vec sk;
       s <- ofipolyvec si;
       mp <- v &+ ((&-) (invntt (ntt_dotp s (nttv u))));
@@ -363,17 +432,14 @@ module InnerPKE_Op = {
 
 import KMatrix Vector.
 
-(* Fixme: move to Matrix *)
-lemma getv_setvE x i j (v : polyvec) : 
-  (v.[i <- x].[j])%Vector = if (0 <= j < kvec) then if (i = j) then x else (v.[j])%Vector else Rq.zero
-   by smt(setvE getvE getv_out offunvE).
+(* get-after-set on the concrete polyvec is KVec.get_setE, used directly. *)
 
 (* We have something equivalent to the spec *)
 import Symmetric.
 
 
 lemma kg_sampler_kg  :
-  equiv [  InnerPKE_Op.kg_derand ~ InnerPKE768.kg_derand : 
+  equiv [  InnerPKE_Op.kg_derand ~ KPKE.keygen : 
      ={arg}==> ={res}].
 proc. 
 wp 6 13. swap {2} 1 4.
@@ -388,32 +454,34 @@ inline {1} 2.
 case <- {1} 12. 
 swap {1} 12 -7. swap {1} 15 -9. wp.
 inline CBD2_PRF(NPRF.PRF).sample.
-inline CBD2.sample.
+inline SamplePolyCBD.sample.
 inline PseudoRF.f.
 while (noise1{1} = s{2} /\ rho{1} = rho{2} /\ noiseseed{1} = sig{2} /\
        ={i,_N,a} /\ NPRF.PRF.k{1} = sig{2} /\
        0<=i{1}<=kvec /\ 
-       forall k, 0 <=k < i{1} => (noise2{1}.[k])%Vector = (e{2}.[k])%Vector).
-+ wp; conseq(_: ={rr0}); 1: by smt(getv_setvE).  
+       forall k, 0 <=k < i{1} => (noise2{1}.[k]) = (e{2}.[k])).
++ wp; conseq(_: ={rr0}); 1: by smt(KVec.get_setE).  
   by inline*; sim; auto => />. 
-wp;conseq (: noise1{1} = s{2} /\ 
+wp;conseq (: noise1{1} = s{2} /\
              rho{1} = rho{2} /\
              NPRF.PRF.k{1} = sig{2} /\
              noiseseed{1} = sig{2} /\
-             ={_N, a}); first by smt(eq_vectorP).
+             ={_N, a}).
++ move => &1 &2 /> *; split; first by smt(gt0_k).
+  by move => *; apply KVec.ext_eq => k hk; smt().
 
 while (rho{1} = rho{2} /\ noiseseed{1} = sig{2} /\
        ={i,_N,a} /\ NPRF.PRF.k{1} = sig{2} /\
        0<=i{1}<=kvec /\ 
-       forall k, 0 <=k < i{1} => (noise1{1}.[k])%Vector = (s{2}.[k])%Vector).
-+ wp; conseq(_: ={rr}); 1: by smt(getv_setvE).  
+       forall k, 0 <=k < i{1} => (noise1{1}.[k]) = (s{2}.[k])).
++ wp; conseq(_: ={rr}); 1: by smt(KVec.get_setE).  
   by inline*; sim; auto => />. 
 inline {1} 6.
 sp;wp;conseq  (: rho{1} = rho{2} /\ 
              noiseseed{1} = sig{2} /\
              a2{1} = a{2}).
-+ auto => /> &2;split;1: by smt(eq_vectorP).
-  by move => *; apply eq_vectorP; smt().
++ move => &1 &2 /> *; split; first by smt(gt0_k).
+  by move => *; apply KVec.ext_eq => k hk; smt().
 while (#post /\ sd{1} = rho{1} /\ i2{1} = i{2} /\ 0<=i2{1}<=kvec); last by auto => />.
 wp;while (#post /\ j1{1} = j{2} /\ 0<=j1{1}<=kvec); 
      last by auto => /> /#. 
@@ -428,7 +496,7 @@ qed.
 
 lemma enc_sampler_enc  :
  equiv [
-   InnerPKE_Op.enc_derand ~ InnerPKE768.enc_derand : 
+   InnerPKE_Op.enc_derand ~ KPKE.encrypt : 
     ={arg}  ==> ={res}].
 proc. 
 wp 10 16. 
@@ -451,19 +519,22 @@ conseq (: ={that,_N,m,aT} /\
   noiseseed{1} = coins{2});1: by smt().
 while (={i, that, _N, m, aT} /\ noise1{1} = rv{2} /\ noiseseed{1} = coins{2} /\
        0<=i{1}<=kvec /\ NPRF.PRF.k{1} = coins{2} /\
-       forall k, 0 <=k < i{1} => (noise2{1}.[k])%Vector = (e1{2}.[k])%Vector).
-+ inline *;wp;conseq(_: ={rr0}); 1: by smt(getv_setvE).  by inline*; sim; auto => />. 
+       forall k, 0 <=k < i{1} => (noise2{1}.[k]) = (e1{2}.[k])).
++ inline *;wp;conseq(_: ={rr0}); 1: by smt(KVec.get_setE).  by inline*; sim; auto => />. 
 wp;conseq (: ={that,_N,m,aT} /\
   noise1{1} = rv{2} /\ NPRF.PRF.k{1} = coins{2} /\
   noiseseed{1} = coins{2}).
-  + move => &1 &2 /> n2;1: by auto => />;smt(eq_vectorP).
++ move => &1 &2 /> *; split; first by smt(gt0_k).
+  by move => *; apply KVec.ext_eq => k hk; smt().
 while (={i, that, _N, m, aT} /\ noiseseed{1} = coins{2} /\
        0<=i{1}<=kvec /\ NPRF.PRF.k{1} = coins{2} /\
-       forall k, 0 <=k < i{1} => (noise1{1}.[k])%Vector = (rv{2}.[k])%Vector).
-+ inline *;wp; conseq(_: ={rr0}); 1: by smt(getv_setvE).  
+       forall k, 0 <=k < i{1} => (noise1{1}.[k]) = (rv{2}.[k])).
++ inline *;wp; conseq(_: ={rr0}); 1: by smt(KVec.get_setE).  
   by inline*; sim; auto => />. 
 inline {1} 1.
-sp;wp;conseq (: ={that, m} /\ a0{1} = aT{2} /\ r{1} = coins{2}); 1: by auto => />; smt(eq_vectorP).
+sp;wp;conseq (: ={that, m} /\ a0{1} = aT{2} /\ r{1} = coins{2}).
++ move => &1 &2 /> *; split; first by smt(gt0_k).
+  by move => *; apply KVec.ext_eq => k hk; smt().
 while (#post /\ sd{1} = rho{2} /\  i1{1} = i{2} /\ r{1} = coins{2} /\ 0<=i1{1}<=kvec); last by auto => />. 
 
 wp;while (#post /\ i1{1} = i{2} /\ j0{1} = j{2} /\ 0<=j0{1}<=kvec); 
@@ -478,7 +549,7 @@ by inline *; auto => /> /#.
 qed.
 
 lemma dec_sampler_dec :
-  equiv [ InnerPKE_Op.dec ~ InnerPKE768.dec : 
+  equiv [ InnerPKE_Op.dec ~ KPKE.decrypt : 
      ={arg}  ==> res{1} = Some res{2} ].
 proc. 
 by auto => />.
@@ -561,11 +632,11 @@ module (MLKEM_Op : Scheme) (O : POracle) = {
     var m : plaintext option;
     var _K' : W8.t Array32.t;
     var r : W8.t Array32.t;
-    var skp : Top.InnerPKE768.InnerPKE768.skey;
-    var pk : Top.InnerPKE768.InnerPKE768.pkey;
+    var skp : skey;
+    var pk : pkey;
     var hpk : W8.t Array32.t;
     var z : W8.t Array32.t;
-    var c : Top.InnerPKE768.InnerPKE768.ciphertext;
+    var c : ciphertext;
     var _K : W8.t Array32.t;
     
     (skp, pk, hpk, z) <- sk;
@@ -592,14 +663,14 @@ module DummyRO = {
 }.
 
 equiv kg_bridge :
-  MLKEM_Op(DummyRO).kg_derand ~ MLKEM768.kg_derand : ={arg} ==> ={res} by proc;wp; call (kg_sampler_kg); auto => />.
+  MLKEM_Op(DummyRO).kg_derand ~ MLKEM.keygen_internal : ={arg} ==> ={res} by proc;wp; call (kg_sampler_kg); auto => />.
 
 equiv enc_bridge :
-  MLKEM_Op(DummyRO).enc_derand ~ MLKEM768.enc_derand : ={arg} ==> ={res} by 
+  MLKEM_Op(DummyRO).enc_derand ~ MLKEM.encaps_internal : ={arg} ==> ={res} by
   proc;wp; call (enc_sampler_enc);inline *; auto => />.
 
 equiv dec_bridge :
-  MLKEM_Op(DummyRO).dec ~ MLKEM768.dec : arg{1}.`1 = arg{2}.`2 /\ arg{1}.`2 = arg{2}.`1 ==> res{1} = Some res{2} 
+  MLKEM_Op(DummyRO).dec ~ MLKEM.decaps_internal : arg{1}.`1 = arg{2}.`2 /\ arg{1}.`2 = arg{2}.`1 ==> res{1} = Some res{2}
 by proc;wp;call(enc_sampler_enc);inline {1} 3;wp;call(dec_sampler_dec);auto => />.
 
 
@@ -612,7 +683,7 @@ by proc;wp;call(enc_sampler_enc);inline {1} 3;wp;call(dec_sampler_dec);auto => /
 (*   Types correspond to implementation types                      *)
 (*******************************************************************)
 
-import KMatrix PolyVec PolyMat InnerPKE768 Zq.
+import KMatrix PolyVec PolyMat KPKE Zq.
 
 op pk_encode(pk : W8.t Array32.t * polyvec) : pkey = 
                                   (encode12_vec (toipolyvec (nttv pk.`2)), pk.`1).
@@ -621,27 +692,27 @@ op sk_encode(sk : polyvec) : skey = encode12_vec (toipolyvec (nttv sk)).
 op sk_decode(sk : skey) =  invnttv (ofipolyvec (decode12_vec sk)).
 op m_encode(m : plaintext) : poly = decompress_poly 1 (decode1 m).
 op m_decode(p : poly) : plaintext = encode1 (compress_poly 1 p). 
-op c_encode(c :  polyvec * poly) : ciphertext = 
-      (encode10_vec (compress_polyvec 10 c.`1), encode4 (compress_poly 4 c.`2)).
+op c_encode(c :  polyvec * poly) : ciphertext =
+      (encode_vec (compress_polyvec du c.`1), encode_poly (compress_poly dv c.`2)).
 op c_decode(c : ciphertext) =
-      (decompress_polyvec 10 (decode10_vec c.`1), decompress_poly 4 (decode4 c.`2)).
+      (decompress_polyvec du (decode_vec c.`1), decompress_poly dv (decode_poly c.`2)).
 
 lemma pk_encodeK : cancel pk_encode pk_decode.
 rewrite /pk_decode /pk_encode /cancel /= => x.
 rewrite -sem_encode12_vecK; last by rewrite toipolyvecK invnttvK /#.
-move => i ib; rewrite /toipolyvec !mapiE /= 1:ib.
+move => i ib; rewrite /toipolyvec IPVec.initiE 1:ib /=.
 by smt(rg_asint qE).
 qed.
 
 lemma sk_encodeK: cancel sk_encode sk_decode.
 rewrite /sk_decode /sk_encode /cancel /= => x.
 rewrite -sem_encode12_vecK; last by rewrite toipolyvecK invnttvK /#.
-move => i ib; rewrite /toipolyvec !mapiE /= 1:ib.
+move => i ib; rewrite /toipolyvec IPVec.initiE 1:ib /=.
 by smt(rg_asint qE).
 qed.
 
-op rnd_err_v = compress_poly_err 4. 
-op rnd_err_u = mapv (compress_poly_err 10). 
+op rnd_err_v = compress_poly_err dv.
+op rnd_err_u = mapv (compress_poly_err du).
 
 op max_noise = q %/ 4 - 1.
 op under_noise_bound (p : poly) (b : int) =
@@ -655,30 +726,30 @@ op cv_bound_max : int = 104. (* this is the compress error bound for d = 4 *)
 clone import MLWE_PKE_Hash as MLWEPKEHash with
   type MLWE_.seed <- W8.t Array32.t,
   type MLWE_.Matrix_.R <- poly,
-  type MLWE_.Matrix_.Matrix.matrix <- polymat,
-  type MLWE_.Matrix_.vector <- polyvec,
+  type MLWE_.Matrix_.Matrix.matrix <- matrix,
+  type MLWE_.Matrix_.vector <- vector,
   type MLWE_.Matrix_.ZR.t <- poly,
   pred MLWE_.Matrix_.ZR.unit <- KMatrix.ZR.unit,
   type FO_MLKEM.UU.key <- sharedsecret,
   type plaintext <- plaintext,
   type randomness <- W8.t Array32.t,
-  type ciphertext <- W8.t Array960.t * W8.t Array128.t,
+  type ciphertext <- W8.t BytesCtVec.t * W8.t BytesPoly.t,
   type FO_MLKEM.UU.PseudoRF.K <- sharedsecret,
   type FO_MLKEM.pkhash <- W8.t Array32.t,
   op FO_MLKEM.pkh <- H_pk,
   type pkey <- publickey,
-  type skey <- W8.t Array1152.t,
-  op MLWE_.H <- H,
-  op prg_kg <- prg_kg_inner,
-  op prg_enc <- prg_enc_inner,
+  type skey <- W8.t BytesPKVec.t,
+  op MLWE_.H <- (fun rho => poly2almat (H rho)),
+  op prg_kg <- (fun coins => let r = prg_kg_inner coins in (r.`1, poly2alg r.`2, poly2alg r.`3)),
+  op prg_enc <- (fun coins => let r = prg_enc_inner coins in (poly2alg r.`1, poly2alg r.`2, r.`3)),
   op MLWE_.Matrix_.ZR.(+) <- Rq.(&+),
   op MLWE_.Matrix_.ZR.([-]) <- Rq.(&-),
   op MLWE_.Matrix_.ZR.zeror <- Rq.zero,
   op MLWE_.Matrix_.ZR.oner <- Rq.one,
   op MLWE_.Matrix_.ZR.( * ) <- Rq.(&*),
-  op MLWE_.Matrix_.ZR.invr <- Top.Correctness768.invr, (* FIXME: Why Top *)
+  op MLWE_.Matrix_.ZR.invr <- Rq.invr,
   op MLWE_.Matrix_.size <- kvec,
-  op MLWE_.Matrix_.Vector.(+) <- Top.Correctness768.KMatrix.Vector.(+),
+  op MLWE_.Matrix_.Vector.(+) <- KMatrix.Vector.(+),
   op MLWE_.Matrix_.Vector.dotp <- dotp,
   op MLWE_.Matrix_.Vector.prevector <- prevector,
   op MLWE_.Matrix_.Vector.vclamp <- vclamp,
@@ -693,16 +764,16 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
   op MLWE_.dseed <- srand,
   op m_encode <- m_encode,
   op m_decode <- m_decode,
-  op pk_encode <- pk_encode,
-  op pk_decode <- pk_decode,
-  op sk_encode <- sk_encode,
-  op sk_decode <- sk_decode,
-  op c_encode <- c_encode,
-  op c_decode <- c_decode,
+  op pk_encode <- (fun (p : W8.t Array32.t * vector) => pk_encode (p.`1, alg2poly p.`2)),
+  op pk_decode <- (fun p => let r = pk_decode p in (r.`1, poly2alg r.`2)),
+  op sk_encode <- (fun v => sk_encode (alg2poly v)),
+  op sk_decode <- (fun s => poly2alg (sk_decode s)),
+  op c_encode <- (fun (c : vector * poly) => c_encode (alg2poly c.`1, c.`2)),
+  op c_decode <- (fun c => let r = c_decode c in (poly2alg r.`1, r.`2)),
   op under_noise_bound <- under_noise_bound,
   op max_noise <- max_noise,
   op cv_bound_max <- cv_bound_max,
-  op rnd_err_u <- rnd_err_u,
+  op rnd_err_u <- (fun v => poly2alg (rnd_err_u (alg2poly v))),
   op rnd_err_v <- rnd_err_v,
   op drand <- srand,
   op FO_MLKEM.UU.TT.dplaintext <- srand,
@@ -713,7 +784,7 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
   proof MLWE_.duni_R_fu by apply duni_R_fu
-  proof MLWE_.Matrix_.ge0_size by smt()
+  proof MLWE_.Matrix_.ge0_size by smt(gt0_k)
   proof MLWE_.Matrix_.ZR.addrA by apply KMatrix.ZR.addrA
   proof MLWE_.Matrix_.ZR.addrC by apply KMatrix.ZR.addrC
   proof MLWE_.Matrix_.ZR.add0r by apply KMatrix.ZR.add0r
@@ -767,67 +838,63 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
 
 realize pk_encodeK.
 rewrite /pk_decode /pk_encode /cancel /= => x.
-rewrite -sem_encode12_vecK; last by rewrite toipolyvecK invnttvK /#.
-move => i ib; rewrite /toipolyvec !mapiE /= 1:ib.
+rewrite -sem_encode12_vecK; last by rewrite toipolyvecK invnttvK poly2algK /#.
+move => i ib; rewrite /toipolyvec IPVec.initiE 1:ib /=.
 by smt(rg_asint qE).
 qed.
 
 realize sk_encodeK.
 rewrite /sk_decode /sk_encode /cancel /= => x.
-rewrite  -sem_encode12_vecK; last by rewrite toipolyvecK invnttvK /#.
-move => i ib; rewrite /toipolyvec !mapiE /= 1:ib.
+rewrite  -sem_encode12_vecK; last by rewrite toipolyvecK invnttvK poly2algK /#.
+move => i ib; rewrite /toipolyvec IPVec.initiE 1:ib /=.
 by smt(rg_asint qE).
 qed.
 
 realize encode_noise.
 move => /> u v.
-rewrite /c_decode /c_encode /rnd_err_u /rnd_err_v /z /= -sem_encode10_vecK.
-+ move => i ib; rewrite /compress_polyvec !mapiE /= 1:ib /compress /= /#.
-rewrite -sem_encode4K /=.
-  by move => i ib; rewrite /compress_poly !mapiE /= 1:ib /compress /= /#.
+rewrite /c_decode /c_encode /rnd_err_u /rnd_err_v /z /= -sem_encode_vecK.
++ move => i ib; rewrite /compress_polyvec IPVec.initiE 1:ib /Compress /=;smt(StdOrder.IntOrder.expr_gt0).
+rewrite -sem_encode_polyK /=.
+  by move => i ib; rewrite /compress_poly !mapiE /= 1:ib /Compress /=;smt(StdOrder.IntOrder.expr_gt0).
 split; last  by rewrite round_poly_errE.
-rewrite /(+) mapvE /=.
-apply eq_vectorP => /> i il ih. rewrite !offunvE /=;1: smt(). 
+rewrite /(+) /mapv /=.
+apply eq_vectorP => /> i il ih.
+rewrite !offunvE /=;1,2: smt(). 
 rewrite offunvE 1:/# /= /compress_poly_err /=.
 apply Array256.tP => k kb.
-rewrite /decompress_polyvec /compress_polyvec /= /fromarray256 /= /Rq.(&+) !getvE !setvE /= !offunvE 1:/# /=.
+rewrite /decompress_polyvec /compress_polyvec /= /fromarray256 /= /Rq.(&+)  /= initiE 1:/# /= mapiE 1:/# mapiE 1:/# map2E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= !initiE 1,2:/# /= mapiE 1:/# /=.
 case (i = 2).
-+ move => -> /=;
- rewrite mapiE // map2E //= initiE //= initiE //= mapiE //= 1:/# initiE 1:/# /=. 
- rewrite decompress_errE //; 1: smt(qE).
- by rewrite mapiE /#.
++ rewrite decompress_errE //; 1,3: smt(param_sets).
+  by rewrite qE /=;have /= H := param_sets; elim H => /> ? -> /=.
+
 case (i = 1).
-+ move => -> /=.
- rewrite !offunvK /vclamp /kvec /=  mapiE // map2E //= initiE //= initiE //= mapiE //= 1:/# initiE 1:/# /=. 
- rewrite decompress_errE //; 1: smt(qE).
- by rewrite mapiE /#.
-move => *;rewrite ifF 1:/# !offunvK /vclamp /kvec /= ifT 1:/# ifF 1:/# ifT 1:/# ifT 1:/#.
- rewrite mapiE // map2E //= initiE //= initiE //= mapiE //= 1:/# initiE 1:/# /=. 
- rewrite decompress_errE //; 1: smt(qE).
- by rewrite mapiE /#.
++ rewrite decompress_errE //; 1,3: smt(param_sets).
+  by rewrite qE /=;have /= H := param_sets; elim H => /> ? -> /=.
+rewrite decompress_errE //; 1,3: smt(param_sets).
+by rewrite qE /=;have /= H := param_sets; elim H => /> ? -> /=.
 qed.
 
 realize good_decode.
 rewrite /under_noise_bound /m_encode /m_decode /compress_poly 
         /decompress_poly /max_noise qE /= => m n.
 rewrite allP  => /=  hgood.
-have : decode1 (encode1 (map (compress 1) (map (decompress 1) (decode1 m) &+ n))) = 
+have : decode1 (encode1 (map (Compress 1) (map (Decompress 1) (decode1 m) &+ n))) = 
        (decode1 m); last by smt(sem_decode1K).
 apply Array256.ext_eq => /> x h0x hx256. 
 rewrite -sem_encode1K. 
-+ move => i ib; rewrite !mapiE /= 1:ib /compress /= /#.
++ move => i ib; rewrite !mapiE /= 1:ib /Compress /= /#.
 rewrite /(&+) mapiE 1:/# map2E /= initiE /= 1:/# mapiE 1:/#.
 have [->|->] /=: (decode1 m).[x]=0 \/ (decode1 m).[x]=1
  by smt(decode1_bnd).
- rewrite /decompress /=.
+ rewrite /Decompress /=.
  rewrite from_int_round.
  rewrite -{1}zeroE asintK Zq.ZModule.add0r compress1_is0 // Bq1E.
  smt().
-rewrite /decompress /round /=.
+rewrite /Decompress /round /=.
 have ->: q%r / 2%r + inv 2%r = (q%r+1%r)/2%r
  by field; smt().
 rewrite qE -fromintD -divz_floor //=.
-have: compress 1 (incoeff 1665 + n.[x]) <> 0.
+have: Compress 1 (incoeff 1665 + n.[x]) <> 0.
  rewrite compress1_is0 Bq1E.
  move: (hgood x _) => //. 
  rewrite (_:832=831+1) 1://. 
@@ -838,7 +905,7 @@ have: compress 1 (incoeff 1665 + n.[x]) <> 0.
   smt(incoeffK).
  rewrite qE /=.
  smt(incoeffK).
-by rewrite /compress /=; smt(ltz_pmod modz_ge0).
+by rewrite /Compress /=; smt(ltz_pmod modz_ge0).
 qed.
 
 realize cv_bound_valid.
@@ -846,7 +913,8 @@ move=> A s e r e2 m ???? t v.
 rewrite /under_noise_bound /rnd_err_v /compress_poly_err /cv_bound.
 rewrite allP /compress_err => i Hi /=.
 rewrite mapiE //= -Bq4E.
-by move: (compress_err_bound v.[i] 4 _ _) => //= /#.
+move: (compress_err_bound v.[i] 4 _ _) => //=;1:smt(qE).
+by rewrite /compress_err dv_val /Bq /=.
 qed.
 
 realize noise_commutes.
@@ -856,8 +924,8 @@ rewrite !allP.
 move => Hn Hnp i ib.
 move : (Hn i ib). 
 move : (Hnp i ib) => /=. 
-rewrite /as_sint /Rq.(&+) /= map2E !initiE //= Zq.addE qE /= !StdOrder.IntOrder.ler_norml /= => Hni Hnpi.
-by smt().
+rewrite /as_sint /Rq.(&+) /= map2E !initiE //= !StdOrder.IntOrder.ler_norml /= => Hni Hnpi.
+by rewrite creprD; smt(to_crepr_abs).
 qed.
 
 realize noise_preserved.
@@ -867,10 +935,10 @@ rewrite !allP.
 rewrite eq_iff; split => /=. 
 move => H i ib; move : (H i ib).
 rewrite /(&-) mapiE 1:/#.
-rewrite as_sintN /= /#. 
+rewrite creprN /= /#. 
 move => H i ib; move : (H i ib).
 rewrite /(&-) mapiE 1:/#.
-rewrite as_sintN /= /#. 
+rewrite creprN /= /#. 
 qed.
 
 
@@ -906,8 +974,8 @@ transitivity {2} { coins0 <- (witness,k); coins <$ srand;  (pk0,sk0) <- kg coins
 swap {1} 1 1;auto => /> coins _; rewrite /kg /=. 
 have -> /= : (prg_kg_inner coins) = 
  ((prg_kg_inner coins).`1,(prg_kg_inner coins).`2,(prg_kg_inner coins).`3) by smt(). 
-rewrite /pk_encode /sk_encode /= /= polyvecD.
-by rewrite -!polyvecD comm_nttv_add comm_nttv_mmul. 
+rewrite /pk_encode /sk_encode /=.
+by rewrite alg2poly_add !alg2polyK comm_nttv_add comm_nttv_mmul.
 qed.
 
 equiv enc_eq: 
@@ -922,8 +990,8 @@ wp;conseq  (: _ ==> (glob FO_MLKEM.KEMROM.RO.RO){1}=(glob SPEC_MODEL.RO.RO){2}  
 + auto => />; rewrite /enc /= /pk_decode /m_encode /c_encode => &2 m r.
   have -> /= : prg_enc_inner r = 
    ((prg_enc_inner r).`1,(prg_enc_inner r).`2,(prg_enc_inner r).`3) by smt().
-  split; congr; congr. 
-  + by rewrite -!polyvecD -comm_nttv_mmul invnttvK.
+  split; congr; congr.
+  + by rewrite alg2poly_add alg2polyK -comm_nttv_mmul invnttvK poly2almat_trmx.
   by rewrite comm_ntt_dotp.
 
 by inline *;auto => />.
@@ -952,8 +1020,8 @@ seq 1 20 : (#pre /\ c'{1} = c{2}); last by auto => />.
 auto => />; rewrite /enc /= /pk_decode /m_encode /c_encode => &1 &2. 
 have -> /= : prg_enc_inner r{2} = 
  ((prg_enc_inner r{2}).`1,(prg_enc_inner r{2}).`2,(prg_enc_inner r{2}).`3) by smt().
-split; congr; congr. 
-+ by rewrite -!polyvecD -comm_nttv_mmul invnttvK.
+split; congr; congr.
++ by rewrite alg2poly_add alg2polyK -comm_nttv_mmul invnttvK poly2almat_trmx.
 by rewrite comm_ntt_dotp.
 qed.
 
@@ -1044,6 +1112,18 @@ module MLKEM_PRGs_O (PRF : PRF_DEFS.PRF_Oracles) = {
 
 }.
 
+(* Clone-boundary bridge: the algebraic short-vector distribution is the
+   concrete polyvec sampler post-composed with poly2alg.  This is what lets
+   the (algebraic) PRG ideal distributions reduce to the concrete CBD samplers. *)
+lemma dvector_poly2alg (d : poly distr) :
+  dvector d = dmap (dmap (dlist d kvec) (fun l => KVec.init (nth witness l))) poly2alg.
+proof.
+rewrite /dvector dmap_comp -dlist_djoin /(\o) /=.
+smt(gt0_k).
+apply eq_dmap_in => l hl /=.
+by rewrite /poly2alg; apply eq_vectorP => i hi; rewrite !offunvE 1,2:/# /= KVec.initiE 1:/# //.
+qed.
+
 section.
 
 declare module  A <: PRG_KG.Distinguisher { -NPRF.PRF, -NRF.RF}.
@@ -1053,7 +1133,7 @@ module (B_HS_KG(A : PRG_KG.Distinguisher) : HS_DEFS.Distinguisher)  = {
    proc distinguish(rho sig : W8.t Array32.t) : bool = {
       var b,x;
       x <@ MLKEM_PRGs_O(NPRF.PRF).prg_kg_hs(rho,sig);
-      b <@ A.distinguish(x);
+      b <@ A.distinguish((x.`1, poly2alg x.`2, poly2alg x.`3));
       return b;
    }
 }.
@@ -1062,7 +1142,7 @@ module (B_PRF_KG(A : PRG_KG.Distinguisher) : PRF_DEFS.Distinguisher) (O : PRF_DE
    proc distinguish() : bool = {
       var b,x;
       x <@ MLKEM_PRGs_O(O).prg_kg_prf();
-      b <@ A.distinguish(x);
+      b <@ A.distinguish((x.`1, poly2alg x.`2, poly2alg x.`3));
       return b;
    }
 }.
@@ -1080,20 +1160,22 @@ have -> : Pr[PRG_KG.IND(PRG_KG.PRGr, A).main() @ &m : res] =
 + byequiv => //.
   proc; inline {2} 3; wp; call(: true) => />. 
   inline {1} 2; inline {2} 2. 
-  transitivity {1} {sd <$ srand; x <@ MLKEM_PRGs.prg_kg(sd);} 
+  transitivity {1} {sd <$ srand; x <@ MLKEM_PRGs_alg.prg_kg(sd);}
         (true ==> ={x})
-        (true ==> x{1} = x0{2});1,2: smt(). 
-  + wp;ecall{2} (prg_kg_sem sd{2}).
+        (true ==> x{1} = (x0{2}.`1, poly2alg x0{2}.`2, poly2alg x0{2}.`3));1,2: smt().
+  + inline {2} 2; wp;ecall{2} (prg_kg_sem sd{2}).
     by auto => />.
-  inline {1} 2; inline {2} 6.
+  inline {1} 2; inline {1} 3; inline {2} 6.
+  wp; conseq (: _ ==> rho{1} = rho0{2} /\ ={noise1,noise2}); 1: smt().
   by sim;auto => />.
 
 have -> : Pr[HS_DEFS.IND(HS_DEFS.PRGi, B_HS_KG(A)).main() @ &m : res] =
           Pr[PRF_DEFS.IND(PRF, B_PRF_KG(A)).main() @ &m : res].
 + byequiv => //.
-  proc; inline {1} 3; inline {2} 2;wp; call(: true) => />. 
-  inline {1} 4; inline {2} 2. 
-  sim; inline *; wp;conseq/>. 
+  proc; inline {1} 3; inline {2} 2;wp; call(: true) => />.
+  conseq (: _ ==> x0{1} = x{2}); 1: smt().
+  inline {1} 4; inline {2} 2.
+  sim; inline *; wp;conseq/>.
   seq 2 0 : #pre; 1: by auto.
   swap {2} 1 1 ;rndsem* {2} 0;auto => />.
   have -> : dlet dRO
@@ -1118,13 +1200,13 @@ byequiv => //.
 proc. inline {2} 2; wp;call(: true) => />.
 inline {1} 2. inline {2} 2.
 transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample_vec_real(); x <- (rho,noise1,noise2); }
-       (true ==> ={x})
+       (true ==> x{1} = (x{2}.`1, poly2alg x{2}.`2, poly2alg x{2}.`3))
        (true ==> ={x}); 1,2: smt().
 + transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_ideal(); noise2 <@ CBD2rnd.sample_vec_ideal(); x <- (rho,noise1,noise2); }
-       (true ==> ={x})
+       (true ==> x{1} = (x{2}.`1, poly2alg x{2}.`2, poly2alg x{2}.`3))
        (true ==> ={x}); 1,2: smt().
-   + inline *. swap {1} 3 -2. swap {2} 3 1. 
-     wp;rnd{1};conseq (:r{1} = (rho{2}, v{2}, v0{2})); 1: smt().
+   + inline *. swap {1} 3 -2. swap {2} 3 1.
+     wp;rnd{1};conseq (:r{1} = (rho{2}, poly2alg v{2}, poly2alg v0{2})); 1: smt().
      by rndsem* {2} 0;auto => /> /#.
   by symmetry;wp; do 2!call(CBD2rnd_vec_equiv); auto => />.
 
@@ -1174,7 +1256,7 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
    by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
   auto => /> &1 &2; split; first smt().
   move=> v1 m i v2 => ??????; split; last smt().
-  apply eq_vectorP => k kb;smt(setvE getvE).
+  apply KVec.ext_eq => k kb;smt(setvE getvE).
  wp; seq 1 2: (={rho,noise1,noise2} /\ _N{2} = 6 /\
            forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
@@ -1212,7 +1294,7 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
    by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
   auto => /> &1 &2; split; first smt().
   move=> v1 m i v2 ??????; split; last smt().
-  by apply eq_vectorP => k kb;smt(setvE getvE).
+  by apply KVec.ext_eq => k kb;smt(setvE getvE).
  by auto.
 qed.
 
@@ -1223,7 +1305,7 @@ module (B_PRF_ENC(A : PRG_ENC.Distinguisher) : PRF_DEFS.Distinguisher) (O : PRF_
    proc distinguish() : bool = {
       var b,x;
       x <@ MLKEM_PRGs_O(O).prg_enc();
-      b <@ A.distinguish(x);
+      b <@ A.distinguish((poly2alg x.`1, poly2alg x.`2, x.`3));
       return b;
    }
 }.
@@ -1306,7 +1388,7 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
    by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
   auto => /> &1 &2; split; first smt().
   move=> v1 m i v2 => ??????; split; last smt().
-  apply eq_vectorP => k kb;smt(setvE getvE).
+  apply KVec.ext_eq => k kb;smt(setvE getvE).
  wp; seq 1 2: (={noise1,noise2} /\ _N{2} = 6 /\
            forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
@@ -1344,7 +1426,7 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
    by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
   auto => /> &1 &2; split; first smt().
   move=> v1 m i v2 ??????; split; last smt().
-  by apply eq_vectorP => k kb;smt(setvE getvE).
+  by apply KVec.ext_eq => k kb;smt(setvE getvE).
  conseq />.
   inline*; wp.
   rcondt {2} 4.
