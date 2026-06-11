@@ -10,12 +10,11 @@ from Spec require import KPKE MLKEM Correctness EncDecCorrectness MLKEMLib.
 require import MLWE_PKE_Hash.
 import Zq MLKEMParams VecMat PolyVec PolyMat Symmetric Serialization KPKE.
 
-(* This is the ML-KEM-768 security proof: it is pinned to the kvec=3 variant
-   (its sampler proofs unroll the concrete matrix/noise loops).  There is no
-   1024 security variant.  Mirrors mldsa's per-variant prelude axioms. *)
-axiom kvec_val : kvec = 3.
-axiom du_val   : du = 10.
-axiom dv_val   : dv = 4.
+(* ML-KEM security/correctness proof, parametric over the variant: it holds for
+   every (kvec,du,dv,eta1,eta2) admitted by param_sets (both 768 and 1024).  The
+   only variant facts the proof needs are the param_sets-derived bounds below. *)
+lemma kvec_le4 : kvec <= 4 by smt(param_sets).
+lemma dv_vals  : dv = 4 \/ dv = 5 by smt(param_sets).
 
 (* Rewriting the Spec in a way that allows applying computational
    assumptions on PRGs, as well as defining operators that
@@ -269,12 +268,12 @@ qed.
 op prg_kg_inner(coins :  W8.t Array32.t) : W8.t Array32.t * polyvec * polyvec =
    ((G_coins768 coins).`1, 
     KVec.init (fun i => samplePolyCBD (Symmetric.PRF (G_coins768 coins).`2 (W8.of_int i))),
-    KVec.init (fun i => samplePolyCBD (Symmetric.PRF (G_coins768 coins).`2 (W8.of_int (i + 3))))).
+    KVec.init (fun i => samplePolyCBD (Symmetric.PRF (G_coins768 coins).`2 (W8.of_int (i + kvec))))).
 
 op prg_enc_inner(coins :  W8.t Array32.t) : polyvec * polyvec * poly =
    (KVec.init (fun i => samplePolyCBD (Symmetric.PRF coins (W8.of_int i))),
-    KVec.init (fun i => samplePolyCBD (Symmetric.PRF coins (W8.of_int (i + 3)))), 
-    samplePolyCBD (Symmetric.PRF coins (W8.of_int 6))).
+    KVec.init (fun i => samplePolyCBD (Symmetric.PRF coins (W8.of_int (i + kvec)))),
+    samplePolyCBD (Symmetric.PRF coins (W8.of_int (2 * kvec)))).
 
 lemma prg_kg_sem _coins : 
    phoare [ MLKEM_PRGs.prg_kg : coins = _coins ==> res = prg_kg_inner _coins ] = 1%r.
@@ -308,7 +307,7 @@ split; first by smt(gt0_k).
 move => hex2 h1 h1l hn10eq Hn20.
 have Hn20v : n20 = (prg_kg_inner _coins).`3.
 + rewrite /prg_kg_inner /=; apply KVec.ext_eq => k hk.
-  by rewrite KVec.initiE 1:hk /= /PRF; smt(kvec_val).
+  by rewrite KVec.initiE 1:hk /= /PRF; smt(kvec_le4).
 by rewrite Hn20v /prg_kg_inner /=; smt().
 qed.
 
@@ -344,8 +343,8 @@ split; first by smt(gt0_k).
 move => hex2 h1 h1l hn10eq Hn20.
 have Hn20v : n20 = (prg_enc_inner _coins).`2.
 + rewrite /prg_enc_inner /=; apply KVec.ext_eq => k hk.
-  by rewrite KVec.initiE 1:hk /= /PRF; smt(kvec_val).
-by rewrite Hn20v /prg_enc_inner /= /PRF; smt(kvec_val).
+  by rewrite KVec.initiE 1:hk /= /PRF; smt(kvec_le4).
+by rewrite Hn20v /prg_enc_inner /= /PRF; smt(kvec_le4).
 (* losslessness of the two noise whiles (prefix of the trailing e2 call) *)
 while (0 <= i <= kvec) (kvec - i).
 + move => z; wp; ecall (cbd2prfsem NPRF.PRF.k _N); auto => /> /#.
@@ -718,7 +717,7 @@ op max_noise = q %/ 4 - 1.
 op under_noise_bound (p : poly) (b : int) =
      all (fun cc => `| as_sint cc| <= b) p.
 
-op cv_bound_max : int = 104. (* this is the compress error bound for d = 4 *)
+op cv_bound_max : int = Bq dv. (* compress error bound for d = dv (104 at dv=4, 52 at dv=5) *)
 
 
 (* This will bring into context a ROM definition which has
@@ -872,9 +871,9 @@ realize cv_bound_valid.
 move=> A s e r e2 m ???? t v.
 rewrite /under_noise_bound /rnd_err_v /compress_poly_err /cv_bound.
 rewrite allP /compress_err => i Hi /=.
-rewrite mapiE //= -Bq4E.
-move: (compress_err_bound v.[i] 4 _ _) => //=;1:smt(qE).
-by rewrite /compress_err dv_val /Bq /=.
+rewrite mapiE //= /cv_bound_max /Bq.
+apply compress_err_bound; 1: smt(gt0_dv).
+by case dv_vals => ->; rewrite qE.
 qed.
 
 realize noise_commutes.
@@ -1215,7 +1214,7 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
     have -> := dprodE (pred1 x) predT srand srand.
     by rewrite srand_ll /=.
     
- seq 1 2: (={noise1,rho} /\ _N{2} = 3 /\
+ seq 1 2: (={noise1,rho} /\ _N{2} = kvec /\
            forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
   while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=i{2} /\
@@ -1224,7 +1223,7 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
    rcondt {2} 4.
    +  move=> *; wp; skip => &hr /> ??? Hm ?.
       rewrite -implybF => H.
-      by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_val).
+      by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_le4).
    wp; while (#[/:4,7:]pre /\ ={bytes} /\ i1{1} = i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
               (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
@@ -1238,7 +1237,7 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
    wp; rnd; wp; skip => /> &1 &2; move => ?????????; split.
     split; 1:   by rewrite FMap.get_set_sameE.
     move=> x; case: (x=W8.of_int i{2}) => E.
-     by move=> _; rewrite E of_uintK; smt(kvec_val).
+     by move=> _; rewrite E of_uintK; smt(kvec_le4).
     rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i0 p2 ?????? H; split; first smt().
@@ -1249,18 +1248,18 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
     by rewrite E; smt(KVec.get_setE).
    by smt(KVec.get_setE).
   auto => /> &1 &2; split; first smt(gt0_k).
-  move=> v1 m i v2 => ??????; split; last smt(kvec_val).
+  move=> v1 m i v2 => ??????; split; last smt(kvec_le4).
   apply KVec.ext_eq => k kb;smt(KVec.get_setE).
- wp; seq 1 2: (={rho,noise1,noise2} /\ _N{2} = 6 /\
+ wp; seq 1 2: (={rho,noise1,noise2} /\ _N{2} = 2*kvec /\
            forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
-  while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ noise1{1}=noise1{2} /\
+  while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=kvec+i{2} /\ noise1{1}=noise1{2} /\
          (forall k, 0 <= k < i{2} => (v{1}.[k]=noise2{2}.[k])%PolyVec) /\
          forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
    rcondt {2} 4.
     move=> *; wp; skip => &hr /> ??? Hm ?.
     rewrite -implybF => H.
-    by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_val).
+    by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_le4).
    wp; while (#[/:5,8:]pre /\ bytes{1}=bytes{2} /\ i1{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
               (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
@@ -1274,8 +1273,8 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
    wp; rnd; wp; skip => /> &1 &2; move => ?????????; split.
     split; 1:  by rewrite FMap.get_set_sameE.
-    move=> x; case: (x=W8.of_int (3+i{2})) => E.
-     by move=> _; rewrite E of_uintK; smt(kvec_val).
+    move=> x; case: (x=W8.of_int (kvec+i{2})) => E.
+     by move=> _; rewrite E of_uintK; smt(kvec_le4).
     rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i1 p2 ?????? H; split; first smt().
@@ -1287,7 +1286,7 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
     by rewrite E; smt(KVec.get_setE).
    by smt(KVec.get_setE).
   auto => /> &1 &2; split; first smt(gt0_k).
-  move=> v1 m i v2 ??????; split; last smt(kvec_val).
+  move=> v1 m i v2 ??????; split; last smt(kvec_le4).
   by apply KVec.ext_eq => k kb;smt(KVec.get_setE).
  by auto.
 qed.
@@ -1374,7 +1373,7 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
      forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   + by auto => />;smt(FMap.mem_empty).
     
- seq 1 2: (={noise1} /\ _N{2} = 3 /\
+ seq 1 2: (={noise1} /\ _N{2} = kvec /\
            forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
   while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=i{2} /\
@@ -1383,7 +1382,7 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
    rcondt {2} 4.
    +  move=> *; wp; skip => &hr /> ??? Hm ?.
       rewrite -implybF => H.
-      by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_val).
+      by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_le4).
    wp; while (#[/:4,7:]pre /\ ={bytes} /\ i1{1} = i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
               (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
@@ -1397,7 +1396,7 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
    wp; rnd; wp; skip => /> &1 &2; move => ?????????; split.
     split; 1:   by rewrite FMap.get_set_sameE.
     move=> x; case: (x=W8.of_int i{2}) => E.
-     by move=> _; rewrite E of_uintK; smt(kvec_val).
+     by move=> _; rewrite E of_uintK; smt(kvec_le4).
     rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i0 p2 ?????? H; split; first smt().
@@ -1408,18 +1407,18 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
     by rewrite E; smt(KVec.get_setE).
    by smt(KVec.get_setE).
   auto => /> &1 &2; split; first smt(gt0_k).
-  move=> v1 m i v2 => ??????; split; last smt(kvec_val).
+  move=> v1 m i v2 => ??????; split; last smt(kvec_le4).
   apply KVec.ext_eq => k kb;smt(KVec.get_setE).
- wp; seq 1 2: (={noise1,noise2} /\ _N{2} = 6 /\
+ wp; seq 1 2: (={noise1,noise2} /\ _N{2} = 2*kvec /\
            forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
-  while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=3+i{2} /\ noise1{1}=noise1{2} /\
+  while (i0{1} = i{2} /\ 0 <= i{2} <= kvec /\ _N{2}=kvec+i{2} /\ noise1{1}=noise1{2} /\
          (forall k, 0 <= k < i{2} => (v{1}.[k]=noise2{2}.[k])%PolyVec) /\
          forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
    rcondt {2} 4.
     move=> *; wp; skip => &hr /> ??? Hm ?.
     rewrite -implybF => H.
-    by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_val).
+    by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_le4).
    wp; while (#[/:5,8:]pre /\ bytes{1}=bytes{2} /\ i1{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
               (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
@@ -1433,8 +1432,8 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
    wp; rnd; wp; skip => /> &1 &2; move => ?????????; split.
     split; 1:  by rewrite FMap.get_set_sameE.
-    move=> x; case: (x=W8.of_int (3+i{2})) => E.
-     by move=> _; rewrite E of_uintK; smt(kvec_val).
+    move=> x; case: (x=W8.of_int (kvec+i{2})) => E.
+     by move=> _; rewrite E of_uintK; smt(kvec_le4).
     rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i1 p2 ?????? H; split; first smt().
@@ -1446,14 +1445,14 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
     by rewrite E; smt(KVec.get_setE).
    by smt(KVec.get_setE).
   auto => /> &1 &2; split; first smt(gt0_k).
-  move=> v1 m i v2 ??????; split; last smt(kvec_val).
+  move=> v1 m i v2 ??????; split; last smt(kvec_le4).
   by apply KVec.ext_eq => k kb;smt(KVec.get_setE).
  conseq />.
   inline*; wp.
   rcondt {2} 4.
    move=> *; wp; skip => &hr /> Hm. 
    rewrite -implybF => H.
-   by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_val).
+   by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_le4).
    while (#[/:-2]pre /\ bytes{1}=bytes{2} /\ i0{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
           forall k, 0 <= k < j{2} => p{1}.[k] = rr{2}.[k]).
     wp; skip => /> &1&2 *; split; first smt(). 

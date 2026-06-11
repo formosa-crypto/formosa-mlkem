@@ -1,13 +1,3 @@
-(* Operator-form spec module InnerPKE_Op, relocated from MLKEMSecurity768.ec
-   so correctness proofs can target it without dragging the security-side
-   sampler scaffolding (Hmodule, MLKEM_PRGs, NPRF/PRF clones, H_sem,
-   prg_kg_sem).  The three equivs InnerPKE_Op.* ~ InnerPKE768.* are
-   re-proven using only Correctness768.ec lemmas (parse_sem, sampleA_sem,
-   cbd2sample's proc-op definition).
-
-   MLKEMSecurity768.ec should `require import` this file and discard its
-   own redundant copies of these defs/equivs. *)
-
 require import AllCore IntDiv Distr List DList.
 from Jasmin require import JWord.
 from JazzEC require import Array25 Array32 Array33 Array64 Array128 Array168
