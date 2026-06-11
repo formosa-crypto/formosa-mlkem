@@ -1,6 +1,6 @@
 (* Ref-free AVX2 noise sampling machinery.
    Builds the chain
-     Jkem768_avx2.M._poly_getnoise_eta1_4x  ~  4x cbd2sample (PRF seed nonce_i)
+     Jkem_avx2.M._poly_getnoise_eta1_4x  ~  4x cbd2sample (PRF seed nonce_i)
    without dragging ref-Jasmin via AuxMLKEM / ref's _poly_getnoise.
 
    This file relocates pure W8 bit-algebra lemmas (parallel_noisesum_low/high
@@ -11,7 +11,7 @@ require import AllCore IntDiv List.
 from Jasmin require import JModel JUtils.
 from JazzEC require import Array8 Array16 Array32 Array33 Array128 Array256.
 from JazzEC require import WArray128.
-from JazzEC require import Jkem768_avx2.
+from JazzEC require import Jkem_avx2.
 from Spec require import GFq Rq Sampling Symmetric InnerPKE768_Op.
 require import MLKEMFCLib NTT_AVX_Fq AVX2_Ops Montgomery16.
 import MLKEMFCLib768.
@@ -121,7 +121,7 @@ qed.
 
 (* ============================================================
    noise_coef + AuxMLKEMAvx2 module (relocated from OLD
-   MLKEM_InnerPKE_avx2.ec).  Ref-free: uses only Jkem768_avx2.M's
+   MLKEM_InnerPKE_avx2.ec).  Ref-free: uses only Jkem_avx2.M's
    _shake256_128_33 (AVX2 Jasmin) inside _poly_getnoise.
    ============================================================ *)
 
@@ -419,7 +419,7 @@ lemma truncateu128_bits128 (w:W256.t):
 proof. by rewrite /truncateu128 to_uint_eq of_uintK bits128_div 1:/# /= of_uintK. qed.
 
 hoare cbd2_avx2_h _bytes:
- Jkem768_avx2.M.__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
+ Jkem_avx2.M.__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k)).
 proof.
 proc.
 sp; simplify.
@@ -538,13 +538,13 @@ rewrite tP => k Hk; rewrite (H k _); first smt(mem_iota).
 by rewrite initiE /#.
 qed.
 
-lemma cbd2_ll : islossless Jkem768_avx2.M.__cbd2.
+lemma cbd2_ll : islossless Jkem_avx2.M.__cbd2.
 proc. inline *. sp; wp. while (true) (4-i). move => z.
 auto => /> &hr H. smt().
 auto => />i. smt(). qed. 
 
 phoare cbd2_avx2_ph _bytes:
- [Jkem768_avx2.M.__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k))] = 1%r.
+ [Jkem_avx2.M.__cbd2: buf=_bytes ==> res = Array256.init (fun k => W16.of_int (noise_coef _bytes k))] = 1%r.
 conseq cbd2_ll (cbd2_avx2_h _bytes) => />. qed.
 module AuxMLKEMAvx2 = {
   proc cbd2_ref (rp:W16.t Array256.t, buf:W8.t Array128.t) : W16.t Array256.t = {
@@ -740,9 +740,9 @@ qed.
    ============================================================ *)
 
 equiv getnoise_1x_equiv_avx :
-  Jkem768_avx2.M.__poly_cbd_eta1 ~ AuxMLKEMAvx2.cbd2_ref : ={arg} ==> ={res}.
+  Jkem_avx2.M.__poly_cbd_eta1 ~ AuxMLKEMAvx2.cbd2_ref : ={arg} ==> ={res}.
 proof.
-proc*. inline Jkem768_avx2.M.__poly_cbd_eta1.  sp;wp.
+proc*. inline Jkem_avx2.M.__poly_cbd_eta1.  sp;wp.
 ecall{1} (cbd2_avx2_ph buf{1}) => />.
 ecall{2} (cbd2_ref_ph buf{2}) => />.
 auto => /> &2. rewrite tP => i Hi. rewrite initiE /#.
@@ -753,7 +753,7 @@ qed.
    ============================================================ *)
 
 equiv getnoise_4x_avx_aux :
-  Jkem768_avx2.M._poly_getnoise_eta1_4x ~ AuxMLKEMAvx2.__poly_getnoise_eta1_4x :
+  Jkem_avx2.M._poly_getnoise_eta1_4x ~ AuxMLKEMAvx2.__poly_getnoise_eta1_4x :
     seed{1} = noiseseed{2} /\ nonce{1} = nonce{2} /\
     r0{1} = aux3{2} /\ r1{1} = aux2{2} /\ r2{1} = aux1{2} /\ r3{1} = aux0{2}
     ==> ={res}.
@@ -805,7 +805,7 @@ auto => /> /#.
 qed.
 
 phoare jkem_getnoise_4x_ph _seed _nonce :
-  [Jkem768_avx2.M._poly_getnoise_eta1_4x :
+  [Jkem_avx2.M._poly_getnoise_eta1_4x :
     seed = _seed /\ nonce = _nonce
     ==>
     lift_array256 res.`1 = cbd2sample (SHAKE256_33_128 _seed _nonce) /\

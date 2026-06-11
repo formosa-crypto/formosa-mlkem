@@ -23,7 +23,7 @@ lemma rrinvcoeff : incoeff R * incoeff 169 = Zq.one by rewrite -incoeffM -eq_inc
 
 theory Fq_avx2.
 
-from JazzEC require import Jkem1024_avx2.
+from JazzEC require import Jkem_avx2.
 
 (*
 import MLKEM.

@@ -6,9 +6,8 @@ from JazzEC require import Array32.
 
 require import Montgomery.
 require import W16extra MLKEMFCLib.
-import MLKEMFCLib1024.
 
-from Spec require import GFq Correctness1024.
+from Spec require import GFq Correctness.
 
 import Zq.
 
@@ -87,7 +86,6 @@ lemma fqmul_old_corr _a _b :
      W16.to_sint a = _a /\ W16.to_sint b = _b ==> 
          W16.to_sint res = SREDC (_a * _b)] = 1%r.
 proof. by conseq fqmul_old_ll (fqmul_old_corr_h _a _b). qed.
-
 
 
 lemma aux26_0 x :
@@ -173,7 +171,7 @@ case (2147483648 <= to_uint a); last first. (* positive numbers *)
     by smt(leq_div2r).
  move => /= lb.
  have -> : to_uint a %/ 2 ^ (x + 26) = to_uint a %/ 67108864 %/ 2 ^ x; last by smt().
- rewrite (_: 67108864 = 2^26) 1:// {1}(divz_eq (to_uint a) (2^26)) exprD_nneg 2://; 1: smt().  
+ rewrite (_: 67108864 = 2^26) 1:// {1}(divz_eq (to_uint a) (2^26)) exprD_nneg 2://; 1: smt().
  by rewrite divmod_mul;smt(gt0_pow2).
 
 move => neg.
@@ -287,7 +285,7 @@ lemma compress_impl_small (a : W16.t) (d : int):
   bpos16 a q =>
   (to_uint (((zeroextu32 a `<<` W8.of_int d) + 
      W32.of_int 1665) * W32.of_int 80635 `>>` W8.of_int 28)) %% 2^d=
-       compress d (incoeff (to_sint a)).
+       Compress d (incoeff (to_sint a)).
 proof.
 move => drng.
 have /= dpow : 2^1<=2^d <= 2^4 
@@ -309,13 +307,43 @@ rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
 rewrite -pow2_4; apply dvdz_exp2l; smt().
 qed.
 
+
+(* Variant-specific compress bridges (the W64/W32 shift constants differ).
+   In variant-namespace subtheories, consuming the Compress768/1024 spec subtheories. *)
+theory Fq768.   (* du = 10, dv = 4 *)
+import Compress768.
+
+lemma compress_impl_large (a : W16.t) :
+  bpos16 a q =>
+  (to_uint (((zeroextu64 a `<<` (of_int 10)%W8) + (of_int 1665)%W64) * (of_int 1290167)%W64 `>>`
+           (of_int 32)%W8)) %% 1024 = Compress 10 (incoeff (to_sint a)).
+rewrite /bpos16 qE;move => abnd.
+move : (to_sint_unsigned a _); 1: by smt().
+move => au; rewrite -compress_alt_compress_large.
+rewrite /zeroextu64 /compress_alt_large qE => /= *.
+rewrite  /(`<<`) /(`>>`) W64.shlMP; 1: by smt().
+rewrite W64.to_uint_shr; 1: by smt().
+rewrite incoeffK to_sintE /max /= !W64.of_uintK /= qE /=.
+rewrite !(modz_small _ 3329) /=; 1: smt().
+have ->: W16.smod (to_uint a) = to_uint a by
+  move : abnd; rewrite /to_sint /smod /=; 1: by smt(W16.to_uint_cmp pow2_16).
+pose xx := (to_uint a * 1024 + 1665).
+have -> : (18446744073709551616 = 4294967296 * 4294967296) by auto.
+rewrite divz_mod_mul //.
+by rewrite (modz_small _ 4294967296); 1: by smt().
+qed.
+end Fq768.
+
+theory Fq1024.   (* du = 11, dv = 5 *)
+import Compress1024.
+
 lemma compress_impl5 (a : W16.t):
   bpos16 a q =>
-  (to_uint (((zeroextu32 a `<<` W8.of_int 5) + 
+  (to_uint (((zeroextu32 a `<<` W8.of_int 5) +
      W32.of_int 1664) * W32.of_int 40318 `>>` W8.of_int 27)) %% 32=
-       compress 5 (incoeff (to_sint a)).
+       Compress 5 (incoeff (to_sint a)).
 proof.
-have ? := pow2_5. 
+have ? := pow2_5.
 rewrite qE;move => abl; move : (to_sint_unsigned a _); 1: by smt().
 move => au; rewrite -compress_alt_compress5.
 rewrite /zeroextu32 /truncateu8 /compress_alt5 qE => /= *.
@@ -326,20 +354,19 @@ rewrite !(modz_small _ 3329) /=; 1: smt().
 have ->: W16.smod (to_uint a) = to_uint a by
   move : abl; rewrite /to_sint /smod /=; 1: by smt(W16.to_uint_cmp pow2_16).
 pose xx := (to_uint a * 32 + 1664).
-have -> : (4294967296 = 32*134217728) by auto. 
-rewrite divz_mod_mul 1..2://. 
+have -> : (4294967296 = 32*134217728) by auto.
+rewrite divz_mod_mul 1..2://.
 rewrite modz_dvd;  last by smt(W16.to_uint_cmp pow2_16).
 done.
 qed.
 
-
 lemma compress_impl_large (a : W16.t) :
   bpos16 a q =>
   (to_uint (((zeroextu64 a `<<` (of_int 11)%W8) + (of_int 1664)%W64) * (of_int 645084)%W64 `>>`
-           (of_int 31)%W8)) %% 2048 = compress 11 (incoeff (to_sint a)).
+           (of_int 31)%W8)) %% 2048 = Compress 11 (incoeff (to_sint a)).
 rewrite /bpos16 qE;move => abnd.
 move : (to_sint_unsigned a _); 1: by smt().
-move => au; rewrite -compress_alt_compress_large. 
+move => au; rewrite -compress_alt_compress_large.
 rewrite /zeroextu64 /compress_alt_large qE => /= *.
 rewrite  /(`<<`) /(`>>`) W64.shlMP; 1: by smt().
 rewrite W64.to_uint_shr; 1: by smt().
@@ -348,9 +375,10 @@ rewrite !(modz_small _ 3329) /=; 1: smt().
 have ->: W16.smod (to_uint a) = to_uint a by
   move : abnd; rewrite /to_sint /smod /=; 1: by smt(W16.to_uint_cmp pow2_16).
 pose xx := (to_uint a * 2048 + 1664).
-have -> : (18446744073709551616 = 8589934592 * 2147483648) by auto. 
-rewrite divz_mod_mul //. 
+have -> : (18446744073709551616 = 8589934592 * 2147483648) by auto.
+rewrite divz_mod_mul //.
 by rewrite (modz_small _ 8589934592); 1: by smt().
 qed.
+end Fq1024.
 
 end Fq.

@@ -4,7 +4,7 @@ from Jasmin require import JModel.
 from JazzEC require import Array400 Array256 Array128 Array64 Array32 Array16 Array8 Array4.
 from JazzEC require import WArray800 WArray512 WArray128 WArray64 WArray32 WArray16.
 require import AVX2_Ops.
-from JazzEC require import Jkem768_avx2.
+from JazzEC require import Jkem_avx2.
 require import MLKEM_Poly_avx2_prevec MLKEM_avx2_auxlemmas MLKEMFCLib.
 import MLKEMFCLib768.
 
@@ -736,7 +736,7 @@ qed.
 
 
 equiv veceq_poly_add2 :
-  Mvec.poly_add2 ~Jkem768_avx2.M._poly_add2: ={rp, bp} ==> ={res}.
+  Mvec.poly_add2 ~Jkem_avx2.M._poly_add2: ={rp, bp} ==> ={res}.
 proof.
   proc.
   while (={rp, bp, i}).
@@ -747,7 +747,7 @@ qed.
 
 
 equiv veceq_poly_sub :
-  Mvec.poly_sub ~Jkem768_avx2.M._poly_sub: ={rp, ap, bp} ==> ={res}.
+  Mvec.poly_sub ~Jkem_avx2.M._poly_sub: ={rp, ap, bp} ==> ={res}.
 proof.
   proc.
   while (={rp, ap, bp, i}).
@@ -757,7 +757,7 @@ proof.
 qed.
 
 equiv veceq_poly_csubq :
-  Mvec.poly_csubq ~Jkem768_avx2.M._poly_csubq: ={rp} ==> ={res}.
+  Mvec.poly_csubq ~Jkem_avx2.M._poly_csubq: ={rp} ==> ={res}.
 proof.
   proc.
   while (={rp, i, qx16}).
@@ -769,7 +769,7 @@ qed.
 
 
 equiv veceq_red16x:
-  Mvec.red16x ~Jkem768_avx2.M.__red16x: ={r, qx16, vx16} ==> ={res}.
+  Mvec.red16x ~Jkem_avx2.M.__red16x: ={r, qx16, vx16} ==> ={res}.
 proof.
   proc.
   inline *.
@@ -777,7 +777,7 @@ proof.
 qed.
 
 equiv veceq_poly_reduce:
-  Mvec.poly_reduce ~Jkem768_avx2.M.__poly_reduce: ={rp} ==> ={res}.
+  Mvec.poly_reduce ~Jkem_avx2.M.__poly_reduce: ={rp} ==> ={res}.
 proof.
   proc.
   while(={rp, i, qx16, vx16}).
@@ -787,7 +787,7 @@ proof.
 qed.
 
 equiv veceq_fqmulx16:
-  Mvec.fqmulx16 ~Jkem768_avx2.M.__fqmulx16: ={a, b, qx16, qinvx16} ==> ={res}.
+  Mvec.fqmulx16 ~Jkem_avx2.M.__fqmulx16: ={a, b, qx16, qinvx16} ==> ={res}.
 proof.
   proc.
   inline *.
@@ -795,7 +795,7 @@ proof.
 qed.
 
 equiv veceq_poly_frommont:
-  Mvec.poly_frommont ~Jkem768_avx2.M._poly_frommont: ={rp} ==> ={res}.
+  Mvec.poly_frommont ~Jkem_avx2.M._poly_frommont: ={rp} ==> ={res}.
 proof.
   proc.
   while(={rp, i, qx16, qinvx16, dmontx16} /\ aux{1} = inc{2}).
@@ -806,28 +806,28 @@ qed.
 
 
 equiv veceq_shuffle8:
-  Mvec.shuffle8 ~Jkem768_avx2.M.__shuffle8: ={a, b} ==> ={res}.
+  Mvec.shuffle8 ~Jkem_avx2.M.__shuffle8: ={a, b} ==> ={res}.
 proof.
   proc.
   inline *; wp; skip; auto => />.
 qed.
 
 equiv veceq_shuffle4:
-  Mvec.shuffle4 ~Jkem768_avx2.M.__shuffle4: ={a, b} ==> ={res}.
+  Mvec.shuffle4 ~Jkem_avx2.M.__shuffle4: ={a, b} ==> ={res}.
 proof.
   proc.
   inline *; wp; skip; auto => />.
 qed.
 
 equiv veceq_shuffle2:
-  Mvec.shuffle2 ~Jkem768_avx2.M.__shuffle2: ={a, b} ==> ={res}.
+  Mvec.shuffle2 ~Jkem_avx2.M.__shuffle2: ={a, b} ==> ={res}.
 proof.
   proc.
   inline *; wp; skip; auto => />.
 qed.
 
 equiv veceq_shuffle1:
-  Mvec.shuffle1 ~Jkem768_avx2.M.__shuffle1: ={a, b} ==> ={res}.
+  Mvec.shuffle1 ~Jkem_avx2.M.__shuffle1: ={a, b} ==> ={res}.
 proof.
   proc.
   inline *; wp; skip; auto => />.
@@ -835,7 +835,7 @@ qed.
 
 
 equiv prevec_eq_poly_add2:
-  Mprevec.poly_add2 ~Jkem768_avx2.M._poly_add2: ={rp, bp} ==> ={res}.
+  Mprevec.poly_add2 ~Jkem_avx2.M._poly_add2: ={rp, bp} ==> ={res}.
     transitivity Mvec.poly_add2 (={rp, bp} ==> ={res}) (={rp, bp} ==> ={res}).
 smt(). trivial.
 apply eq_poly_add2.
@@ -843,7 +843,7 @@ apply veceq_poly_add2.
 qed.
 
 equiv prevec_eq_poly_sub:
-  Mprevec.poly_sub ~Jkem768_avx2.M._poly_sub: ={rp, ap, bp} ==> ={res}.
+  Mprevec.poly_sub ~Jkem_avx2.M._poly_sub: ={rp, ap, bp} ==> ={res}.
     transitivity Mvec.poly_sub (={rp, ap, bp} ==> ={res}) (={rp, ap, bp} ==> ={res}).
 smt(). trivial.
 apply eq_poly_sub.
@@ -851,7 +851,7 @@ apply veceq_poly_sub.
 qed.
 
 equiv prevec_eq_poly_csubq:
-  Mprevec.poly_csubq ~Jkem768_avx2.M._poly_csubq: ={rp} ==> ={res}.
+  Mprevec.poly_csubq ~Jkem_avx2.M._poly_csubq: ={rp} ==> ={res}.
     transitivity Mvec.poly_csubq (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt(). trivial.
 apply eq_poly_csubq.
@@ -860,7 +860,7 @@ qed.
 
 
 equiv prevec_eq_red16x:
-  Mprevec.red16x ~Jkem768_avx2.M.__red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
+  Mprevec.red16x ~Jkem_avx2.M.__red16x: is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2}.
   transitivity Mvec.red16x (is16u16 r{1} r{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2} ==> is16u16 res{1} res{2})
                            (={r, qx16, vx16} ==> ={res}).
 smt(). trivial.
@@ -869,7 +869,7 @@ apply veceq_red16x.
 qed.
 
 equiv prevec_eq_poly_reduce:
-  Mprevec.poly_reduce ~Jkem768_avx2.M.__poly_reduce: ={rp} ==> ={res}.
+  Mprevec.poly_reduce ~Jkem_avx2.M.__poly_reduce: ={rp} ==> ={res}.
     transitivity Mvec.poly_reduce (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt(). trivial.
 apply eq_poly_reduce.
@@ -877,7 +877,7 @@ apply veceq_poly_reduce.
 qed.
 
 equiv prevec_eq_fqmulx16:
-  Mprevec.fqmulx16 ~Jkem768_avx2.M.__fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
+  Mprevec.fqmulx16 ~Jkem_avx2.M.__fqmulx16: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2}.
     transitivity Mvec.fqmulx16 (is16u16 a{1} a{2} /\ is16u16 b{1} b{2} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} ==> is16u16 res{1} res{2})
                                (={a, b, qx16, qinvx16} ==> ={res}).
 smt(). trivial.
@@ -886,7 +886,7 @@ apply veceq_fqmulx16.
 qed.
 
 equiv prevec_eq_poly_frommont:
-  Mprevec.poly_frommont ~Jkem768_avx2.M._poly_frommont: ={rp} ==> ={res}.
+  Mprevec.poly_frommont ~Jkem_avx2.M._poly_frommont: ={rp} ==> ={res}.
     transitivity Mvec.poly_frommont (={rp} ==> ={res}) (={rp} ==> ={res}).
 smt(). trivial.
 apply eq_poly_frommont.
@@ -895,7 +895,7 @@ qed.
 
 
 equiv prevec_eq_shuffle8:
-  Mprevec.shuffle8 ~Jkem768_avx2.M.__shuffle8: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+  Mprevec.shuffle8 ~Jkem_avx2.M.__shuffle8: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
                                     is16u16 res{1}.`1 res{2}.`1 /\
                                     is16u16 res{1}.`2 res{2}.`2.
 proof.
@@ -909,13 +909,13 @@ proof.
 qed.
 
 equiv prevec_eq_shuffle8_sym :
-  Jkem768_avx2.M.__shuffle8 ~ Mprevec.shuffle8 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+  Jkem_avx2.M.__shuffle8 ~ Mprevec.shuffle8 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
                                     is16u16 res{2}.`1 res{1}.`1 /\
                                     is16u16 res{2}.`2 res{1}.`2.
 symmetry. conseq prevec_eq_shuffle8 => />. qed.
 
 equiv prevec_eq_shuffle4:
-  Mprevec.shuffle4 ~Jkem768_avx2.M.__shuffle4: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+  Mprevec.shuffle4 ~Jkem_avx2.M.__shuffle4: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
                                     is16u16 res{1}.`1 res{2}.`1 /\
                                     is16u16 res{1}.`2 res{2}.`2.
 proof.
@@ -929,13 +929,13 @@ proof.
 qed.
 
 equiv prevec_eq_shuffle4_sym:
-  Jkem768_avx2.M.__shuffle4 ~ Mprevec.shuffle4: is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+  Jkem_avx2.M.__shuffle4 ~ Mprevec.shuffle4: is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
                                     is16u16 res{2}.`1 res{1}.`1 /\
                                     is16u16 res{2}.`2 res{1}.`2.
 symmetry. conseq prevec_eq_shuffle4 => />. qed.
 
 equiv prevec_eq_shuffle2:
-  Mprevec.shuffle2 ~Jkem768_avx2.M.__shuffle2: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+  Mprevec.shuffle2 ~Jkem_avx2.M.__shuffle2: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
                                     is16u16 res{1}.`1 res{2}.`1 /\
                                     is16u16 res{1}.`2 res{2}.`2.
 proof.
@@ -949,13 +949,13 @@ proof.
 qed.
 
 equiv prevec_eq_shuffle2_sym:
-  Jkem768_avx2.M.__shuffle2 ~ Mprevec.shuffle2 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+  Jkem_avx2.M.__shuffle2 ~ Mprevec.shuffle2 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
                                     is16u16 res{2}.`1 res{1}.`1 /\
                                     is16u16 res{2}.`2 res{1}.`2.
 symmetry. conseq prevec_eq_shuffle2 => />. qed.
 
 equiv prevec_eq_shuffle1:
-  Mprevec.shuffle1 ~Jkem768_avx2.M.__shuffle1: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
+  Mprevec.shuffle1 ~Jkem_avx2.M.__shuffle1: is16u16 a{1} a{2} /\ is16u16 b{1} b{2} ==>
                                     is16u16 res{1}.`1 res{2}.`1 /\
                                     is16u16 res{1}.`2 res{2}.`2.
 proof.
@@ -969,7 +969,7 @@ proof.
 qed.
 
 equiv prevec_eq_shuffle1_sym:
-  Jkem768_avx2.M.__shuffle1 ~ Mprevec.shuffle1 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
+  Jkem_avx2.M.__shuffle1 ~ Mprevec.shuffle1 : is16u16 a{2} a{1} /\ is16u16 b{2} b{1} ==>
                                     is16u16 res{2}.`1 res{1}.`1 /\
                                     is16u16 res{2}.`2 res{1}.`2.
 symmetry. conseq prevec_eq_shuffle1 => />. qed.
@@ -982,7 +982,7 @@ lemma list_arr16 (x:'a Array16.t):
 rewrite /to_list /mkseq -iotaredE => />. qed.
 
 lemma avx2_shuffle8_corr_h (_a _b : t16u16) :
-      hoare[ Jkem768_avx2.M.__shuffle8 :
+      hoare[ Jkem_avx2.M.__shuffle8 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf8 _a _b).`1 res.`1 /\
@@ -992,7 +992,7 @@ auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
 lemma avx2_shuffle8_corr (_a _b : t16u16) :
-      phoare[ Jkem768_avx2.M.__shuffle8 :
+      phoare[ Jkem_avx2.M.__shuffle8 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf8 _a _b).`1 res.`1 /\
@@ -1000,7 +1000,7 @@ lemma avx2_shuffle8_corr (_a _b : t16u16) :
 conseq __shuffle8_ll (avx2_shuffle8_corr_h _a _b) => />. qed.
 
 lemma avx2_shuffle4_corr_h (_a _b : t16u16) :
-      hoare[ Jkem768_avx2.M.__shuffle4 :
+      hoare[ Jkem_avx2.M.__shuffle4 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf4 _a _b).`1 res.`1 /\
@@ -1010,7 +1010,7 @@ auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
 lemma avx2_shuffle4_corr (_a _b : t16u16) :
-      phoare[ Jkem768_avx2.M.__shuffle4 :
+      phoare[ Jkem_avx2.M.__shuffle4 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf4 _a _b).`1 res.`1 /\
@@ -1018,7 +1018,7 @@ lemma avx2_shuffle4_corr (_a _b : t16u16) :
 conseq __shuffle4_ll (avx2_shuffle4_corr_h _a _b) => />. qed.
 
 lemma avx2_shuffle2_corr_h (_a _b : t16u16) :
-      hoare[ Jkem768_avx2.M.__shuffle2 :
+      hoare[ Jkem_avx2.M.__shuffle2 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf2 _a _b).`1 res.`1 /\
@@ -1028,7 +1028,7 @@ auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
 lemma avx2_shuffle2_corr (_a _b : t16u16) :
-      phoare[ Jkem768_avx2.M.__shuffle2 :
+      phoare[ Jkem_avx2.M.__shuffle2 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf2 _a _b).`1 res.`1 /\
@@ -1036,7 +1036,7 @@ lemma avx2_shuffle2_corr (_a _b : t16u16) :
 conseq __shuffle2_ll (avx2_shuffle2_corr_h _a _b) => />. qed.
 
 lemma avx2_shuffle1_corr_h (_a _b : t16u16) :
-      hoare[ Jkem768_avx2.M.__shuffle1 :
+      hoare[ Jkem_avx2.M.__shuffle1 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf1 _a _b).`1 res.`1 /\
@@ -1046,7 +1046,7 @@ auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
 
 lemma avx2_shuffle1_corr (_a _b : t16u16) :
-      phoare[ Jkem768_avx2.M.__shuffle1 :
+      phoare[ Jkem_avx2.M.__shuffle1 :
              is16u16 _a a /\ is16u16 _b b
              ==>
              is16u16 (NTT_Avx2.shuf1 _a _b).`1 res.`1 /\

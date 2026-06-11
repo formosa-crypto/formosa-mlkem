@@ -3,11 +3,28 @@ require import AllCore List IntDiv.
 from Jasmin require import JModel.
 from JazzEC require import Array128 Array160 Array256 Array32 Array16 Array768 Array1024 Array2304 Array4096 Array1536 Array320 Array384 Array960 Array1408 Array1152 WArray512 WArray128.
 
-from Spec require import GFq Rq VecMat Serialization Correctness768.
-import Serialization768 VecMat768 PolyVec PolyMat KMatrix.
+from Spec require import GFq Rq VecMat Serialization Correctness.
+import Serialization VecMat PolyVec PolyMat KMatrix.
 require import W16extra Montgomery.
 
 import Zq.
+
+(* W16 Montgomery instantiation of SignedReductions, relocated here from
+   avx2/Fq.ec so eclib (NTT_Fq) can use R without depending on the avx2 layer.
+   Cloned without `import` to keep SignedReductions.smod from colliding with the
+   JModel word-level smod used in the rep proofs below.
+   TODO: simplify SignedReductions to reuse crepr. *)
+clone SignedReductions as SignedReductions_W16 with
+    op k <- 16,
+    op q <- q,
+    op qinv <- 62209,
+    op Rinv <- 169
+    proof q_bnd by (rewrite /R qE => />)
+    proof q_odd1 by (rewrite qE => />)
+    proof qqinv by (rewrite /R qE  => />)
+    proof Rinv_gt0 by (auto => />)
+    proof RRinv by (rewrite /R qE  => />)
+    proof qinv_bnd by (rewrite /R  => />).
 
 from Jasmin require import JModel.
 
@@ -530,6 +547,9 @@ op lift_array2304 (p : W16.t Array2304.t) =
 op [a] subarray768(x: 'a Array2304.t, i : int) : 'a Array768.t =
     Array768.init (fun (k : int) => x.[768 * i + k]).
 
+op [a] subarray256(x: 'a Array768.t, i : int) : 'a Array256.t =
+    Array256.init (fun (k : int) => x.[256 * i + k]).
+
 op pos_bound2304_cxq (coefs : W16.t Array2304.t) (l u c : int) : bool =
   forall (k : int), l <= k && k < u => bpos16 coefs.[k] (c * q).
 
@@ -561,7 +581,7 @@ end MLKEMFCLib768.
 (* === Dimension-specific (kvec=4, MLKEM1024) === *)
 theory MLKEMFCLib1024.
 
-import Serialization1024.
+import Serialization.
 
 op pos_bound4096_cxq (coefs : W16.t Array4096.t) (l u c : int) : bool =
   forall (k : int), l <= k && k < u => bpos16 coefs.[k] (c * q).
@@ -571,6 +591,9 @@ op lift_array4096 (p : W16.t Array4096.t) =
 
 op [a] subarray1024(x: 'a Array4096.t, i : int) : 'a Array1024.t =
     Array1024.init (fun (k : int) => x.[1024 * i + k]).
+
+op [a] subarray256(x: 'a Array1024.t, i : int) : 'a Array256.t =
+    Array256.init (fun (k : int) => x.[256 * i + k]).
 
 op lift_array1024 (p : W16.t Array1024.t) =
   Array1024.map (fun x => incoeff (W16.to_sint x)) p.
@@ -609,12 +632,12 @@ proof.
 split. 
 + rewrite /lift_array256 /unlift_poly /= tP => k kb.
   rewrite mapiE //= initiE //= /to_sint /smod /=.
-  rewrite !of_uintK /=; rewrite /as_sint qE /=.
-  by smt(rg_asint asintK).
+  rewrite !of_uintK /=.
+  by smt(rg_crepr as_sintK qE).
 
 rewrite /unlift_poly /signed_bound_cxq => k kb; rewrite initiE //=.
-rewrite /to_sint /smod /= !of_uintK /= /as_sint qE /=.
-by smt(rg_asint).
+rewrite /to_sint /smod /= !of_uintK /=.
+by smt(rg_crepr qE).
 qed.
 
 lemma inFq_to_sint (a : W16.t) :
@@ -622,19 +645,10 @@ lemma inFq_to_sint (a : W16.t) :
   a = (W16.of_int (as_sint (incoeff (to_sint a)))).
 proof.
 rewrite qE /=; move => [#] bndl bndh.
-rewrite /as_sint fun_if /= !incoeffK qE /=.
-case(0<= to_sint a).
-+ move => ?; rewrite !modz_small 1:/#.
-  have -> : !(1664 < to_sint a) by smt().
-  by rewrite to_sint_unsigned 1:/# to_uintK.
-+ move => ?; pose x := - (to_sint a); have -> : to_sint a = -x by ring.
-  have xbnd : 0 < x < 1664 by smt(). 
-  rewrite modNz 1:/# //= !modz_small 1:/# /=.
-  have -> /= : 1664 < 3328 - (x - 1) by smt().
-  have -> : a = W16.of_int (to_sint a); last by ring.
-  rewrite /to_sint /smod fun_if /= of_intS to_uintK.
-  case(32768 <= to_uint a); 2:auto.
-  by move => *; ring.
+rewrite incoeffK_sint_small; first by smt(qE).
+rewrite /to_sint /smod fun_if /= of_intS to_uintK.
+case(32768 <= to_uint a); 2:auto.
+by move => *; ring.
 qed.
 
 lemma bits16_W16u16 ws i :

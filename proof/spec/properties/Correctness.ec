@@ -351,17 +351,46 @@ move => *;case (d = 4).
 by smt().
 qed.
 
-(* This is the implementation of compress d in C/Jasmin for d = 10 *)
-op compress_alt_large (c : coeff) : int = 
+(* du/dv compress implementations in C/Jasmin — the W32/W64 shift constants
+   differ between variants, so they live in variant-namespace subtheories. *)
+theory Compress768.   (* du = 10, dv = 4 *)
+op compress_alt_large (c : coeff) : int =
    (asint c * 2 ^ 10 + (q + 1) %/ 2) * (2 ^ 32 %/ q) %/ 2 ^ 32 %% 2 ^ 10.
 
-lemma compress_alt_compress_large (c : coeff): 
+lemma compress_alt_compress_large (c : coeff):
     compress_alt_large c = Compress 10 c.
 rewrite compress_alt_nice /compress_alt_large qE =>  /=.
 by have ? : all
-     (fun x => (x * 1024 + 1665) * 1290167 %/ 4294967296 %% 1024 = (x * 1024 + 1664) %/ 3329 %% 1024) 
+     (fun x => (x * 1024 + 1665) * 1290167 %/ 4294967296 %% 1024 = (x * 1024 + 1664) %/ 3329 %% 1024)
         (iota_ 0 3229); [by rewrite -iotaredE //= | smt(mem_iota gtp_asint ge0_asint)].
 qed.
+end Compress768.
+
+theory Compress1024.   (* du = 11, dv = 5 *)
+op compress_alt5(c : coeff) : int =
+    (asint c * 32 + ((q - 1) %/ 2)) * (2^27 %/ q + 1) %/ 2^27 %% 32.
+
+lemma compress_alt_compress5 c :
+      compress_alt5 c = Compress 5 c.
+proof.
+rewrite compress_alt_nice /compress_alt5 qE =>  /=.
++ by  have  : all
+     (fun x => (x * 32 + 1664) * 40318 %/ 134217728 %% 32 = (x * 32 + 1664) %/ 3329 %% 32)
+        (iota_ 0 3229); [by rewrite -iotaredE //= | smt(mem_iota gtp_asint ge0_asint)].
+qed.
+
+op compress_alt_large (c : coeff) : int =
+   (asint c * 2 ^ 11 + (q - 1) %/ 2) * (2 ^ 31 %/ q + 1) %/ 2 ^ 31 %% 2 ^ 11.
+
+lemma compress_alt_compress_large (c : coeff):
+    compress_alt_large c = Compress 11 c.
+rewrite compress_alt_nice /compress_alt_large qE =>  /=.
+have ? : all
+     (fun x => (x * 2048 + 1664) * 645084 %/ 2147483648 %% 2048 = (x * 2048 + 1664) %/ 3329 %% 2048)
+        (iota_ 0 3229); [by rewrite -iotaredE //= | ].
+congr;congr; smt(allP mem_iota gtp_asint ge0_asint).
+qed.
+end Compress1024.
 
 (* This is the implementation of decompress d in C/Jasmin *)
 op decompress_alt(d : int, c : int) : coeff = 

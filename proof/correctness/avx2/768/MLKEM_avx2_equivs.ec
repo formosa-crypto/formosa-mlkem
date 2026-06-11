@@ -5,7 +5,7 @@ from JazzEC require import Array1152 Array1088 Array960 Array1410 Array768 Array
 from JazzEC require import WArray512 WArray128 WArray384 WArray32 WArray16 WArray1410 WArray160 WArray960 WArray1152 WArray1536.
 
 require import AVX2_Ops W16extra.
-from JazzEC require import Jkem768_avx2.
+from JazzEC require import Jkem_avx2.
 require import MLKEM_PolyVec_avx2_prevec.
 require import MLKEM_Poly_avx2_prevec.
 require import NTT_avx2.
@@ -417,14 +417,14 @@ move => Hi Hk /=; rewrite /compress10_circuit  /pos_bound768_cxq qE /= => H00.
 rewrite ultE /= get_to_uint.
 have ->/= : (0 <= (i * 8 + k) %% 10 < 10) by smt().
 case (to_uint p.[(i * 8 + k) %/ 10] < 3329) => /= *. 
-+ rewrite -Fq.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).  
++ rewrite -Fq.Fq768.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).  
   congr;congr;congr;congr;congr;congr; 2: by smt().
   rewrite /truncateu64_10 of_uintK /=. 
   by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) /= /#.
 
   
 have -> : (incoeff (to_sint p.[(8 * i + k) %/ 10])) = (incoeff (to_sint (W16_sub p.[(8 * i + k) %/ 10] (W16.of_int 3329)))); last first.
-+ rewrite -Fq.compress_impl_large //=.
++ rewrite -Fq.Fq768.compress_impl_large //=.
   rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota).
   rewrite  /= /smod /= qE; have := H00 ((8 * i + k) %/ 11) _; by smt(W16.to_uint_cmp pow2_16).
   rewrite /truncateu64_10 of_uintK /=.
@@ -465,12 +465,12 @@ qed.
 (********** BEGIN BDEP PROOF OF CSUBQ **************)
 
 lemma polyvec_csubq_avx2_ll :
-   islossless Jkem768_avx2.M.__polyvec_csubq.
+   islossless Jkem_avx2.M.__polyvec_csubq.
 by proc;inline *;do 4!(unroll for ^while);auto.
 qed.
 
 lemma poly_csubq_avx2_ll :
-   islossless Jkem768_avx2.M._poly_csubq.
+   islossless Jkem_avx2.M._poly_csubq.
 by proc;inline *;unroll for ^while;auto.
 qed.
 
@@ -479,7 +479,7 @@ op csubq_circuit(a : W16.t) : W16.t =
    else (W16_sub a (W16.of_int 3329)).
 
 lemma poly_csubq_avx2_corr_h (_aw : W16.t Array256.t):
-    hoare[ Jkem768_avx2.M._poly_csubq  :
+    hoare[ Jkem_avx2.M._poly_csubq  :
              rp = _aw /\
              pos_bound256_cxq rp 0 256 2 ==> 
              lift_array256 res = lift_array256 _aw /\
@@ -526,7 +526,7 @@ have ->/= : !32768 <= to_uint _aw.[i] - 3329;  by smt(W16.to_uint_cmp).
 qed.
 
 lemma poly_csubq_avx2_corr (_aw : W16.t Array256.t):
-    phoare[ Jkem768_avx2.M._poly_csubq  :
+    phoare[ Jkem_avx2.M._poly_csubq  :
              rp = _aw /\
              pos_bound256_cxq rp 0 256 2 ==> 
              lift_array256 res = lift_array256 _aw /\
@@ -535,7 +535,7 @@ lemma poly_csubq_avx2_corr (_aw : W16.t Array256.t):
 
 
 lemma polyvec_csubq_avx2_corr_h (_aw : W16.t Array768.t):
-    hoare[ Jkem768_avx2.M.__polyvec_csubq  :
+    hoare[ Jkem_avx2.M.__polyvec_csubq  :
              r = _aw /\
              pos_bound768_cxq r 0 768 2 ==> 
              lift_array768 res = lift_array768 _aw /\
@@ -586,7 +586,7 @@ have ->/= : !32768 <= to_uint _aw.[i] - 3329;  by smt(W16.to_uint_cmp).
 qed.
 
 lemma polyvec_csubq_avx2_corr (_aw : W16.t Array768.t):
-    phoare[ Jkem768_avx2.M.__polyvec_csubq  :
+    phoare[ Jkem_avx2.M.__polyvec_csubq  :
              r = _aw /\
              pos_bound768_cxq r 0 768 2 ==> 
              lift_array768 res = lift_array768 _aw /\
@@ -599,13 +599,13 @@ lemma polyvec_csubq_avx2_corr (_aw : W16.t Array768.t):
 
 
 lemma polyvec_decompress_ll :
-   islossless Jkem768_avx2.M.__i_polyvec_decompress.
+   islossless Jkem_avx2.M.__i_polyvec_decompress.
 by proc;inline *;unroll for ^while; do 3!(cfold ^inc<-; unroll for ^while);auto.
 qed.
 (********** BEGIN BDEP PROOF OF DECOMPRESS **************)
 
 lemma polyvec_decompress_corr_h (_aw : W8.t Array960.t):
-    hoare[ Jkem768_avx2.M.__i_polyvec_decompress :
+    hoare[ Jkem_avx2.M.__i_polyvec_decompress :
              Array960.init (fun i => rp.[i]) = _aw ==> pos_bound768_cxq res 0 768 1 /\ lift_polyvec res = decompress_polyvec 10 (decode10_vec _aw)].
 proc; inline *.
 proc change 3: { shufbidx <- sliceget32_8_256 pvd_shufbdidx_s 0;}; 1: by auto.
@@ -650,7 +650,7 @@ qed.
 
 
 lemma polyvec_decompress_corr (_aw : W8.t Array960.t):
-    phoare[ Jkem768_avx2.M.__i_polyvec_decompress :
+    phoare[ Jkem_avx2.M.__i_polyvec_decompress :
              Array960.init (fun i => rp.[i]) = _aw ==> pos_bound768_cxq res 0 768 1 /\ lift_polyvec res = decompress_polyvec 10 (decode10_vec _aw)] = 1%r
  by conseq polyvec_decompress_ll (polyvec_decompress_corr_h _aw).
 
@@ -997,13 +997,13 @@ lemma auxcompress10_corr (_aw : W16.t Array768.t):
   by conseq auxcompress10_ll (auxcompress10_corr_h _aw).
 
 
-lemma polyvec_compress_avx2_ll : islossless Jkem768_avx2.M.__i_polyvec_compress.
+lemma polyvec_compress_avx2_ll : islossless Jkem_avx2.M.__i_polyvec_compress.
 proc. cfold 12. unroll for ^while; wp => /=. 
 inline *;unroll for ^while; do 3!(unroll for ^while);auto.
 qed.
 
 lemma polyvec_compress_avx2_corr (_aw : W16.t Array768.t):
-    phoare[ Jkem768_avx2.M.__i_polyvec_compress  :
+    phoare[ Jkem_avx2.M.__i_polyvec_compress  :
              a = _aw /\
              pos_bound768_cxq a 0 768 2 ==> 
       res  = encode10_vec (compress_polyvec 10 (lift_polyvec _aw))] = 1%r.
@@ -1049,12 +1049,12 @@ have -> : 1023 = 2^10 -1 by auto.
 rewrite and_mod 1:/# /= /smod /= /#.
 qed.
 
-lemma poly_decompress_ll : islossless Jkem768_avx2.M._i_poly_decompress.
+lemma poly_decompress_ll : islossless Jkem_avx2.M._i_poly_decompress.
  proc; inline *;wp. cfold 9; unroll for ^while;auto.
 qed.
 
 lemma poly_decompress_corr_h (_a : W8.t Array128.t): 
-    hoare [Jkem768_avx2.M._i_poly_decompress  :
+    hoare [Jkem_avx2.M._i_poly_decompress  :
               arg.`2 = _a
               ==>
              lift_array256 res = decompress_poly 4 (decode4 _a) /\
@@ -1089,14 +1089,14 @@ qed.
 (********** END BDEP PROOF OF DECOMPRESS **************)
 
 lemma poly_decompress_corr (_a : W8.t Array128.t): 
-    phoare [Jkem768_avx2.M._i_poly_decompress  :
+    phoare [Jkem_avx2.M._i_poly_decompress  :
               arg.`2 = _a
               ==>
              lift_array256 res = decompress_poly 4 (decode4 _a) /\
              pos_bound256_cxq res 0 256 1 ] = 1%r
   by conseq poly_decompress_ll (poly_decompress_corr_h _a).
 
-lemma i_poly_compress_corr_ll : islossless Jkem768_avx2.M._i_poly_compress.
+lemma i_poly_compress_corr_ll : islossless Jkem_avx2.M._i_poly_compress.
 proof.
 proc; inline *.
 cfold 13.
@@ -1105,7 +1105,7 @@ auto.
 qed.
 
 lemma i_poly_compress_corr_h _aw  : 
-    hoare [Jkem768_avx2.M._i_poly_compress  :
+    hoare [Jkem_avx2.M._i_poly_compress  :
              pos_bound256_cxq a 0 256 2 /\
              a = _aw
               ==>
@@ -1153,7 +1153,7 @@ qed.
 (********** END BDEP PROOF OF COMPRESS **************)
 
 lemma i_poly_compress_corr _aw  : 
-    phoare [Jkem768_avx2.M._i_poly_compress  :
+    phoare [Jkem_avx2.M._i_poly_compress  :
              pos_bound256_cxq a 0 256 2 /\
              a = _aw
               ==>
@@ -1161,7 +1161,7 @@ lemma i_poly_compress_corr _aw  :
              ] = 1%r
  by conseq i_poly_compress_corr_ll (i_poly_compress_corr_h _aw).
 
-lemma polyvec_frombytes_ll : islossless Jkem768_avx2.M.__i_polyvec_frombytes.
+lemma polyvec_frombytes_ll : islossless Jkem_avx2.M.__i_polyvec_frombytes.
 proc; inline *;wp. 
   while (0 <= i <= 4) (4-i); last by  auto =>  /> /#.
 move => *. cfold 3. unroll for ^while;auto => /> /#.
@@ -1185,7 +1185,7 @@ lemma nttunpackv_16E v: nttunpackv_16 v = nttunpackv v.
 
 
 lemma polyvec_frombytes_corr_h (_aw : W8.t Array1152.t): 
-    hoare [Jkem768_avx2.M.__i_polyvec_frombytes  :
+    hoare [Jkem_avx2.M.__i_polyvec_frombytes  :
              a = _aw
               ==>
              lift_array768 res = nttunpackv (map incoeff (decode12_vec _aw))  /\
@@ -1253,7 +1253,7 @@ qed.
 (********** END BDEP PROOF OF FROMBYTES **************)
 
 lemma polyvec_frombytes_corr (_aw : W8.t Array1152.t): 
-    phoare [Jkem768_avx2.M.__i_polyvec_frombytes  :
+    phoare [Jkem_avx2.M.__i_polyvec_frombytes  :
              a = _aw
               ==>
              lift_array768 res = nttunpackv (map incoeff (decode12_vec _aw))  /\
@@ -1280,11 +1280,11 @@ lemma poly_add_corr_avx_impl ab bb :
               incoeff (to_sint res.[k]) = _a.[k] + _b.[k]] = 1%r
    by move => abb bbb _a _b; apply (MLKEM_PolyAVX.poly_add_corr _a _b ab bb abb bbb).
 
-lemma poly_frommsg_ll : islossless Jkem768_avx2.M._i_poly_frommsg 
+lemma poly_frommsg_ll : islossless Jkem_avx2.M._i_poly_frommsg 
  by proc; inline *;wp;while (0 <= i <= 32) (32-i);  by  auto =>  /> /#.
 
 lemma poly_frommsg_corr_h (_m : W8.t Array32.t): 
-    hoare [Jkem768_avx2.M._i_poly_frommsg :
+    hoare [Jkem_avx2.M._i_poly_frommsg :
              ap =  _m 
               ==>
              lift_array256 res = decompress_poly 1 (decode1 _m) /\
@@ -1326,7 +1326,7 @@ qed.
 
 
 lemma poly_frommsg_corr (_m : W8.t Array32.t): 
-    phoare [Jkem768_avx2.M._i_poly_frommsg :
+    phoare [Jkem_avx2.M._i_poly_frommsg :
              ap =  _m 
               ==>
              lift_array256 res = decompress_poly 1 (decode1 _m) /\
@@ -1339,7 +1339,7 @@ lemma compress_poly_rng i xs :
 rewrite /compress_poly /map allP => Hi j Hj. rewrite !initiE //=. rewrite compress_rng //. qed.
 
 
-lemma poly_tomsg_ll : islossless Jkem768_avx2.M._i_poly_tomsg.
+lemma poly_tomsg_ll : islossless Jkem_avx2.M._i_poly_tomsg.
 proc.
 cfold 7.
 inline *.
@@ -1353,7 +1353,7 @@ qed.
 op pcond_reduced (w: W16.t) =   w \ult W16.of_int (2*3329).
 
 lemma poly_tomsg_corr_h _aw : 
-    hoare [Jkem768_avx2.M._i_poly_tomsg :
+    hoare [Jkem_avx2.M._i_poly_tomsg :
              pos_bound256_cxq a 0 256 2 /\ 
               a = _aw
               ==>
@@ -1397,14 +1397,14 @@ qed.
 
 
 lemma poly_tomsg_corr _aw : 
-    phoare [Jkem768_avx2.M._i_poly_tomsg :
+    phoare [Jkem_avx2.M._i_poly_tomsg :
              pos_bound256_cxq a 0 256 2 /\ 
               a = _aw
               ==>
              res.`1 = encode1 (compress_poly 1 (lift_array256 _aw))  ] = 1%r
   by conseq poly_tomsg_ll (poly_tomsg_corr_h _aw).
 
-lemma polyvec_tobytes_ll : islossless Jkem768_avx2.M.__i_polyvec_tobytes.
+lemma polyvec_tobytes_ll : islossless Jkem_avx2.M.__i_polyvec_tobytes.
 proc.
 inline *. 
 do 7!(unroll for ^while); auto. 
@@ -1419,7 +1419,7 @@ proc __i_polyvec_tobytes(r : W8.t Array1152.t, a : W16.t Array768.t) : W8.t Arra
   while (i < 3) {                                                                                                              
     rp <- Array384.init (fun (i_0 : int) => r.[384 * i + i_0]);                                                                 
     a0 <- Array256.init (fun (i_0 : int) => a.[256 * i + i_0]);  
-    a0 <@ Jkem768_avx2.M._poly_csubq(a0);                                                           
+    a0 <@ Jkem_avx2.M._poly_csubq(a0);                                                           
     i0 <- 0;                                                                                                                    
     while (i0 < 2) {                                                                                                           
       t0 <- get256 (WArray512.init16 (fun (i_0 : int) => a0.[i_0])) (8 * i0);                                                   
@@ -1654,7 +1654,7 @@ lemma auxtobytes_corr (_aw : W16.t Array768.t):
 
 
 lemma polyvec_tobytes_corr (_aw : W16.t Array768.t):
-    phoare[ Jkem768_avx2.M.__i_polyvec_tobytes :
+    phoare[ Jkem_avx2.M.__i_polyvec_tobytes :
              pos_bound768_cxq a 0 768 2 /\ a = _aw ==> 
     res = encode12_vec (map asint (lift_array768 (nttpackv _aw)))] = 1%r.
 proof.

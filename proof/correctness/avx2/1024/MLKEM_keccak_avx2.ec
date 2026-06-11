@@ -13,8 +13,8 @@ from Spec require import Symmetric.
 require import MLKEMFCLib.
 import MLKEMFCLib1024.
 
-from JazzEC require import Jkem1024_avx2 WArray200.
-from JazzEC require Jkem1024_avx2.
+from JazzEC require import Jkem_avx2 WArray200.
+from JazzEC require Jkem_avx2.
 
 
 
@@ -611,7 +611,7 @@ from JazzEC require import Array1568.
 
 (*********************************************************************************)
 equiv sha3_256A_A1568_eq:
-  Jkem1024_avx2.M._sha3_256A_A1568 ~ K._sha3_256A_A1568
+  Jkem_avx2.M._sha3_256A_A1568 ~ K._sha3_256A_A1568
  : ={arg} ==> ={res}
  by sim.
 
@@ -656,7 +656,7 @@ phoare sha3_256A_A1568_ph' _in:
 proof. by conseq sha3_256A_A1568_ll (sha3_256A_A1568_h' _in). qed.
 
 phoare sha3_256A_M1568_ph (inp : W8.t Array1568.t):
- [ Jkem1024_avx2.M._sha3_256A_A1568
+ [ Jkem_avx2.M._sha3_256A_A1568
  : arg.`2 = inp 
  ==> 
    res = SHA3_256_1568_32
@@ -731,7 +731,7 @@ by conseq shake256_A32__A1600_ll (shake256_A32__A1600_h' _in).
 qed.
 
 phoare shake256_A32_A1600_ph (_in : W8.t Array1600.t):
- [ Jkem1024_avx2.M._shake256_A32__A1600
+ [ Jkem_avx2.M._shake256_A32__A1600
  : arg.`2=_in
  ==> res = SHAKE_256_1600_32 
                (init (fun (k : int) => _in.[k]))%Array32
@@ -794,7 +794,7 @@ by conseq shake128_next_state_ll (shake128_next_state_h' _buf).
 qed.
 
 phoare shake128_next_state_ph _buf:
- [ Jkem1024_avx2.M._shake128_next_state
+ [ Jkem_avx2.M._shake128_next_state
  : buf = _buf
    ==>
    let st = bytes2state (sub _buf (2*168) 200) in
@@ -907,7 +907,7 @@ qed.
 
 phoare shake256x4_A128__A32_A1_ph _seed _nonces :
  [ 
-   Jkem1024_avx2.M._shake256x4_A128__A32_A1
+   Jkem_avx2.M._shake256x4_A128__A32_A1
  : seed = _seed /\ nonces = _nonces 
  ==>
     res.`1 = Array128.of_list W8.zero (SHAKE256 (to_list _seed ++ [_nonces.[0]]) 128)
@@ -1153,7 +1153,7 @@ by conseq shake128x4_squeeze3blocks_ll (shake128x4_squeeze3blocks_h' _st0 _st1 _
 qed.
 
 phoare shake128x4_squeeze3blocks_ph _st0 _st1 _st2 _st3:
- [ Jkem1024_avx2.M._shake128x4_squeeze3blocks
+ [ Jkem_avx2.M._shake128x4_squeeze3blocks
  : st4x_match st (_st0,_st1,_st2,_st3)
  ==>
       sub res.`2 (0*536) (3*168) = SHAKE128_SQUEEZE (3*168) _st0

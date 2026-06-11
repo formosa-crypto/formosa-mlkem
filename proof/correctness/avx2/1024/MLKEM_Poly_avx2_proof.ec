@@ -9,7 +9,7 @@ require import AVX2_Ops MLKEM_Poly_avx2_prevec NTT_avx2 Fq_avx2 MLKEM_avx2_auxle
 require import Fq NTT_Fq MLKEMFCLib.
 import MLKEMFCLib1024.
 
-from JazzEC require import Jkem1024_avx2.
+from JazzEC require import Jkem_avx2.
 
 from Spec require import GFq Rq Serialization VecMat Correctness1024.
 
@@ -232,7 +232,7 @@ lemma poly_csubq_corr_h ap :
              pos_bound256_cxq res 0 256 1 ].
 proof.
   proc.
-  while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = Jkem1024_avx2.jqx16.[k]).
+  while (ap = lift_array256 rp /\ pos_bound256_cxq rp 0 256 2 /\ pos_bound256_cxq rp 0 (16*i) 1 /\ 0 <= i <= 16 /\ forall k, 0 <= k < 16 => _qx16.[k] = Jkem_avx2.jqx16.[k]).
   seq 3 : (#pre /\ forall k, 0 <= k < 16 => _r.[k] = rp.[16 * i + k] - _qx16.[k]).
   inline Ops.iVPSUB_16u16.
   wp. skip. simplify.
@@ -322,7 +322,7 @@ proof.
   (****)
   rewrite to_sintN => //=.
   rewrite (_qx16_def (x%% 16))  => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK /= /smod.
@@ -330,7 +330,7 @@ proof.
   simplify.
   smt().
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK /= /smod /=.
@@ -341,13 +341,13 @@ proof.
   
   rewrite to_sintN => //=.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK /= /smod.
   smt().
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK /= /smod.
@@ -357,7 +357,7 @@ proof.
   rewrite _qx16_def => //=.
   rewrite (_: rp{hr}.[16 * i{hr} + x %% 16] = rp{hr}.[x]).
     by move : x_i x_mb => /#.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite incoeffD. ring.
@@ -423,7 +423,7 @@ proof.
   rewrite W16.sltE.
   rewrite to_sintB_small.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   do rewrite of_sintK.
@@ -434,7 +434,7 @@ proof.
   rewrite idx_bounds /= qE /=.
   smt().
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   do rewrite of_sintK.
@@ -445,7 +445,7 @@ proof.
   rewrite to_sintD_small => />.
   rewrite to_sintN => />.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   do rewrite of_sintK => />.
@@ -458,7 +458,7 @@ proof.
   rewrite _r_def => //.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -484,7 +484,7 @@ proof.
   rewrite _r_def => //.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -507,7 +507,7 @@ proof.
   smt().
 
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite to_sintN /=.
@@ -554,7 +554,7 @@ proof.
   move : _r_ub.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -581,7 +581,7 @@ proof.
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -601,7 +601,7 @@ proof.
   rewrite to_sintD_small => />.
   rewrite to_sintN => />.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite of_sintK => />.
@@ -613,7 +613,7 @@ proof.
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -632,7 +632,7 @@ proof.
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -643,7 +643,7 @@ proof.
 
   move : _sr_lb rp_qx16_lb.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -660,7 +660,7 @@ proof.
   
   rewrite qE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   do rewrite fun_if.
   rewrite to_sintN of_sintK => />.
@@ -669,7 +669,7 @@ proof.
   move : _r_lb.
   rewrite sltE.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -681,7 +681,7 @@ proof.
   move => rp_q_lb_neg.
   move : _sr_lb.
   rewrite _qx16_def => //=.
-  rewrite /(Jkem1024_avx2.jqx16).
+  rewrite /(Jkem_avx2.jqx16).
   rewrite get_of_list => />.
   rewrite to_sintB_small.
   do rewrite fun_if.
@@ -754,8 +754,8 @@ proof.
   while (0 <= i <= 16 /\
          (forall k, 0 <= k < 256 => ap.[k] = incoeff (to_sint rp.[k])) /\
          (forall k, 0 <= k < 16 * i => bpos16 rp.[k] (2*q)) /\
-         (forall k, 0 <= k < 16 => qx16.[k] = Jkem1024_avx2.jqx16.[k]) /\
-         (forall k, 0 <= k < 16 => vx16.[k] = Jkem1024_avx2.jvx16.[k])); last first.
+         (forall k, 0 <= k < 16 => qx16.[k] = Jkem_avx2.jqx16.[k]) /\
+         (forall k, 0 <= k < 16 => vx16.[k] = Jkem_avx2.jvx16.[k])); last first.
   wp. skip.
   move => &hr ap_def />.
   do split.
@@ -893,7 +893,7 @@ proof.
   rewrite (_: (2 * k + 1) %% 2 = 1).
     by smt().
   rewrite pack2_bits8.
-  rewrite /(Jkem1024_avx2.jdmontx16) => />.
+  rewrite /(Jkem_avx2.jdmontx16) => />.
   rewrite initiE => />. move : k_lb k_ub => /#.
   smt().
   
@@ -913,7 +913,7 @@ proof.
   rewrite (_: (2 * k + 1) %% 2 = 1).
     by smt().
   rewrite pack2_bits8.
-  rewrite /(Jkem1024_avx2.jqx16) => />.
+  rewrite /(Jkem_avx2.jqx16) => />.
   rewrite initiE => />. move : k_lb k_ub => /#.
   smt().
   

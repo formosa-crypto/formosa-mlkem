@@ -4,7 +4,7 @@ from Jasmin require import JModel.
 from JazzEC require import Array16 Array32 Array128 Array256 Array400 Array1024 Array1408 Array1410.
 from JazzEC require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800 WArray1408.
 require import AVX2_Ops.
-from JazzEC require import Jkem1024_avx2.
+from JazzEC require import Jkem_avx2.
 require import MLKEM_Poly_avx2_vec.
 require import MLKEM_PolyVec_avx2_prevec.
 require import MLKEM_avx2_auxlemmas.
@@ -112,7 +112,7 @@ qed.
 
 
 equiv veceq_polyvec_add2 :
-  Mvec.polyvec_add2 ~Jkem1024_avx2.M.__polyvec_add2: ={r, b} ==> ={res}.
+  Mvec.polyvec_add2 ~Jkem_avx2.M.__polyvec_add2: ={r, b} ==> ={res}.
 proof.
   proc.
   unroll for {2}  2.
@@ -121,7 +121,7 @@ proof.
 qed.
 (* 
 equiv veceq_polyvec_csubq :
-  Mvec.polyvec_csubq ~Jkem1024_avx2.M.__polyvec_csubq: ={r} ==> ={res}.
+  Mvec.polyvec_csubq ~Jkem_avx2.M.__polyvec_csubq: ={r} ==> ={res}.
 proof.
   proc.
   unroll for {2}  2.
@@ -131,7 +131,7 @@ qed.
 *)
 
 equiv veceq_polyvec_reduce :
-  Mvec.polyvec_reduce ~Jkem1024_avx2.M.__polyvec_reduce: ={r} ==> ={res}.
+  Mvec.polyvec_reduce ~Jkem_avx2.M.__polyvec_reduce: ={r} ==> ={res}.
 proof.
   proc.
   unroll for {2}  2.
@@ -141,7 +141,7 @@ qed.
 
 
 equiv prevec_eq_polyvec_add2 :
-  Mprevec.polyvec_add2 ~Jkem1024_avx2.M.__polyvec_add2: ={r, b} ==> ={res}.
+  Mprevec.polyvec_add2 ~Jkem_avx2.M.__polyvec_add2: ={r, b} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_add2 (={r, b} ==> ={res}) (={r, b} ==> ={res}).
 smt(). trivial.
@@ -151,7 +151,7 @@ qed.
 
 (* 
 equiv prevec_eq_polyvec_csubq :
-  Mprevec.polyvec_csubq ~Jkem1024_avx2.M.__polyvec_csubq: ={r} ==> ={res}.
+  Mprevec.polyvec_csubq ~Jkem_avx2.M.__polyvec_csubq: ={r} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_csubq (={r} ==> ={res}) (={r} ==> ={res}).
 smt(). trivial.
@@ -161,7 +161,7 @@ qed.
 *)
 
 equiv prevec_eq_polyvec_reduce :
-  Mprevec.polyvec_reduce ~Jkem1024_avx2.M.__polyvec_reduce: ={r} ==> ={res}.
+  Mprevec.polyvec_reduce ~Jkem_avx2.M.__polyvec_reduce: ={r} ==> ={res}.
 proof.
   transitivity Mvec.polyvec_reduce (={r} ==> ={res}) (={r} ==> ={res}).
 smt(). trivial.

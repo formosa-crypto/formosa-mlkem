@@ -1,6 +1,6 @@
 require import AllCore IntDiv List.
 
-from JazzEC require import Jkem1024_avx2.
+from JazzEC require import Jkem_avx2.
 
 from JazzEC require import Array1152 Array32 Array1408 Array1568 Array1536 Array64 Array128 Array160 Array3168 WArray3168 WArray1568 WArray64 Array1600.
 from Jasmin require import JModel.
@@ -15,7 +15,7 @@ require import MLKEM_keccak_avx2.
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
 
 lemma mlkem_kem_correct_kg  : 
-   equiv [Jkem1024_avx2.M.__crypto_kem_keypair_jazz ~ MLKEM1024.kg_derand : 
+   equiv [Jkem_avx2.M.__crypto_kem_keypair_jazz ~ MLKEM1024.kg_derand : 
         coins{2}.`1 = Array32.init(fun i => randomnessp{1}.[0 + i]) /\
         coins{2}.`2 = Array32.init(fun i => randomnessp{1}.[32 + i])
         ==> 
@@ -119,7 +119,7 @@ qed.
 from JazzEC require import WArray32 Array4.
 
 lemma mlkem_kem_correct_enc  : 
-   equiv [Jkem1024_avx2.M.__crypto_kem_enc_jazz ~ MLKEM1024.enc_derand: 
+   equiv [Jkem_avx2.M.__crypto_kem_enc_jazz ~ MLKEM1024.enc_derand: 
      randomnessp{1} = coins{2} /\
      pk{2}.`1 = Array1536.init( fun i => pk{1}.[i]) /\
      pk{2}.`2 = Array32.init( fun i => pk{1}.[1536+i])
@@ -171,7 +171,7 @@ qed.
 require import StdOrder. 
 import IntOrder.
 lemma verify_correct_h _ct _ct1 :
-  hoare [Jkem1024_avx2.M.__verify : 
+  hoare [Jkem_avx2.M.__verify : 
              ct = _ct /\ ctpc =_ct1 ==>
              (_ct = _ct1 => res = W64.of_int 0) /\
              (_ct <> _ct1 => res = W64.of_int 1) 
@@ -236,7 +236,7 @@ rewrite /xx /yy wordP => j jb.
   rewrite !WArray1568.initiE 1,2:/# /=; smt().
 qed.
 
-lemma verify_ll : islossless Jkem1024_avx2.M.__verify.
+lemma verify_ll : islossless Jkem_avx2.M.__verify.
 proc.
 wp.
 while (0 <= i{hr} <= 49 /\ inc{hr} = 49) (49 - i{hr}).
@@ -245,14 +245,14 @@ auto => /> /#.
 qed.
 
 lemma verify_correct  _ct _ct1 :
-  phoare [Jkem1024_avx2.M.__verify : 
+  phoare [Jkem_avx2.M.__verify : 
               ct = _ct /\ ctpc =_ct1 ==>
              (_ct = _ct1 => res = W64.of_int 0) /\
              (_ct <> _ct1 => res = W64.of_int 1) ] = 1%r 
    by conseq verify_ll (verify_correct_h  _ct _ct1).
 
 lemma cmov_correct_h _dst _src _cnd :
-   hoare [Jkem1024_avx2.M.__cmov : 
+   hoare [Jkem_avx2.M.__cmov : 
              src = _src /\ cnd = _cnd /\  dst = _dst ==>
              (_cnd = W64.of_int 0 => res = _src)/\
              (_cnd = W64.of_int 1 => res = _dst)].
@@ -298,11 +298,11 @@ rewrite /BLENDV_32u8 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /BLENDV_16u8 /= !m
 by rewrite pack32E initiE /= 1:/# /of_list !initiE /= /#.
 qed.
 
-lemma cmov_ll : islossless Jkem1024_avx2.M.__cmov by islossless.
+lemma cmov_ll : islossless Jkem_avx2.M.__cmov by islossless.
 
 
 lemma cmov_correct _dst _src _cnd:
-   phoare [Jkem1024_avx2.M.__cmov : 
+   phoare [Jkem_avx2.M.__cmov : 
             src = _src /\ cnd = _cnd /\  dst = _dst ==>
              (_cnd = W64.of_int 0 => res = _src)/\
              (_cnd = W64.of_int 1 => res = _dst)] = 1%r
@@ -310,7 +310,7 @@ lemma cmov_correct _dst _src _cnd:
 
 from JazzEC require import Array196.
 lemma mlkem_kem_correct_dec  : 
-   equiv [Jkem1024_avx2.M.__crypto_kem_dec_jazz ~ MLKEM1024.dec: 
+   equiv [Jkem_avx2.M.__crypto_kem_dec_jazz ~ MLKEM1024.dec: 
      sk{2}.`1 = Array1536.init (fun i =>  sk{1}.[i]) /\
      sk{2}.`2.`1 = Array1536.init (fun i => sk{1}.[i + 1536]) /\
      sk{2}.`2.`2 = Array32.init (fun i =>  sk{1}.[i + 1536 + 1536]) /\

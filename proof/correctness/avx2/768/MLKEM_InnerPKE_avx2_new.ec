@@ -4,7 +4,7 @@ from JazzEC require import Array2304 Array1184 Array1152 Array1088 Array960 Arra
 from JazzEC require import WArray64 WArray1184 WArray512 WArray128 WArray384 WArray33 WArray32 WArray16 WArray1410 WArray160 WArray960 WArray1152 WArray1536.
 
 require import AVX2_Ops W16extra.
-from JazzEC require import Jkem768_avx2.
+from JazzEC require import Jkem_avx2.
 require import MLKEM_PolyVec_avx2_prevec.
 require import MLKEM_Poly_avx2_prevec.
 require import NTT_avx2.
@@ -44,12 +44,12 @@ import InnerPKE768.
 require Montgomery.
 
 
-(********** AVX2 PHOARE WRAPPERS on Jkem768_avx2.M procs via Mprevec + prevec_eq **************)
+(********** AVX2 PHOARE WRAPPERS on Jkem_avx2.M procs via Mprevec + prevec_eq **************)
 
 lemma poly_add_corr_avx ab bb :
   0 <= ab <= 6 => 0 <= bb <= 3 =>
   forall _a _b,
-  phoare [Jkem768_avx2.M._poly_add2 :
+  phoare [Jkem_avx2.M._poly_add2 :
     _a = lift_array256 rp /\ _b = lift_array256 bp /\
     signed_bound_cxq rp 0 256 ab /\ signed_bound_cxq bp 0 256 bb
     ==>
@@ -69,7 +69,7 @@ qed.
 lemma poly_sub_corr_avx ab bb :
   0 <= ab <= 4 => 0 <= bb <= 4 =>
   forall _a _b,
-  phoare [Jkem768_avx2.M._poly_sub :
+  phoare [Jkem_avx2.M._poly_sub :
     _a = lift_array256 ap /\ _b = lift_array256 bp /\
     signed_bound_cxq ap 0 256 ab /\ signed_bound_cxq bp 0 256 bb
     ==>
@@ -89,7 +89,7 @@ qed.
 lemma polyvec_add_corr_avx ab bb :
   0 <= ab <= 6 => 0 <= bb <= 3 =>
   forall _a _b,
-  phoare [Jkem768_avx2.M.__polyvec_add2 :
+  phoare [Jkem_avx2.M.__polyvec_add2 :
     _a = lift_array768 r /\ _b = lift_array768 b /\
     signed_bound768_cxq r 0 768 ab /\ signed_bound768_cxq b 0 768 bb
     ==>
@@ -108,7 +108,7 @@ qed.
 
 
 lemma poly_reduce_corr_avx ap :
-  phoare [Jkem768_avx2.M.__poly_reduce :
+  phoare [Jkem_avx2.M.__poly_reduce :
     ap = lift_array256 rp
     ==>
     ap = lift_array256 res /\
@@ -123,7 +123,7 @@ proof.
 qed.
 
 lemma poly_frommont_corr_avx ap :
-  phoare [Jkem768_avx2.M._poly_frommont :
+  phoare [Jkem_avx2.M._poly_frommont :
     ap = map W16.to_sint rp
     ==>
     map W16.to_sint res =
@@ -138,7 +138,7 @@ proof.
 qed.
 
 lemma polyvec_reduce_corr_avx _a :
-  phoare [Jkem768_avx2.M.__polyvec_reduce :
+  phoare [Jkem_avx2.M.__polyvec_reduce :
     _a = lift_array768 r
     ==>
     _a = lift_array768 res /\
@@ -202,7 +202,7 @@ lemma polyvec_pointwise_acc_corr_avx_ph
   _p1 = scale (basemul _a1 _b1) (incoeff 169) =>
   _p2 = scale (basemul _a2 _b2) (incoeff 169) =>
   (forall k, 0 <= k < 256 => _r.[k] = _p0.[k] + _p1.[k] + _p2.[k]) =>
-  phoare [Jkem768_avx2.M.__polyvec_pointwise_acc :
+  phoare [Jkem_avx2.M.__polyvec_pointwise_acc :
     _a0 = lift_array256 (subarray256 a_ref 0) /\
     _a1 = lift_array256 (subarray256 a_ref 1) /\
     _a2 = lift_array256 (subarray256 a_ref 2) /\
@@ -281,7 +281,7 @@ move => [#] ???? result3 [Hres3bnd Hres3k]; split; 2:smt().
 qed.
 
 lemma polyvec_pointwise_acc_corr_alg_avx (va vb : PolyVec.polyvec) (a_ref b_ref : W16.t Array768.t) :
-  phoare [Jkem768_avx2.M.__polyvec_pointwise_acc :
+  phoare [Jkem_avx2.M.__polyvec_pointwise_acc :
     PolyVec.nttv va = lift_polyvec a_ref /\
     signed_bound768_cxq a_ref 0 768 2 /\
     PolyVec.nttv vb = lift_polyvec b_ref /\
@@ -606,14 +606,14 @@ have -> : (i = 2) by smt().
 by rewrite !offunvE //= /ntt_mmul !setvE !offunvE //= !getvE /= !getmE /lift_polyvec !offunvE //=.
 qed.
 
-lemma poly_add2_avx_ll : islossless Jkem768_avx2.M._poly_add2.
+lemma poly_add2_avx_ll : islossless Jkem_avx2.M._poly_add2.
 proof. proc; while (true) (16 - i); auto; smt(). qed.
 
-lemma poly_basemul_avx_ll : islossless Jkem768_avx2.M._poly_basemul.
+lemma poly_basemul_avx_ll : islossless Jkem_avx2.M._poly_basemul.
 proof. proc; islossless. qed.
 
 lemma polyvec_pointwise_acc_avx_ll :
-  islossless Jkem768_avx2.M.__polyvec_pointwise_acc.
+  islossless Jkem_avx2.M.__polyvec_pointwise_acc.
 proof.
 proc; while (true) (3 - i).
 + move => z; wp; call poly_add2_avx_ll; call poly_basemul_avx_ll; auto; smt().
@@ -621,7 +621,7 @@ wp; call poly_basemul_avx_ll; auto; smt().
 qed.
 
 lemma mlkem_correct_enc_avx2_op _pkp :
-  equiv [Jkem768_avx2.M.__indcpa_enc ~ InnerPKE_Op.enc_derand :
+  equiv [Jkem_avx2.M.__indcpa_enc ~ InnerPKE_Op.enc_derand :
     msgp{1} = m{2} /\ pk{1} = _pkp /\
     noiseseed{1} = r{2} /\
     pk{2}.`1 = Array1152.init (fun i => pk{1}.[i]) /\
@@ -1114,7 +1114,7 @@ by rewrite initiE 1:/# /=  initiE 1:/# /=  initiE 1:/# /= ifT 1:/# Hresv Hvv ini
 qed.
 
 lemma mlkem_correct_enc_1_avx2 _pkp :
-  equiv [Jkem768_avx2.M.__indcpa_enc ~ InnerPKE768.enc_derand :
+  equiv [Jkem_avx2.M.__indcpa_enc ~ InnerPKE768.enc_derand :
     msgp{1} = m{2} /\ pk{1} = _pkp /\
     noiseseed{1} = coins{2} /\
     pk{2}.`1 = Array1152.init (fun i => pk{1}.[i]) /\
@@ -1141,7 +1141,7 @@ transitivity InnerPKE_Op.enc_derand
 qed.
 
 lemma mlkem_correct_kg_avx2_op :
-  equiv [Jkem768_avx2.M.__indcpa_keypair ~ InnerPKE_Op.kg_derand :
+  equiv [Jkem_avx2.M.__indcpa_keypair ~ InnerPKE_Op.kg_derand :
     randomnessp{1} = coins{2}
     ==>
     let (pk,sk) = res{2} in let (t,rho) = pk in
@@ -1561,7 +1561,7 @@ qed.
 (* DERIVED: original target via transitivity through InnerPKE_Op (operator
    form spec) using kg_op_eq from InnerPKE768_Op. *)
 lemma mlkem_correct_kg_avx2 :
-  equiv [Jkem768_avx2.M.__indcpa_keypair ~ InnerPKE768.kg_derand :
+  equiv [Jkem_avx2.M.__indcpa_keypair ~ InnerPKE768.kg_derand :
     randomnessp{1} = coins{2}
     ==>
     let (pk,sk) = res{2} in let (t,rho) = pk in
@@ -1583,7 +1583,7 @@ transitivity InnerPKE_Op.kg_derand
 qed.
 
 lemma mlkem_correct_dec :
-  equiv [Jkem768_avx2.M.__indcpa_dec ~ InnerPKE768.dec :
+  equiv [Jkem_avx2.M.__indcpa_dec ~ InnerPKE768.dec :
     ={sk} /\
     let (c1,c2) = cph{2} in
       c1 = Array960.init (fun i => ct{1}.[i]) /\

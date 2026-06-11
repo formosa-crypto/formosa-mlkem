@@ -13,7 +13,7 @@ from Spec require import Symmetric.
 require import MLKEMFCLib.
 import MLKEMFCLib768.
 
-from JazzEC require import Jkem768_avx2 WArray200.
+from JazzEC require import Jkem_avx2 WArray200.
 
 
 
@@ -576,7 +576,7 @@ from JazzEC require import Array1184.
 
 (*********************************************************************************)
 equiv sha3_256A_A1184_eq:
-  Jkem768_avx2.M._sha3_256A_A1184 ~ K._sha3_256A_A1184
+  Jkem_avx2.M._sha3_256A_A1184 ~ K._sha3_256A_A1184
  : ={arg} ==> ={res}
  by sim.
 
@@ -621,7 +621,7 @@ phoare sha3_256A_A1184_ph' _in:
 proof. by conseq sha3_256A_A1184_ll (sha3_256A_A1184_h' _in). qed.
 
 phoare sha3_256A_M1184_ph (inp : W8.t Array1184.t):
- [ Jkem768_avx2.M._sha3_256A_A1184
+ [ Jkem_avx2.M._sha3_256A_A1184
  : arg.`2 = inp 
  ==> 
    res = SHA3_256_1184_32
@@ -640,7 +640,7 @@ from JazzEC require import Array960 Array128.
 
 (*********************************************************************************)
 equiv shake256_A32__A1120_eq:
-  Jkem768_avx2.M._shake256_A32__A1120 ~ K._shake256_A32__A1120
+  Jkem_avx2.M._shake256_A32__A1120 ~ K._shake256_A32__A1120
  : ={arg, Glob.mem} ==> ={res, Glob.mem}
  by sim.
 
@@ -696,7 +696,7 @@ by conseq shake256_A32__A1120_ll (shake256_A32__A1120_h' _in).
 qed.
 
 phoare shake256_A32_A1120_ph (_in : W8.t Array1120.t):
- [ Jkem768_avx2.M._shake256_A32__A1120
+ [ Jkem_avx2.M._shake256_A32__A1120
  : arg.`2=_in
  ==> res = SHAKE_256_1120_32 
                (init (fun (k : int) => _in.[k]))%Array32
@@ -893,7 +893,7 @@ by conseq shake128_next_state_ll (shake128_next_state_h' _buf).
 qed.
 
 phoare shake128_next_state_ph _buf:
- [ Jkem768_avx2.M._shake128_next_state
+ [ Jkem_avx2.M._shake128_next_state
  : buf = _buf
    ==>
    let st = bytes2state (sub _buf (2*168) 200) in
@@ -1081,7 +1081,7 @@ by conseq shake128x4_absorb_A32_A2_ll (shake128x4_absorb_A32_A2_h' _rho _rc).
 qed.
 
 phoare shake128x4_absorb_A32_A2_ph _rho _rc:
- [ Jkem768_avx2.M._shake128x4_absorb_A32_A2
+ [ Jkem_avx2.M._shake128x4_absorb_A32_A2
  : seed = _rho /\ pos = _rc
  ==>
     st4x_match res
@@ -1251,7 +1251,7 @@ by conseq shake128x4_squeeze3blocks_ll (shake128x4_squeeze3blocks_h' _st0 _st1 _
 qed.
 
 phoare shake128x4_squeeze3blocks_ph _st0 _st1 _st2 _st3:
- [ Jkem768_avx2.M._shake128x4_squeeze3blocks
+ [ Jkem_avx2.M._shake128x4_squeeze3blocks
  : st4x_match st (_st0,_st1,_st2,_st3)
  ==>
       sub res.`2 (0*536) (3*168) = SHAKE128_SQUEEZE (3*168) _st0

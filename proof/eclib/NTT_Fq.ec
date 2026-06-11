@@ -2,9 +2,9 @@ require import AllCore List IntDiv Ring StdOrder BitEncoding.
 
 from JazzEC require import Array256 Array128.
 
-from Spec require import GFq Rq Correctness768.
+from Spec require import GFq Rq Correctness.
 
-require import Fq Fastexp.
+require import Fastexp MLKEMFCLib.
 
 import Zq IntOrder BitReverse.
 
@@ -220,7 +220,7 @@ op right256 ['t] (a : 't Array256.t) : 't Array128.t =
 op cat256 ['t] (a b : 't Array128.t) : 't Array256.t =
   Array256.init (fun i => if i < 128 then a.[i] else b.[i - 128]).
 
-op R = incoeff Fq.SignedReductions.R.
+op R = incoeff SignedReductions_W16.R.
 
 op scale127 = incoeff (-26).
 
@@ -249,7 +249,7 @@ lemma zetas_invE: zetas_inv = Array128.of_list witness
 ; incoeff 3303 ].
 proof.
 apply/Array128.ext_eq; move => i /mem_range mem_i_range.
-rewrite /zetas_inv /= Array128.get_set_if /= /scale127 {1 2}/R /Fq.SignedReductions.R /=.
+rewrite /zetas_inv /= Array128.get_set_if /= /scale127 {1 2}/R /SignedReductions_W16.R /=.
 case: (i=127) => E.
  by rewrite E initiE //= -eq_incoeff /q /=.
 rewrite initiE /=; first by rewrite -mem_range.
@@ -326,7 +326,7 @@ lemma zetas_inv_vals : array128_mont_inv zetas_inv =
 proof.
   apply/Array128.ext_eq => i /mem_range mem_i_range.
   rewrite /array128_mont_inv /zetas_inv /=.
-  rewrite Array128.get_set_if /= /scale127 {1 2}/R /Fq.SignedReductions.R.
+  rewrite Array128.get_set_if /= /scale127 {1 2}/R /SignedReductions_W16.R.
   rewrite -(incoeffM_mod (-26)) /q /= -incoeffM_mod /q /=.
   rewrite mapiE /=; [by rewrite -mem_range|].
   rewrite get_setE //= initiE /=; [by rewrite -mem_range|].
@@ -375,7 +375,7 @@ proof.
   rewrite /zetas -?mem_range //.
   rewrite initiE -?mem_range //; move: mem_i_range.
   rewrite /= -(fastexp_nbitsP 8) ?bsrev_range //.
-  rewrite /fastexp_nbits int2bs_bsrev revK /R /Fq.SignedReductions.R.
+  rewrite /fastexp_nbits int2bs_bsrev revK /R /SignedReductions_W16.R.
   do 8!(rewrite BS2Int.int2bs_rcons //= foldr_rcons /= /q /=).
   rewrite BS2Int.int2bs0s /= ComRing.mul1r.
   do 128!(rewrite range_ltn //=; move => [->> /=|];
