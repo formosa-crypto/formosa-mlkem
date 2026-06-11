@@ -23,5 +23,6 @@ idirs = Spec:proof/spec
 idirs = Spec:proof/spec/properties
 
 idirs = JazzEC:proof/arrays
-idirs = JazzEC:code/jasmin/768/avx2/extraction
-idirs = JazzEC:code/jasmin/1024/avx2/extraction
+# The mlkem extraction (jkem_avx2.ec, same filename per variant) is NOT on the
+# root path — each variant is injected via `args = -I JazzEC:.../<v>/.../extraction`
+# in config/tests.config, so the two same-named files never clash.

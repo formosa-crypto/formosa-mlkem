@@ -2,7 +2,7 @@ require import AllCore List IntDiv Ring StdOrder BitEncoding.
 
 require import Fq NTT_Fq NTTAlgebra.
 
-import GFq Rq Correctness768.
+import GFq Rq Correctness.
 
 import Zq IntOrder BitReverse.
 import NTTequiv.
@@ -11,7 +11,6 @@ from Jasmin require import JModel.
 from JazzEC require import Array16 Array128  Array256 Array400.
 
 require import MLKEMFCLib.
-import MLKEMFCLib768.
 from JazzEC require import Array400 WArray32 WArray800 WArray512.
 
 
