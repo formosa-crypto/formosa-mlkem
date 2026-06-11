@@ -2,15 +2,15 @@ require import AllCore IntDiv RealExp StdOrder RealExp Ring List Distr DInterval
 
 from Jasmin require import JWord JUtils.
 
-from JazzEC require import Array25 Array256 Array384 Array128 Array160 Array168  Array32 Array960 Array1024 Array1152 Array4096.
+from JazzEC require import Array25 Array256 Array384 Array128 Array168  Array32.
 
 
 (*---*) import BitEncoding BitChunking BS2Int.
 (*---*) import RField RealOrder IntOrder IntID.
 
 require import MLKEMLib DistrExtra.
-require import GFq Rq Symmetric Sampling VecMat  Serialization InnerPKE1024 MLKEM1024.
-import Zq Symmetric1024 VecMat1024 Serialization1024.
+require import GFq Rq Parameters Symmetric Sampling VecMat  Serialization KPKE MLKEM.
+import Zq MLKEMParams PolyVec PolyMat.
 
 (* Signed representation: could go in coeff *)
 
@@ -22,9 +22,6 @@ lemma incoeffK_sint_small n:
  - (q-1) %/ 2 <= n <= (q-1) %/ 2 =>
  as_sint (incoeff n) = n.
 proof. move=> H; rewrite /as_sint; smt(incoeffK). qed.
-
-lemma as_sintN (x: coeff): as_sint (-x) = - as_sint x.
-proof. by rewrite /as_sint oppE;smt(asintK incoeffK). qed.
 
 lemma as_sint_range x :  - (q-1) %/2 <= as_sint x <= (q-1) %/2 by smt(rg_asint).
 
@@ -151,9 +148,9 @@ lemma compress0L d x:
  0 < d =>
  2^d < q =>
  q%r - q%r / (2^(d+1))%r <= (asint x)%r =>
- compress d x = 0.
+ Compress d x = 0.
 proof.
-move=> Hd0 Hd Hx; rewrite /compress.
+move=> Hd0 Hd Hx; rewrite /Compress.
 have ->: comp d (asint x)%r = 2^d.
  by rewrite comp_over // modzz.
 by rewrite modzz.
@@ -163,10 +160,10 @@ lemma compress_small d x:
  0 < d =>
  2^d < q =>
  (asint x)%r < q%r - q%r / (2^(d+1))%r =>
- compress d x = comp d (asint x)%r.
+ Compress d x = comp d (asint x)%r.
 proof.
 move=> Hd0 Hd Hx.
-rewrite /compress.
+rewrite /Compress.
 rewrite modz_small 2:/# ger0_norm.
  smt(expr_ge0).
 have ?: comp d (asint x)%r <> 2^d by rewrite comp_over // /#. 
@@ -174,20 +171,20 @@ smt(comp_asint_range).
 qed.
 
 lemma compress1_is0 x:
- compress 1 x = 0 <=> absZq x <= Bq 1.
+ Compress 1 x = 0 <=> absZq x <= Bq 1.
 proof.
 have L: forall y m, 0 <= y <= m => y %% m = 0 <=> y=0 \/ y=m.
  move=> y m H; case: (y=m) => E.
   by rewrite E modzz /#.
  by rewrite modz_small /#.
-rewrite Bq1E /compress L.
+rewrite Bq1E /Compress L.
  by apply comp_asint_range => //= /#.
 by rewrite absZqP qE /= -fromintM round_divz 1:/# /=; smt(rg_asint).
 qed.
 
 lemma decompress0 d:
- decompress d 0 = Zq.zero
-by rewrite /decompress /= from_int_round.
+ Decompress d 0 = Zq.zero
+by rewrite /Decompress /= from_int_round.
 
 lemma decomp_bound d x:
  0 < d =>
@@ -221,10 +218,10 @@ smt(RealOrder.divr_gt0 expr_gt0).
 qed.
 
 (* These operations introduce a rounding error, which we see additively *)
-op compress_err(d : int, c: coeff) : coeff = decompress d (compress d c) - c.
+op compress_err(d : int, c: coeff) : coeff = Decompress d (Compress d c) - c.
 
 lemma decompress_errE c d : 
-   0 < d => 2^d < q => decompress d (compress d c) = c + (compress_err d c)
+   0 < d => 2^d < q => Decompress d (Compress d c) = c + (compress_err d c)
 by rewrite /compress_err => *; ring.
 
 lemma decomp_comp d x:
@@ -259,7 +256,7 @@ qed.
 lemma compress_decompress d x:
  0 < d =>
  2^d < q =>
- absZq (x - decompress d (compress d x)) <= Bq d.
+ absZq (x - Decompress d (Compress d x)) <= Bq d.
 proof.
 move=> Hd0 Hd.
 case: ((asint x)%r < q%r - q%r / (2^(d+1))%r).
@@ -286,21 +283,11 @@ case: ((asint x)%r < q%r - q%r / (2^(d+1))%r).
  have ->: (q%r - q%r / (2%r * (2 ^ d)%r)) * (2 ^ d)%r / q%r = (2^d)%r - inv 2%r by field; smt(expr_gt0).
  smt().
 move=> Hx.
-rewrite compress0L // 1:/# /absZq decompress0 /= ZqField.oppr0 ZqField.addr0.
+rewrite compress0L // 1:/# /absZq decompress0 /= ZqRing.oppr0 ZqRing.addr0.
 have ?:= Bq_le_half d.
-rewrite /as_sint.
-have ?: q%r - q%r / (2 ^ (d + 1))%r <= (asint x)%r by smt().
-have ->/=: (q - 1) %/ 2 < asint x.
- rewrite -lerNgt in Hx.
- rewrite divz_floor //.
- have ?: (floor ((q - 1)%r / 2%r))%r < (asint x)%r; last by smt().
- apply (RealOrder.ler_lt_trans ((q - 1)%r / 2%r)).
-  by apply floor_le.
- smt().
-rewrite ltr0_norm.
- smt(rg_asint).
-rewrite IntID.opprB. 
-smt(round_bound).
+have Hhi: q%r - q%r / (2 ^ (d + 1))%r <= (asint x)%r by smt().
+have ->: as_sint x = asint x - q by smt(asint_crepr rg_crepr rg_asint).
+smt(round_bound rg_asint).
 qed.
 
 (* As a corollary we get a bound on the additive error term *)
@@ -310,9 +297,10 @@ lemma compress_err_bound (c:coeff) d :
 proof.
 move => *.
 have ->: compress_err d c 
-         = -(c - decompress d (compress d c))%Zq.
+         = -(c - Decompress d (Compress d c))%Zq.
  by rewrite decompress_errE //; ring.
-rewrite as_sintN normrN.
+rewrite creprN; 1: by smt(prime_q).
+rewrite normrN.
 by apply compress_decompress.
 qed.
 
@@ -324,10 +312,10 @@ qed.
 (*******************************************************)
 
 lemma compress_alt_nice c d :
-    compress d c = (asint c * 2^d + (q %/ 2)) %/ q %% 2^d.
+    Compress d c = (asint c * 2^d + (q %/ 2)) %/ q %% 2^d.
 proof.
 move=> *.
-rewrite /compress /round ; congr; congr.
+rewrite /Compress /round ; congr; congr.
 have ->: (asint c * 2 ^ d + q %/ 2) %/ q
  = (2*asint c * 2 ^ d + q) %/ (2*q)
 by smt().
@@ -341,7 +329,7 @@ op compress_alt(d : int, c : coeff) : int =
 
 lemma compress_alt_compress c d :    
    1 <= d <=4 =>
-      compress_alt d c = compress d c.
+      compress_alt d c = Compress d c.
 proof.
 move => db; rewrite compress_alt_nice /compress_alt qE =>  /=.
 case (d = 1).
@@ -363,30 +351,16 @@ move => *;case (d = 4).
 by smt().
 qed.
 
-(* This is the implementation of compress d in C/Jasmin for d = 5 *)
-op compress_alt5(c : coeff) : int =
-    (asint c * 32 + ((q - 1) %/ 2)) * (2^27 %/ q + 1) %/ 2^27 %% 32.
-
-lemma compress_alt_compress5 c :    
-      compress_alt5 c = compress 5 c.
-proof.
-rewrite compress_alt_nice /compress_alt5 qE =>  /=.
-+ by  have  : all
-     (fun x => (x * 32 + 1664) * 40318 %/ 134217728 %% 32 = (x * 32 + 1664) %/ 3329 %% 32) 
-        (iota_ 0 3229); [by rewrite -iotaredE //= | smt(mem_iota gtp_asint ge0_asint)].
-qed.
-
 (* This is the implementation of compress d in C/Jasmin for d = 10 *)
 op compress_alt_large (c : coeff) : int = 
-   (asint c * 2 ^ 11 + (q - 1) %/ 2) * (2 ^ 31 %/ q + 1) %/ 2 ^ 31 %% 2 ^ 11.
+   (asint c * 2 ^ 10 + (q + 1) %/ 2) * (2 ^ 32 %/ q) %/ 2 ^ 32 %% 2 ^ 10.
 
 lemma compress_alt_compress_large (c : coeff): 
-    compress_alt_large c = compress 11 c.
+    compress_alt_large c = Compress 10 c.
 rewrite compress_alt_nice /compress_alt_large qE =>  /=.
-have ? : all
-     (fun x => (x * 2048 + 1664) * 645084 %/ 2147483648 %% 2048 = (x * 2048 + 1664) %/ 3329 %% 2048) 
-        (iota_ 0 3229); [by rewrite -iotaredE //= | ].
-congr;congr; smt(allP mem_iota gtp_asint ge0_asint).
+by have ? : all
+     (fun x => (x * 1024 + 1665) * 1290167 %/ 4294967296 %% 1024 = (x * 1024 + 1664) %/ 3329 %% 1024) 
+        (iota_ 0 3229); [by rewrite -iotaredE //= | smt(mem_iota gtp_asint ge0_asint)].
 qed.
 
 (* This is the implementation of decompress d in C/Jasmin *)
@@ -394,11 +368,11 @@ op decompress_alt(d : int, c : int) : coeff =
     incoeff (((c * q + 2^(d-1)) %/ 2^d)).
 
 lemma decompress_alt_decompress c d : 
-   0 < d => d<=11 =>
-    decompress_alt d c = decompress d c.
+   0 < d => d<=10 =>
+    decompress_alt d c = Decompress d c.
 proof.
 move => *.
-rewrite /decompress_alt /decompress /round; congr.
+rewrite /decompress_alt /Decompress /round; congr.
 rewrite mulrC divz_floor; first smt(expr_gt0).
 congr; field; first 2 smt(expr_gt0).
 rewrite mulrC mulrA.
@@ -427,12 +401,12 @@ op b_decode(c: coeff) : bool = ! `| as_sint c| < q %/ 4 + 1.
 (* The spec uses compress and decompress to do encode/decode,
    so these should be true *)
 lemma b_encode_sem c :
- b_encode c = decompress 1 (if c then 1 else 0)
+ b_encode c = Decompress 1 (if c then 1 else 0)
 by rewrite /b_encode -decompress_alt_decompress /decompress_alt //; smt(qE).
 
 
 lemma b_decode_sem c :
-   compress 1 c = if b_decode c then 1 else 0
+   Compress 1 c = if b_decode c then 1 else 0
 by rewrite /b_decode -compress_alt_compress /compress_alt //=; smt(qE rg_asint).
 
 
@@ -469,224 +443,17 @@ decryption failure bound.
    to be that of the base ring of polynomials, which 
    I never work with. *)
 
-require import PolyReduce. 
-clone import PolyReduce as RqTheory with
-   op n <- 256,
-   type coeff <- coeff,
-   op Coeff.(+) <- Zq.(+),
-   op Coeff.( *) <- Zq.( *),
-   op Coeff.zeror <- Zq.zero,
-   op Coeff.oner <- Zq.one,
-   op Coeff.([-]) <- Zq.([-]),
-   op Coeff.invr <- Zq.inv,
-   pred Coeff.unit <- Zq.unit
-   rename "polyXnD1" as "AlgR"
-   rename "poly" as "basepoly"
-   proof Coeff.addrA by apply ZqRing.addrA
-   proof Coeff.addrC by apply ZqRing.addrC
-   proof Coeff.add0r by apply ZqRing.add0r 
-   proof Coeff.addNr by apply ZqRing.addNr 
-   proof Coeff.oner_neq0 by apply ZqRing.oner_neq0
-   proof Coeff.mulrA by apply ZqRing.mulrA
-   proof Coeff.mulrC by apply ZqRing.mulrC 
-   proof Coeff.mul1r by apply ZqRing.mul1r 
-   proof Coeff.mulrDl by apply ZqRing.mulrDl 
-   proof Coeff.mulVr by apply ZqRing.mulVr
-   proof Coeff.unitP by apply ZqRing.unitP 
-   proof Coeff.unitout by apply ZqRing.unitout
-   proof gt0_n by auto.
-   (* proof *. fixme *)
-
-op poly2polyr(p : poly) : AlgR = pi (oget (BasePoly.to_basepoly 
-                              (fun i => if 0<=i<256 then p.[i] else Zq.zero))).
-op polyr2poly(p : AlgR) : poly = Array256.init (fun i => p.[i]).
-
-lemma poly2polyrP i p :  0<=i<256 => (poly2polyr p).[i] = p.[i].
-move => ib.
-have H := (BasePoly.to_basepolyT (fun (i0 : int) => if 0 <= i0 && i0 < 256 then p.[i0] else Zq.zero) _).
- split; first smt(). 
- by exists 256; smt().
-rewrite /poly2polyr /"_.[_]".
-rewrite piK. 
-+ rewrite reducedP /=.
-  apply BasePoly.deg_leP => //. 
-  move=> j Hj /=. 
-  move: H; pose P:= BasePoly.to_basepoly _.
-  have: P=P by done.
-  by move: {1}P => [|pol] /#.
-move: H; pose P:= BasePoly.to_basepoly _.
-have: P=P by done.
-by move: {1}P => [|pol] /#.
-qed.
-
-lemma polyr2polyP i p :  0<=i<256 => (polyr2poly p).[i] = p.[i].
-move => ib;rewrite /polyr2poly /"_.[_]" initiE //=.
-qed.
+(* poly-ring algebraic bridge (RqTheory/AlgR, poly2polyr/polyr2poly,
+   add_lift/sub_lift/mul_lift/zero_lift/one_lift, unit/invr) relocated
+   to Rq.ec; the Matrix clone, conversions and ntt_*E to VecMat.ec. *)
 
 
-lemma polyr2polyK : cancel poly2polyr polyr2poly.
-rewrite /cancel => x; apply Array256.tP => i ib.
-by rewrite polyr2polyP // poly2polyrP //=.
-qed.
-
-lemma poly2polyrK : cancel polyr2poly poly2polyr.
-rewrite /cancel => x;  apply AlgR_eqP => i ib.
-by rewrite poly2polyrP // polyr2polyP //=.
-qed.
-
-lemma add_lift a b : a &+ b = polyr2poly (poly2polyr a + poly2polyr b). 
-apply Array256.tP => i ib.
-rewrite polyr2polyP // rcoeffD !poly2polyrP //.
-by rewrite /(&+) /= map2E /= initiE //=.
-qed.
-
-lemma sub_lift a : (&-) a = polyr2poly (- poly2polyr a). 
-apply Array256.tP => i ib.
-rewrite polyr2polyP // -rcoeffN !poly2polyrP //.
-by rewrite /(&-) /= mapE /= initiE //=.
-qed.
-
-lemma mul_lift a b : a &* b = polyr2poly (poly2polyr a * poly2polyr b). 
-apply Array256.tP => i ib.
-rewrite polyr2polyP // rcoeffM //. 
-rewrite /(&*) /= /BasePoly.BigCf.BCA.big filter_predT /range /= initiE  //= foldr_map /=.
-have : forall x, x \in (iota_ 0 256) => 0 <= x < 256 by smt(mem_iota).
-elim (iota_ 0 256).
-+ by auto.
-move => x l H H1 /=.
-case (0 <= i - x).
- + move => * /=.
-   rewrite (H _) /=.
-    by move=> y Hy; apply H1 => /= /#.
-   ring.
-   have -> : (poly2polyr b).[256 + i - x] = Zq.zero by smt(lt0_rcoeff gered_rcoeff).
-   rewrite poly2polyrP; 1: by smt(mem_head). 
-   rewrite poly2polyrP; 1: by smt().
-   by ring.
-move => * /=.
-rewrite (H _) /=. 
- by move=> y Hy; apply H1 => /= /#.
-ring.
-rewrite poly2polyrP; 1: smt().
-rewrite poly2polyrP; 1: by smt(mem_head). 
-   have -> : (poly2polyr b).[i - x] = Zq.zero by smt(lt0_rcoeff gered_rcoeff).
-   have -> : 256 + (i - x) = 256 + i - x by smt().
-   by ring.
-qed.
-
-lemma zero_lift : Rq.zero = polyr2poly zeroXnD1. 
-apply Array256.tP => i ib.
-by rewrite polyr2polyP // /Rq.zero /create initiE //= rcoeff0.
-qed.
-
-lemma one_lift : Rq.one = polyr2poly oneXnD1. 
-apply Array256.tP => i ib.
-rewrite polyr2polyP // /Rq.one /Rq.zero /create.
-case (i = 0).
-move => *;rewrite set_eqiE //;1: 
-  by smt(BasePoly.lc1 creprK piK reduced1 BasePoly.deg1).
-by move => *; rewrite set_neqiE // initiE //=;
- smt(BasePoly.gedeg_coeff creprK piK reduced1 BasePoly.deg1).
-qed.
-
-lemma polyr2poly_inj : injective polyr2poly.
-by apply (can_inj _ poly2polyr); apply poly2polyrK.
-qed.
-
-lemma poly2polyr_inj : injective poly2polyr.
-by apply (can_inj _ polyr2poly); apply polyr2polyK.
-qed.
-
-(* Fix me PY: We currently don't care about inverting polynomials *)
-op unit(p : poly) = exists q, q &* p = Rq.one.
-op invr(p : poly) = choiceb (fun q => q &* p = Rq.one) p.
-
-require Matrix. 
-
-clone import Matrix as KMatrix with
-    op size <- kvec,
-    type ZR.t <- poly,
-    op ZR.zeror <- Rq.zero,
-    op ZR.oner <- Rq.one,
-    pred ZR.unit = unit,
-    op ZR.(+) <- Rq.(&+),
-    op ZR.([-]) <- Rq.(&-),
-    op ZR.( * ) <- Rq.(&*),
-    op ZR.invr <- invr,
-    type vector <- PolyVec.polyvec,
-    type Matrix.matrix <- PolyMat.polymat
-    proof ZR.addrA by smt(add_lift  poly2polyrK addrA)
-    proof ZR.addrC by smt(add_lift  poly2polyrK addrC)
-    proof ZR.add0r by smt(zero_lift add_lift poly2polyrK add0r polyr2polyK)
-    proof ZR.addNr by smt(zero_lift sub_lift add_lift poly2polyrK addNr polyr2polyK)
-    proof ZR.oner_neq0 by smt(zero_lift  poly2polyrK one_lift oner_neq0)
-    proof ZR.mulrA by smt(mul_lift  poly2polyrK mulrA)
-    proof ZR.mulrC by smt(mul_lift  poly2polyrK mulrC)
-    proof ZR.mul1r by smt(one_lift mul_lift poly2polyrK mul1r polyr2polyK)
-    proof ZR.mulrDl by smt(add_lift mul_lift poly2polyrK mulrDl polyr2polyK)
-    proof ZR.mulVr by smt(choicebP)
-    proof ZR.unitP by smt()
-    proof ZR.unitout by (move=> x H; rewrite /invr choiceb_dfl // /#)
-    proof ge0_size by auto.
-
-(* We give semantics to the spec operators *)
-axiom getvE : PolyVec."_.[_]" = Vector."_.[_]".
-axiom setvE : PolyVec."_.[_<-_]" = fun v i c => offunv (fun i' => if i = i' then c else (tofunv v) i').
-axiom mapvE : PolyVec.mapv = fun f v => offunv (fun i => f (tofunv v i)).
-axiom zerovE : PolyVec.zerov = zerov.
-axiom polyvecD : PolyVec.(+) = Vector.(+).
-
-axiom getmE : PolyMat."_.[_]" = Matrix."_.[_]".
-axiom setmE : PolyMat."_.[_<-_]" = fun m ij c =>  offunm (fun i j => if (i,j) = ij then c else (tofunm m) i j).
-axiom mapmE : PolyMat.mapm = fun f m => offunm (fun i j => f (tofunm m i j)).
-axiom zeromE : PolyMat.zerom = Matrix.zerom.
-
-(* Fixme PY: is this nowhere? *)
-instance ring with R
-  op rzero = Rq.zero
-  op rone  = Rq.one
-  op add   = Rq.(&+)
-  op opp   = Rq.(&-)
-  op mul   = Rq.(&*)
-  op expr  = ZR.exp
-  op ofint = ZR.ofint
-
-  proof oner_neq0 by apply ZR.oner_neq0
-  proof addrA     by apply ZR.addrA
-  proof addrC     by apply ZR.addrC
-  proof addr0     by apply ZR.addr0
-  proof addrN     by apply ZR.addrN
-  proof mulr1     by apply ZR.mulr1
-  proof mulrA     by apply ZR.mulrA
-  proof mulrC     by apply ZR.mulrC
-  proof mulrDl    by apply ZR.mulrDl
-  proof expr0     by apply ZR.expr0
-  proof ofint0    by apply ZR.ofint0
-  proof ofint1    by apply ZR.ofint1
-  proof exprS     by apply ZR.exprS
-  proof ofintS    by apply ZR.ofintS
-  proof ofintN    by apply ZR.ofintN.
-
-import Vector.
-
-lemma ntt_mmulE m  v: 
-   ntt_mmul m v =
-   offunv (fun (i : int) => (Big.BAdd.bigi predT (fun (j : int) => basemul m.[i, j] v.[j]) 0 kvec)).
-rewrite /kvec /range -iotaredE /=.
-rewrite /ntt_mmul eq_vectorP => i ib.
-rewrite (offunvE _ _ ib) /=  !Big.BAdd.big_cons /predT /= Big.BAdd.big_nil /=.
-rewrite !setvE !getvE !getmE /= (offunvE _ _ ib) /=  ZR.addr0.
- by smt(offunvE ZR.addrA).
-qed.
-
-lemma ntt_dotpE v1 v2 :
-  ntt_dotp v1 v2 = 
-   Big.BAdd.bigi predT (fun (i : int) => basemul v1.[i] v2.[i]) 0 kvec.
-rewrite /kvec /range -iotaredE /= /ntt_dotp.
-rewrite !Big.BAdd.big_cons /predT /= Big.BAdd.big_nil /=.
-rewrite !getvE  /=  ZR.addr0.
- by smt(ZR.addrA).
-qed.
+(* Algebraic vector/matrix semantics, the `ring` instance, and
+   ntt_mmulE/ntt_dotpE were relocated to the spec: the poly-ring bridge
+   lives in Rq.ec, and the Matrix clone (own vector/matrix), conversions
+   (poly2alg/alg2poly), ring instance and ntt_*E live in VecMat.ec.
+   The old getvE/setvE/... bridge axioms are GONE — polyvec = poly KVec.t
+   is concrete, so its accessors reduce on their own. *)
 
 (****************************************************)
 (*               Distributions over coeff              *)
@@ -726,8 +493,8 @@ proof.
 rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
   by rewrite as_sintK.
  move=> y; rewrite supp_dcbd; move=> ? <-.
- by rewrite incoeffK_sint_small /#.
-rewrite incoeffK_sint_small /q //=.
+ by rewrite /= incoeffK_sint_small /#.
+rewrite /= incoeffK_sint_small; 1: by smt(qE).
 by rewrite dcbd1E mcbd_2_2.
 qed.
 
@@ -736,8 +503,8 @@ proof.
 rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
   by rewrite as_sintK.
  move=> y; rewrite supp_dcbd; move=> ? <-.
- by rewrite incoeffK_sint_small /#.
-rewrite incoeffK_sint_small /q //=.
+ by rewrite /= incoeffK_sint_small /#.
+rewrite /= incoeffK_sint_small; 1: by smt(qE).
 by rewrite dcbd1E mcbd_2_2N.
 qed.
 
@@ -746,8 +513,8 @@ proof.
 rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
   by rewrite as_sintK.
  move=> y; rewrite supp_dcbd; move=> ? <-.
- by rewrite incoeffK_sint_small /#.
-rewrite incoeffK_sint_small /q //=.
+ by rewrite /= incoeffK_sint_small /#.
+rewrite /= incoeffK_sint_small; 1: by smt(qE).
 by rewrite dcbd1E mcbd_2_1.
 qed.
 
@@ -756,8 +523,8 @@ proof.
 rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
   by rewrite as_sintK.
  move=> y; rewrite supp_dcbd; move=> ? <-.
- by rewrite incoeffK_sint_small /#.
-rewrite incoeffK_sint_small /q //=.
+ by rewrite /= incoeffK_sint_small /#.
+rewrite /= incoeffK_sint_small; 1: by smt(qE).
 by rewrite dcbd1E mcbd_2_1N.
 qed.
 
@@ -766,8 +533,8 @@ proof.
 rewrite /dshort_elem (in_dmap1E_can (dcbd 2) _ as_sint).
   by rewrite as_sintK.
  move=> y; rewrite supp_dcbd; move=> ? <-.
- by rewrite incoeffK_sint_small /#.
-rewrite incoeffK_sint_small /q //=.
+ by rewrite /= incoeffK_sint_small /#.
+rewrite /= incoeffK_sint_small; 1: by smt(qE).
 by rewrite dcbd1E mcbd_2_0.
 qed.
 
@@ -865,34 +632,27 @@ by smt(dR_fu duni_elem_fu).
 (****************************************************************************)
 (****************************************************************************)
 
+
 lemma ofipolyvecK_small (x : ipolyvec) :
-    (forall k, 0 <= k < 1024 => 0 <= x.[k] < q) =>  toipolyvec (ofipolyvec x) = x.
+    (forall k, 0 <= k < 256 * kvec => 0 <= x.[k] < q) =>  toipolyvec (ofipolyvec x) = x.
 move => bnd.
-rewrite /ofipolyvec /toipolyvec /fromarray256 /subarray256.
-apply Array1024.ext_eq => k kb.
-rewrite mapiE //= initiE //=.
-case (0 <= k && k < 256). 
-+ move => *. rewrite !setvE !getvE zerovE //= offunvE //=.
-  rewrite !offunvK /vclamp /kvec /= mapiE //= initiE //= incoeffK; smt(modz_small).
-move => *;case (256 <= k && k < 512). 
-+ move => *;rewrite !setvE !getvE zerovE //= offunvE //=. 
-  rewrite !offunvK /vclamp /kvec /= mapiE 1:/# initiE 1:/#  incoeffK; smt(modz_small).
-move => *;case (512 <= k && k < 768). 
-+ by move => *;rewrite !setvE !getvE zerovE offunvE //= offunvK /vclamp /=  /kvec /= mapiE 1:/# initiE 1:/#  incoeffK; smt(modz_small).
-+ by move => *;rewrite !setvE !getvE zerovE offunvE //=  /kvec /= mapiE 1:/# initiE 1:/#  incoeffK; smt(modz_small).
+apply IPVec.tP => k kb.
+rewrite /toipolyvec IPVec.initiE //= /ofipolyvec KVec.initiE 1:/# /=.
+rewrite /subarray256 mapiE 1:/# initiE 1:/# /=.
+have ->: 256 * (k %/ 256) + k %% 256 = k by smt(divz_eq).
+rewrite incoeffK; smt(modz_small).
 qed.
 
 lemma toipolyvecK (x : PolyVec.polyvec) :
    ofipolyvec (toipolyvec x) = x.
-rewrite /ofipolyvec /toipolyvec /fromarray256 /subarray256.
-apply eq_vectorP => i ib.
-rewrite !setvE !getvE zerovE //=  offunvE //=.
-apply Array256.tP => k kb.
-rewrite !offunvK /vclamp /kvec /=. 
-case(i = 0); 1: by move => -> /=;rewrite mapiE //= initiE //= mapiE 1:/# initiE 1:/# /= asintK /#.
-case(i = 1); 1: by move => -> /=;rewrite mapiE //= initiE //= mapiE 1:/# initiE 1:/# /= asintK /#.
-case(i = 2); 1: by move => -> /=;rewrite mapiE //= initiE //= mapiE 1:/# initiE 1:/# /= asintK /#.
-move => * /=; rewrite ifT 1:/# mapiE //= initiE //= mapiE 1:/# initiE 1:/# /= asintK /#.
+apply KVec.tP => i ib.
+rewrite /ofipolyvec KVec.initiE //=.
+apply Array256.tP => j jb.
+rewrite /subarray256 mapiE 1:/# initiE 1:/# /=.
+rewrite /toipolyvec IPVec.initiE 1:/# /=.
+have ->: (256 * i + j) %/ 256 = i by smt(divzMDl).
+have ->: (256 * i + j) %% 256 = j by smt(modzMDl).
+by rewrite asintK.
 qed.
 
 (************************************)
@@ -1076,7 +836,7 @@ proof.
 by rewrite size_takel //=; apply needed_blocksP.
 qed.
 
-abbrev idx_from_pos pos = ((* row *) pos %/ 4, (* column *) pos %% 4).
+abbrev idx_from_pos pos = ((* row *) pos %/ 3, (* column *) pos %% 3).
 
 op pos2ji (pos: int) (t: bool): W8.t*W8.t =
  let rc = idx_from_pos pos  in
@@ -1454,7 +1214,7 @@ by rewrite /mkseq -iotaredE /(\o) /=.
 qed.
 
 equiv parse_corr _rho _j _i:
- Parse(XOF).sample ~ ParseFilter.sample
+ SampleNTT(XOF).sample ~ ParseFilter.sample
  : XOF.state{1}=SHAKE128_ABSORB_34 _rho _j _i 
    /\ (rho,(j,i)){2}=(_rho,(_j,_i)) 
  ==> ={res}.
@@ -1691,7 +1451,7 @@ proof. by conseq (sampleFilter_sem _rho _j _i). qed.
 
 lemma parse_sem _st _rho _j _i:
  _st = SHAKE128_ABSORB_34 _rho _j _i => 
- phoare [ Parse(XOF).sample
+ phoare [ SampleNTT(XOF).sample
         : XOF.state = _st ==> res = parse _rho _j _i ] = 1%r.
 proof.
 move=> Est.
@@ -1748,12 +1508,8 @@ qed.
 
 import PolyMat.
 
-(* Word-array form of polymat (relocated from ref's MLKEM_InnerPKE.ec). *)
-op unlift_matrix(a : polymat) : W16.t Array4096.t = Array4096.init
-   (fun i => W16.of_int (asint (a.[i %/ 1024, i %% 1024 %/ 256].[i %% 256]))%Matrix).
-
 module Hmodule = {
-    proc sampleA(sd : W8.t Array32.t) : polymat = { 
+    proc sampleA(sd : W8.t Array32.t) : polymat = {
      var i,j,c;
      var a : polymat;
      a <- witness;
@@ -1767,10 +1523,10 @@ module Hmodule = {
         }
         i <- i + 1;
      }
-     return a;      
+     return a;
     }
 
-    proc sampleAT(sd : W8.t Array32.t) : polymat = { 
+    proc sampleAT(sd : W8.t Array32.t) : polymat = {
      var i,j,c;
      var a : polymat;
      a <- witness;
@@ -1784,70 +1540,92 @@ module Hmodule = {
         }
         i <- i + 1;
      }
-     return a;      
+     return a;
     }
+
 }.
 
 lemma KSamplerA_ll  : islossless Hmodule.sampleA.
-proc;while(0<=i<=kvec) (kvec - i) => *; last by auto => /#.
-move => *;wp;while(0<=i<kvec && 0<=j<=kvec) (kvec - j) => *; last by auto => /#.
+proc;while(0<=i<=kvec) (kvec - i) => *; last by auto => *; smt(gt0_k).
+move => *;wp;while(0<=i<kvec && 0<=j<=kvec) (kvec - j) => *; last by auto => *; smt(gt0_k).
 by move => *;inline *;auto => /> /#.
 qed.
 
 lemma KSamplerAT_ll : islossless Hmodule.sampleAT.
-proc;while(0<=i<=kvec) (kvec - i) => *; last by auto => /#.
-move => *;wp;while(0<=i<kvec && 0<=j<=kvec) (kvec - j) => *; last by auto => /#.
+proc;while(0<=i<=kvec) (kvec - i) => *; last by auto => *; smt(gt0_k).
+move => *;wp;while(0<=i<kvec && 0<=j<=kvec) (kvec - j) => *; last by auto => *; smt(gt0_k).
 by move => *;inline *;auto => /> /#.
 qed.
 
-import KMatrix.Matrix.
-equiv H_sem_equiv : 
- Hmodule.sampleAT  ~ Hmodule.sampleA : ={arg} ==> res{1} = trmx res{2}.
-proof. 
-proc.
-inline XOF.init.
-unroll for* {1} 3;unroll for* {2} 3.
-unroll for* {1} 13; unroll for* {2} 13.
-unroll for* {1} 10; unroll for* {2} 10.
-unroll for* {1} 7; unroll for* {2} 7.
-unroll for* {1} 4; unroll for* {2} 4.
-auto => /> &2. 
-apply eq_matrixP => i j rng.
-have rnji := mrangeL _ _ rng.
-have rnjj := mrangeR _ _ rng.
-by rewrite trmxE !setmE /= !offunmE //= !offunmK /mclamp rng /= /#. 
-qed.
+import KMatrix.Vector.
 
-op sampleA(sd : W8.t Array32.t) : polymat = 
- witness<:polymat>
-        .[0, 0 <- parse sd W8.zero W8.zero]
-        .[0, 1 <- parse sd W8.one W8.zero]
-        .[0, 2 <- parse sd (W8.of_int 2) W8.zero]
-        .[0, 3 <- parse sd (W8.of_int 3) W8.zero]
-        .[1, 0 <- parse sd W8.zero W8.one]
-        .[1, 1 <- parse sd W8.one W8.one]
-        .[1, 2 <- parse sd (W8.of_int 2) W8.one]
-        .[1, 3 <- parse sd (W8.of_int 3) W8.one]
-        .[2, 0 <- parse sd W8.zero (W8.of_int 2)]
-        .[2, 1 <- parse sd W8.one (W8.of_int 2)]
-        .[2, 2 <- parse sd (W8.of_int 2) (W8.of_int 2)]
-        .[2, 3 <- parse sd (W8.of_int 3) (W8.of_int 2)]
-        .[3, 0 <- parse sd W8.zero (W8.of_int 3)]
-        .[3, 1 <- parse sd W8.one (W8.of_int 3)]
-        .[3, 2 <- parse sd (W8.of_int 2) (W8.of_int 3)]
-        .[3, 3 <- parse sd (W8.of_int 3) (W8.of_int 3)].
+(* spec-level matrix sampling: concrete and parametric over kvec.
+   sampleA.[(i,j)] = parse sd j i  (matches the Hmodule.sampleA proc). *)
+op sampleA(sd : W8.t Array32.t) : polymat =
+  KMat.init (fun f => parse sd (W8.of_int (f %% kvec)) (W8.of_int (f %/ kvec))).
+
+lemma sampleAE sd i j : 0 <= i < kvec => 0 <= j < kvec =>
+  (sampleA sd).[(i,j)] = parse sd (W8.of_int j) (W8.of_int i).
+proof.
+move=> hi hj; rewrite /sampleA {1}/PolyMat."_.[_]" KMat.initiE 1:/# /=.
+by rewrite modzMDl modz_small 1:/# divzMDl 1:/# divz_small 1:/#.
+qed.
 
 lemma sampleA_sem _sd :
-   phoare [ Hmodule.sampleA : arg = _sd ==> res = sampleA _sd ] = 1%r.
-proc. 
-inline *.
-do 5!(unroll for* ^while).
-auto => />.
+  phoare [ Hmodule.sampleA : arg = _sd ==> res = sampleA _sd ] = 1%r.
+proof.
+proc; sp.
+while (sd = _sd /\ 0 <= i <= kvec /\
+       forall i0 j0, 0 <= i0 < i => 0 <= j0 < kvec =>
+         a.[(i0,j0)] = parse _sd (W8.of_int j0) (W8.of_int i0)) (kvec - i).
++ move=> z; wp; sp.
+  while (sd = _sd /\ 0 <= i < kvec /\ 0 <= j <= kvec /\
+         (forall i0 j0, 0 <= i0 < i => 0 <= j0 < kvec =>
+            a.[(i0,j0)] = parse _sd (W8.of_int j0) (W8.of_int i0)) /\
+         (forall j0, 0 <= j0 < j =>
+            a.[(i,j0)] = parse _sd (W8.of_int j0) (W8.of_int i))) (kvec - j).
+  - move=> z'; auto => /> &hr hi1 hi2 hj0 hjle Hprev Hrow hjlt; split; last by smt().
+    split; first by smt().
+    split.
+    + move=> i0 j0 ????; case (i0 = i{hr} /\ j0 = j{hr}) => h; smt(get_setmE).
+    move=> j0 ??; case (j0 = j{hr}) => h; smt(get_setmE).
+  auto => /> /#.
+auto => />; split; 1: smt(gt0_k).
+move=> a0 i0; split; 1: smt().
+move=> hexit hi0 hi0le Hinv; apply eq_polymatP => i0' j0' ??.
+rewrite sampleAE 1,2:/#; smt().
 qed.
 
-lemma sampleAT_sem _sd : 
-   phoare [ Hmodule.sampleAT : arg = _sd ==> res = trmx (sampleA _sd) ] = 1%r
- by conseq H_sem_equiv (sampleA_sem _sd);smt().
+lemma sampleAT_sem _sd :
+  phoare [ Hmodule.sampleAT : arg = _sd ==> res = trmx (sampleA _sd) ] = 1%r.
+proof.
+proc; sp.
+while (sd = _sd /\ 0 <= i <= kvec /\
+       forall i0 j0, 0 <= i0 < i => 0 <= j0 < kvec =>
+         a.[(i0,j0)] = parse _sd (W8.of_int i0) (W8.of_int j0)) (kvec - i).
++ move=> z; wp; sp.
+  while (sd = _sd /\ 0 <= i < kvec /\ 0 <= j <= kvec /\
+         (forall i0 j0, 0 <= i0 < i => 0 <= j0 < kvec =>
+            a.[(i0,j0)] = parse _sd (W8.of_int i0) (W8.of_int j0)) /\
+         (forall j0, 0 <= j0 < j =>
+            a.[(i,j0)] = parse _sd (W8.of_int i) (W8.of_int j0))) (kvec - j).
+  - move=> z'; auto => /> &hr hi1 hi2 hj0 hjle Hprev Hrow hjlt; split; last by smt().
+    split; first by smt().
+    split.
+    + move=> i0 j0 ????; case (i0 = i{hr} /\ j0 = j{hr}) => h; smt(get_setmE).
+    move=> j0 ??; case (j0 = j{hr}) => h; smt(get_setmE).
+  auto => /> /#.
+auto => />; split; 1: smt(gt0_k).
+move=> a0 i0; split; 1: smt().
+move=> hexit hi0 hi0le Hinv; apply eq_polymatP => i0' j0' ??.
+rewrite trmxE 1,2:/# sampleAE 1,2:/#; smt().
+qed.
+
+equiv H_sem_equiv :
+ Hmodule.sampleAT  ~ Hmodule.sampleA : ={arg} ==> res{1} = trmx res{2}.
+proof.
+proc*; ecall {2} (sampleA_sem sd{2}); ecall {1} (sampleAT_sem sd{1}); auto => /#.
+qed.
 
 
 from JazzEC require import Array168.
@@ -2077,6 +1855,7 @@ if{1} => //; sp 0 1; if{2} => //.
   by auto => /> &1 &2 * /#.
 by auto => /> /#.
 
+
  alias {1} 1 xl = [0].
  transitivity {1}
   { xl <@ MSll.S.map(dlist (dbits 24) 56, flatten \o List.map (spreadbits 8 3));
@@ -2248,7 +2027,7 @@ module CBD2rnd = {
        l <- rcons l p;
        i <- i + 1;
      }
-     v <- offunv (nth witness l);
+     v <- KVec.init (nth witness l);
      return v;
    }
    proc sample_vec_real() : polyvec = {
@@ -2265,7 +2044,7 @@ module CBD2rnd = {
    }
    proc sample_vec_ideal() : polyvec = {
      var v;
-     v <$ dvector dshort_R;
+     v <$ dmap (dlist dshort_R kvec) (fun l => KVec.init (nth witness l));
      return v;
    }
 }.
@@ -2369,26 +2148,18 @@ equiv CBD2rnd_sampleL_vec_eq:
  true ==> ={res}.
 proof.
 proc.
-wp; while (={i} /\ (0 <= i{1} <= kvec) /\ 
-       size l{2}=i{2} /\ forall k, 0 <= k < i{1} => (v{1}.[k])%PolyVec = nth witness l{2} k).
+wp; while (={i} /\ (0 <= i{1} <= kvec) /\
+       size l{2}=i{2} /\ forall k, 0 <= k < i{1} => v{1}.[k] = nth witness l{2} k).
  wp; call (_: true); first by sim.
- skip => |> &1 &2; rewrite !setvE !getvE /set => ?? H ??.
- split; first smt().
+ skip => |> &1 &2 hge hle H hlt result; split; first smt().
  split; first by rewrite size_rcons.
- move=> k ??.
- rewrite  offunvE 1:/# /=.
- case: (size l{2}=k) => E.
-  by rewrite nth_rcons -E ltrr.
- by rewrite nth_rcons (_:k < size l{2}) 1:/# /= -H /#.
-wp; skip; rewrite !getvE /set => |> *.
-split; first smt().
-move => |> v p l ???.
-have H: size p=kvec by smt().
-by rewrite eq_vectorP => i Hi; rewrite offunvE /#.
+ move=> k ??; rewrite KVec.get_setE 1:/# nth_rcons; smt().
+wp; skip => |>; split; first smt(gt0_k).
+move=> i_L v_L i_R l_R he1 he2 Hinv; apply KVec.tP => i Hi; rewrite KVec.initiE 1:/#; smt().
 qed.
 
 clone DMapSampling as MSvkvec with
- type t1 <- R list,
+ type t1 <- poly list,
  type t2 <- polyvec.
 
 clone Program as LSvec with
@@ -2411,14 +2182,14 @@ transitivity {1}
     l <- rcons l p;
     i <- i+1;
    }
-   v <- offunv (nth witness l); }
+   v <- KVec.init (nth witness l); }
  ( true ==> ={v}) (true ==> ={v} ) => //=.
 - wp; while (={i,l} /\ 0 <= i{2} <= kvec).
    by wp; call CBD2rnd_equiv; auto => /> /#.
   by auto.
 transitivity {1}
  { l <@ LSvec.LoopSnoc.sample(kvec);
-   v <- offunv (nth witness l); }
+   v <- KVec.init (nth witness l); }
  ( true ==> ={v}) (true ==> ={v} ) => //=.
 - inline*; wp.
   while ((i,l){1}=(i0,l0){2} /\ n{2}=kvec /\ 0 <= i{1} <= kvec).
@@ -2426,13 +2197,13 @@ transitivity {1}
   by auto.
 transitivity {1}
  { l <@ LSvec.Sample.sample(kvec);
-   v <- offunv (nth witness l); }
+   v <- KVec.init (nth witness l); }
  ( true ==> ={v}) (true ==> ={v} ) => //=.
 - by symmetry; wp; call LSvec.Sample_LoopSnoc_eq; auto.
-transitivity {2} { v <@ MSvkvec.S.map(dlist dshort_R kvec, fun (l:R list) => offunv (nth witness l)); }
+transitivity {2} { v <@ MSvkvec.S.map(dlist dshort_R kvec, fun (l:poly list) => KVec.init (nth witness l)); }
  ( true ==> ={v}) (true ==> ={v} ) => //=.
  by inline*; wp; rnd; auto. 
-transitivity {1} { v <@ MSvkvec.S.sample(dlist dshort_R kvec, fun (l:R list) => offunv (nth witness l)); }
+transitivity {1} { v <@ MSvkvec.S.sample(dlist dshort_R kvec, fun (l:poly list) => KVec.init (nth witness l)); }
  ( true ==> ={v}) (true ==> ={v} ) => //=.
  by symmetry; call MSvkvec.sample; auto.
 by inline*; wp; rnd; auto => />; rewrite /dvector -dlist_djoin /#.
@@ -2446,8 +2217,8 @@ qed.
 (*************************************************************************)
 
 lemma exp_neg1_2 :
-  Zq.exp (incoeff (-1)) 2 = Zq.one.
-proof. by rewrite ZqField.expr2 -incoeffM. qed.
+  ZqRing.exp (incoeff (-1)) 2 = Zq.one.
+proof. by rewrite ZqRing.expr2 -incoeffM. qed.
 
 lemma exp_neg1_2_ring :
   ZqRing.exp (incoeff (-1)) 2 = Zq.one.
@@ -2457,11 +2228,11 @@ proof. by rewrite ZqRing.expr2 -incoeffM. qed.
 hint simplify expr0.
 
 lemma exp_zroot_128 :
-  Zq.exp zroot 128 = incoeff (-1).
+  ZqRing.exp zroot 128 = incoeff (-1).
 proof. by rewrite exp_incoeff /= incoeff_mod eq_sym incoeff_mod /q. qed.
 
 lemma exp_zroot_256 :
-  Zq.exp zroot 256 = incoeff 1.
+  ZqRing.exp zroot 256 = incoeff 1.
 proof. by rewrite exp_incoeff /= incoeff_mod /q. qed.
 
 lemma unit_zroot :
@@ -2477,7 +2248,7 @@ proof.
 qed.
 
 lemma exp_zroot n :
-  Zq.exp zroot n =
+  ZqRing.exp zroot n =
   incoeff (exp 17 (n %% 256) %% q).
 proof. by rewrite -!incoeff_mod (exp_mod _ _ _ exp_zroot_256) exp_incoeff modz_ge0. qed.
 
@@ -2649,7 +2420,7 @@ proof.
         by rewrite -ler_subl_addl lez_divRL //; move: mem_i_range; apply/mem_range_le.
       case: (j - i %/ 2 = 0) => [->|]; [by rewrite ZqRing.expr0 ZqRing.mulr1|].
       rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /=.
-      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
+      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqRing.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
     rewrite sum_pred1 /= range_div_range //= mem_i_range /= ZqRing.mulrA ZqField.mulVf.
     - by move: (eq_incoeff 128 0); rewrite /Zq.zero /q.
     by rewrite ZqRing.mul1r mulrC {2}(divz_eq i 2) eq_mod.
@@ -2711,7 +2482,7 @@ proof.
       by rewrite -ler_subl_addl lez_divRL //; move: mem_i_range; apply/mem_range_le.
     case: (j - i %/ 2 = 0) => [->|]; [by rewrite ZqRing.expr0 ZqRing.mulr1|].
     rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /=.
-      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.  
+      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqRing.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.  
      rewrite sum_pred1 /= range_div_range //= mem_i_range /= ZqRing.mulrA ZqField.mulVf.
   + by move: (eq_incoeff 128 0); rewrite /Zq.zero /q.
   by rewrite ZqRing.mul1r mulrC {2}(divz_eq i 2) eq_mod.
@@ -2781,7 +2552,7 @@ proof.
         by rewrite -ler_subl_addl; move: mem_i_range; apply/mem_range_le.
       case: (br (i %/ 2) - br j = 0) => [//|].
       rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /=.
-      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
+      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqRing.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
     rewrite sum_pred1 /= range_div_range //= mem_i_range /= ZqRing.mulrA ZqField.mulVf.
     - by move: (eq_incoeff 128 0); rewrite /Zq.zero /q.
     by rewrite ZqRing.mul1r mulrC {2}(divz_eq i 2) eq_mod.
@@ -2844,44 +2615,37 @@ proof.
       by rewrite -ler_subl_addl; move: mem_i_range; apply/mem_range_le.
     case: (br (i %/ 2) - br j = 0) => [//|].
     rewrite ZqRing.expr0 -ZqRing.exprM mulrAC /=.
-      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqField.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
+      by rewrite (exp_mod _ (256 * _) _ exp_zroot_256) modzMr ZqRing.expr0 ZqRing.subrr ZqRing.mulr0 !ZqRing.mul0r.
   rewrite sum_pred1 /= range_div_range //= mem_i_range /= ZqRing.mulrA ZqField.mulVf.
   + by move: (eq_incoeff 128 0); rewrite /Zq.zero /q.
   by rewrite ZqRing.mul1r mulrC {2}(divz_eq i 2) eq_mod.
 qed.
 
 lemma nttvK : cancel invnttv nttv.
-proof. 
-rewrite /nttv /invnttv /mapv /= /cancel !mapvE  => x /=.
-rewrite KMatrix.Vector.offunvK /vclamp /kvec /=.
-apply KMatrix.Vector.eq_vectorP => i ib.
-rewrite KMatrix.Vector.offunvE //=.
+proof.
+move=> v; apply KVec.tP => i ib.
+rewrite /nttv /invnttv /mapv KVec.mapiE 1:/# KVec.mapiE 1:/#.
 smt(nttK).
 qed.
 
 lemma invnttvK : cancel nttv invnttv.
-proof. 
-rewrite /nttv /invnttv /mapv /= /cancel !mapvE => x /=.
-rewrite KMatrix.Vector.offunvK /vclamp /kvec /=.
-apply KMatrix.Vector.eq_vectorP => i ib.
-rewrite KMatrix.Vector.offunvE //=.
+proof.
+move=> v; apply KVec.tP => i ib.
+rewrite /nttv /invnttv /mapv KVec.mapiE 1:/# KVec.mapiE 1:/#.
 smt(invnttK).
 qed.
 
 lemma nttmK : cancel invnttm nttm.
-proof. 
-rewrite /nttm /invnttm /mapm /= /cancel !mapmE => x /=.
-rewrite offunmK /mclamp /kvec /=.
-apply eq_matrixP => i ib mr.
-rewrite offunmE //=.
+proof.
+move=> m; apply KMat.tP => i ib.
+rewrite /nttm /invnttm /mapm KMat.mapiE 1:/# KMat.mapiE 1:/#.
 smt(nttK).
 qed.
 
 lemma invnttmK : cancel nttm invnttm.
-rewrite /nttm /invnttm /mapm /= /cancel !mapmE => x /=.
-rewrite offunmK /mclamp /kvec /=.
-apply eq_matrixP => i ib mr.
-rewrite offunmE //=.
+proof.
+move=> m; apply KMat.tP => i ib.
+rewrite /nttm /invnttm /mapm KMat.mapiE 1:/# KMat.mapiE 1:/#.
 smt(invnttK).
 qed.
 
@@ -3305,59 +3069,59 @@ lemma invnttzero : invntt Rq.zero = Rq.zero by
 
 lemma nttv_add (v1 v2 : polyvec) :
    nttv (v1 + v2)%PolyVec = (nttv v1 + nttv v2)%PolyVec.
-proof.
-rewrite polyvecD /nttv !mapvE /=. 
-rewrite eq_vectorP => x H.
-rewrite !offunvE //= offunvK /vclamp H //= !offunvE //=. 
-by rewrite add_comm_ntt.
-qed.
+proof. apply KVec.tP => i ib; smt(nttvE polyvec_addE add_comm_ntt). qed.
 
 lemma mulvec a b :
-   dotp a b = 
-    invntt (basemul (ntt a.[0])%PolyVec (ntt b.[0])%PolyVec) &+
-    invntt (basemul (ntt a.[1])%PolyVec (ntt b.[1])%PolyVec) &+
-    invntt (basemul (ntt a.[2])%PolyVec (ntt b.[2])%PolyVec) &+ 
-    invntt (basemul (ntt a.[3])%PolyVec (ntt b.[3])%PolyVec).
+   dotp a b =
+   KMatrix.Big.BAdd.bigi predT (fun (i : int) => invntt (basemul (ntt a.[i]) (ntt b.[i]))) 0 kvec.
 proof.
-rewrite -!mul_comm_ntt !invnttK.
-rewrite /dotp !getvE  => />. 
-rewrite /Big.BAdd.big /range /kvec -iotaredE /predT => /=.
-by ring.
+rewrite /dotp; apply KMatrix.Big.BAdd.eq_bigr => i _ /=.
+by rewrite -mul_comm_ntt invnttK.
 qed.
 
 lemma comm_nttv_add v1 v2:  nttv (v1 + v2)%PolyVec = (nttv v1 + nttv v2)%PolyVec.
-rewrite /Vector.(+) /= Vector.eq_vectorP => i ib.
-by rewrite /nttv !mapvE !polyvecD  !offunvE //=  !offunvE //= offunvK /vclamp /= ib /= add_comm_ntt /("_.[_]")%Vector /=.
-qed.
+proof. apply KVec.tP => i ib; smt(nttvE polyvec_addE add_comm_ntt). qed.
 
-lemma comm_nttv_mmul a v: nttv (a *^ v) = ntt_mmul (nttm a) (nttv v).
+import KMatrix.Matrix.
+
+(* ntt/invntt are BAdd-morphisms (no big_morph in the lib): push through the sum. *)
+lemma ntt_big (f : int -> poly) (s : int list) :
+  ntt (KMatrix.Big.BAdd.big predT f s) = KMatrix.Big.BAdd.big predT (fun j => ntt (f j)) s.
 proof.
-rewrite /nttv ntt_mmulE /nttm !mapvE mapmE /= /kvec /( *^).
-rewrite /Big.BAdd.big /range /kvec -iotaredE /predT => /=.
-rewrite  !offunvE //= Vector.eq_vectorP => i ib.
-rewrite !offunvE //= offunvK /vclamp /= !offunmE //=.
-by rewrite -!mul_comm_ntt ib /= !add_comm_ntt nttZero /=.  
+elim: s => [|x l ih] /=.
++ by rewrite !KMatrix.Big.BAdd.big_nil nttZero.
+by rewrite !KMatrix.Big.BAdd.big_cons {1 2}/predT /= add_comm_ntt ih.
 qed.
 
-lemma comm_ntt_dotp (v1 v2 : polyvec):   dotp (invnttv v1) v2 = invntt (ntt_dotp v1 (nttv v2)).
-rewrite ntt_dotpE /nttv /invnttv mapvE /dotp.
-rewrite /Big.BAdd.big /range /kvec -iotaredE /predT => /=.
-rewrite !offunvE //=.
-by rewrite !add_comm_invntt !mul_comm_invntt -nttZero !invnttK nttZero. 
+lemma invntt_big (f : int -> poly) (s : int list) :
+  invntt (KMatrix.Big.BAdd.big predT f s) = KMatrix.Big.BAdd.big predT (fun j => invntt (f j)) s.
+proof.
+elim: s => [|x l ih] /=.
++ by rewrite !KMatrix.Big.BAdd.big_nil invnttzero.
+by rewrite !KMatrix.Big.BAdd.big_cons {1 2}/predT /= add_comm_invntt ih.
 qed.
 
-lemma dotpmm (a : polymat) (v : polyvec) r :
-  0 <= r < 4 =>
-  (ntt (dotp (invnttv (offunv (fun (i : int) => (a.[r, i])%PolyMat))) (invnttv v))) =
-  ((ntt_mmul a v).[r])%PolyVec.
-move => rb.
-rewrite ntt_mmulE /dotp /kvec !getmE !getvE !offunvE //=.
-rewrite /Big.BAdd.big /range /kvec -iotaredE /predT => /=.
-rewrite /nttv /invnttv !mapvE /=  !offunvE //= !offunvK /= /vclamp /kvec /=.
-by rewrite !add_comm_ntt !mul_comm_ntt !nttK nttZero. 
+lemma comm_nttv_mmul (a : polymat) (v : polyvec) :
+  nttv (alg2poly (poly2almat a *^ poly2alg v)) = ntt_mmul (nttm a) (nttv v).
+proof.
+apply KVec.tP => i ib.
+rewrite nttvE 1:/# alg2polyE 1:/# KMatrix.Matrix.mulmxvE /ntt_mmul KVec.initiE 1:/# /=.
+rewrite nttsum_big ntt_big /range /=.
+apply KMatrix.Big.BAdd.eq_big_seq => j /mem_iota jb /=.
+by rewrite poly2almatE 1,2:/# poly2algE 1:/# nttmE 1,2:/# nttvE 1:/# mul_comm_ntt.
 qed.
+
+lemma comm_ntt_dotp (v1 v2 : polyvec):
+  dotp (poly2alg (invnttv v1)) (poly2alg v2) = invntt (ntt_dotp v1 (nttv v2)).
+proof.
+rewrite /dotp ntt_dotpE invntt_big /range /=.
+apply KMatrix.Big.BAdd.eq_big_seq => j /mem_iota jb /=.
+by rewrite !poly2algE 1,2:/# invnttvE 1:/# nttvE 1:/# mul_comm_invntt invnttK.
+qed.
+
+(* dotpmm removed: dead (no consumers) + subsumed by comm_nttv_mmul/comm_ntt_dotp. *)
 
 lemma nttvecinv v i: 0 <= i < kvec => ntt ((invnttv v).[i])%PolyVec = (v.[i])%PolyVec
-  by move => ib; rewrite /invnttv mapvE /= !getvE  offunvE //= nttK.
+  by move => ib; rewrite invnttvE 1:/#; smt(nttK invnttK).
 
 

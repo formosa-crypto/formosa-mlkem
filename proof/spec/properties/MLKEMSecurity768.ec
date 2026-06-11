@@ -5,7 +5,7 @@ from JazzEC require import Array25 Array32 Array33 Array64 Array128 Array168 Arr
 from JazzEC require import Array768 Array960 Array1024 Array1152.
 
 from Spec require import GFq Rq Parameters VecMat Sampling Symmetric Serialization.
-from Spec require import KPKE MLKEM Correctness768 EncDecCorrectness MLKEMLib.
+from Spec require import KPKE MLKEM Correctness EncDecCorrectness MLKEMLib.
 
 require import MLWE_PKE_Hash.
 import Zq MLKEMParams VecMat PolyVec PolyMat Symmetric Serialization KPKE.
@@ -725,11 +725,7 @@ op cv_bound_max : int = 104. (* this is the compress error bound for d = 4 *)
    the same types as the ROM we will use for the Spec *)
 clone import MLWE_PKE_Hash as MLWEPKEHash with
   type MLWE_.seed <- W8.t Array32.t,
-  type MLWE_.Matrix_.R <- poly,
-  type MLWE_.Matrix_.Matrix.matrix <- matrix,
-  type MLWE_.Matrix_.vector <- vector,
-  type MLWE_.Matrix_.ZR.t <- poly,
-  pred MLWE_.Matrix_.ZR.unit <- KMatrix.ZR.unit,
+  theory MLWE_.Matrix_ <- KMatrix,
   type FO_MLKEM.UU.key <- sharedsecret,
   type plaintext <- plaintext,
   type randomness <- W8.t Array32.t,
@@ -742,23 +738,6 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
   op MLWE_.H <- (fun rho => poly2almat (H rho)),
   op prg_kg <- (fun coins => let r = prg_kg_inner coins in (r.`1, poly2alg r.`2, poly2alg r.`3)),
   op prg_enc <- (fun coins => let r = prg_enc_inner coins in (poly2alg r.`1, poly2alg r.`2, r.`3)),
-  op MLWE_.Matrix_.ZR.(+) <- Rq.(&+),
-  op MLWE_.Matrix_.ZR.([-]) <- Rq.(&-),
-  op MLWE_.Matrix_.ZR.zeror <- Rq.zero,
-  op MLWE_.Matrix_.ZR.oner <- Rq.one,
-  op MLWE_.Matrix_.ZR.( * ) <- Rq.(&*),
-  op MLWE_.Matrix_.ZR.invr <- Rq.invr,
-  op MLWE_.Matrix_.size <- kvec,
-  op MLWE_.Matrix_.Vector.(+) <- KMatrix.Vector.(+),
-  op MLWE_.Matrix_.Vector.dotp <- dotp,
-  op MLWE_.Matrix_.Vector.prevector <- prevector,
-  op MLWE_.Matrix_.Vector.vclamp <- vclamp,
-  op MLWE_.Matrix_.Vector.tofunv <- tofunv,
-  op MLWE_.Matrix_.Vector.offunv <- offunv,
-  op MLWE_.Matrix_.Matrix.prematrix <- prematrix,
-  op MLWE_.Matrix_.Matrix.mclamp <- mclamp,
-  op MLWE_.Matrix_.Matrix.tofunm <- tofunm,
-  op MLWE_.Matrix_.Matrix.offunm <- offunm, 
   op MLWE_.duni_R <- duni_R,
   op MLWE_.dshort_R <- dshort_R,
   op MLWE_.dseed <- srand,
@@ -784,25 +763,6 @@ clone import MLWE_PKE_Hash as MLWEPKEHash with
   proof MLWE_.dshort_R_ll  by apply dshort_R_ll
   proof MLWE_.duni_R_ll by apply duni_R_ll
   proof MLWE_.duni_R_fu by apply duni_R_fu
-  proof MLWE_.Matrix_.ge0_size by smt(gt0_k)
-  proof MLWE_.Matrix_.ZR.addrA by apply KMatrix.ZR.addrA
-  proof MLWE_.Matrix_.ZR.addrC by apply KMatrix.ZR.addrC
-  proof MLWE_.Matrix_.ZR.add0r by apply KMatrix.ZR.add0r
-  proof MLWE_.Matrix_.ZR.addNr by apply KMatrix.ZR.addNr
-  proof MLWE_.Matrix_.ZR.oner_neq0 by apply KMatrix.ZR.oner_neq0
-  proof MLWE_.Matrix_.ZR.mulrA by apply KMatrix.ZR.mulrA
-  proof MLWE_.Matrix_.ZR.mulrC by apply KMatrix.ZR.mulrC
-  proof MLWE_.Matrix_.ZR.mul1r by apply KMatrix.ZR.mul1r
-  proof MLWE_.Matrix_.ZR.mulrDl by apply KMatrix.ZR.mulrDl
-  proof MLWE_.Matrix_.ZR.mulVr by apply KMatrix.ZR.mulVr
-  proof MLWE_.Matrix_.ZR.unitP by apply KMatrix.ZR.unitP
-  proof MLWE_.Matrix_.ZR.unitout by apply KMatrix.ZR.unitout
-  proof MLWE_.Matrix_.Vector.tofunv_prevector by apply tofunv_prevector
-  proof MLWE_.Matrix_.Vector.tofunvK by apply tofunvK
-  proof MLWE_.Matrix_.Vector.offunvK by apply offunvK
-  proof MLWE_.Matrix_.Matrix.tofunm_prematrix by apply tofunm_prematrix
-  proof MLWE_.Matrix_.Matrix.tofunmK by apply tofunmK
-  proof MLWE_.Matrix_.Matrix.offunmK by apply offunmK
   proof MLWE_.duni_R_uni by apply duni_R_uni
   proof drand_ll by apply srand_ll
   proof drand_uni by apply srand_uni
@@ -1207,7 +1167,41 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
        (true ==> ={x}); 1,2: smt().
    + inline *. swap {1} 3 -2. swap {2} 3 1.
      wp;rnd{1};conseq (:r{1} = (rho{2}, poly2alg v{2}, poly2alg v0{2})); 1: smt().
-     by rndsem* {2} 0;auto => /> /#.
+     rndsem* {2} 0.
+     rnd (fun (r : W8.t Array32.t * KMatrix.vector * KMatrix.vector) => (r.`1, alg2poly r.`2, alg2poly r.`3))   (* {1}->{2}: unwrap *)
+    (fun (t : W8.t Array32.t * poly KVec.t * poly KVec.t)        => (t.`1, poly2alg t.`2, poly2alg t.`3)).  (* {2}->{1}: wrap = the post map *)
+     auto => |>; split; 1: by move=> t _; rewrite !alg2polyK; case: t => /#.
+     move => ?.
+     have HID : prg_kg_ideal =
+  dmap (dlet srand (fun (rho0 : W8.t Array32.t) =>
+          dlet (dmap (dlist dshort_R kvec) (fun l => KVec.init (nth witness l))) (fun (v1 : poly KVec.t) =>
+            dmap (dmap (dlist dshort_R kvec) (fun l => KVec.init (nth witness l))) (fun (v0_0 : poly KVec.t) => (rho0, v1, v0_0)))))
+       (fun (t : W8.t Array32.t * PolyVec.polyvec * PolyVec.polyvec) => (t.`1, poly2alg t.`2, poly2alg t.`3)); last first.
+     split.
+     + move=> t _; rewrite HID.
+       rewrite dmap1E; congr; apply fun_ext => x /=.
+       rewrite eq_iff; split=> [/#|//].
+       rewrite /(\o) /= /pred1 /=; smt(alg2polyK).
+    + move=> ? rL ?.
+      split; last by move=> ?; rewrite !poly2algK;smt().
+      have Hd : rL \in prg_kg_ideal by assumption.
+      rewrite HID in Hd; case/supp_dmap: Hd => t [ht ->] /=.
+      by rewrite !alg2polyK; have ->/= : (t.`1, t.`2, t.`3) = t;1:by smt().
+    rewrite /prg_kg_ideal /dshort !dvector_poly2alg. 
+    rewrite !dmap_comp /(\o) /=.  
+    rewrite !dlet_dmap; simplify.   
+    rewrite !dmap_dlet; simplify. 
+    congr; apply fun_ext => a.   
+    rewrite !dmap_dlet; simplify.
+    rewrite !dlet_dmap; simplify.
+    apply eq_dlet;1: by  done. 
+    move => x1 /=. 
+    rewrite /dmap !dlet_dlet /(\o) /=.
+    apply eq_dlet; first done.
+    move=> x1_0 /=.
+    rewrite !dlet_unit /=.
+    by rewrite dlet_unit /=.
+
   by symmetry;wp; do 2!call(CBD2rnd_vec_equiv); auto => />.
 
  seq 1 5: (_N{2} = 0 /\ ={rho} /\
@@ -1230,7 +1224,7 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
    rcondt {2} 4.
    +  move=> *; wp; skip => &hr /> ??? Hm ?.
       rewrite -implybF => H.
-      by move: (Hm _ H); rewrite implybF of_uintK /#.
+      by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_val).
    wp; while (#[/:4,7:]pre /\ ={bytes} /\ i1{1} = i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
               (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
@@ -1241,10 +1235,10 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
     case: (k= 2*i0{2}+1) => E2.
      by rewrite set_eqiE 1..2:/# set_eqiE /#.
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#. 
-   wp; rnd; wp; skip => /> &1 &2; rewrite !setvE !getvE => ?????????; split.
+   wp; rnd; wp; skip => /> &1 &2; move => ?????????; split.
     split; 1:   by rewrite FMap.get_set_sameE.
     move=> x; case: (x=W8.of_int i{2}) => E.
-     by move=> _; rewrite E of_uintK modz_small /#.
+     by move=> _; rewrite E of_uintK; smt(kvec_val).
     rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i0 p2 ?????? H; split; first smt().
@@ -1252,11 +1246,11 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
     by apply Array256.tP => k kb; apply H; smt().
    split; last smt().
    move=> k HkL HkR; case: (k = i{2}) => E.
-    by rewrite /set E !offunvE /= /#.
-   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
-  auto => /> &1 &2; split; first smt().
-  move=> v1 m i v2 => ??????; split; last smt().
-  apply KVec.ext_eq => k kb;smt(setvE getvE).
+    by rewrite E; smt(KVec.get_setE).
+   by smt(KVec.get_setE).
+  auto => /> &1 &2; split; first smt(gt0_k).
+  move=> v1 m i v2 => ??????; split; last smt(kvec_val).
+  apply KVec.ext_eq => k kb;smt(KVec.get_setE).
  wp; seq 1 2: (={rho,noise1,noise2} /\ _N{2} = 6 /\
            forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
@@ -1266,7 +1260,7 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
    rcondt {2} 4.
     move=> *; wp; skip => &hr /> ??? Hm ?.
     rewrite -implybF => H.
-    by move: (Hm _ H); rewrite implybF of_uintK /#.
+    by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_val).
    wp; while (#[/:5,8:]pre /\ bytes{1}=bytes{2} /\ i1{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
               (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
@@ -1278,10 +1272,10 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
     case: (k= 2*i0{2}+1) => E2.
      by rewrite set_eqiE 1..2:/# set_eqiE /#.
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
-   wp; rnd; wp; skip => /> &1 &2; rewrite !getvE !setvE => ?????????; split.
+   wp; rnd; wp; skip => /> &1 &2; move => ?????????; split.
     split; 1:  by rewrite FMap.get_set_sameE.
     move=> x; case: (x=W8.of_int (3+i{2})) => E.
-     by move=> _; rewrite E of_uintK modz_small /#.
+     by move=> _; rewrite E of_uintK; smt(kvec_val).
     rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i1 p2 ?????? H; split; first smt().
@@ -1290,11 +1284,11 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
    split; first smt().
    split; last smt().
    move=> k HkL HkR; case: (k = i{2}) => E.
-    by rewrite /set E !offunvE /= /#.
-   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
-  auto => /> &1 &2; split; first smt().
-  move=> v1 m i v2 ??????; split; last smt().
-  by apply KVec.ext_eq => k kb;smt(setvE getvE).
+    by rewrite E; smt(KVec.get_setE).
+   by smt(KVec.get_setE).
+  auto => /> &1 &2; split; first smt(gt0_k).
+  move=> v1 m i v2 ??????; split; last smt(kvec_val).
+  by apply KVec.ext_eq => k kb;smt(KVec.get_setE).
  by auto.
 qed.
 
@@ -1325,12 +1319,12 @@ have -> : Pr[PRG_ENC.IND(PRG_ENC.PRGr, A).main() @ &m : res] =
 + byequiv => //.
   proc;inline {2} 2;wp;call(:true).
   inline {1} 2; conseq />.
-   transitivity {1} {sd <$ srand; x <@ MLKEM_PRGs.prg_enc(sd);} 
+   transitivity {1} {sd <$ srand; x <@ MLKEM_PRGs_alg.prg_enc(sd);}
         (true ==> ={x})
-        (true ==> x{1} = x{2});1,2: smt(). 
-  + wp;ecall{2} (prg_enc_sem sd{2}).
-    by auto => />.
-  inline {1} 2; inline {2} 2.
+        (true ==> x{1} = (poly2alg x{2}.`1, poly2alg x{2}.`2, x{2}.`3));1,2: smt().
+  + inline {2} 2; wp; ecall{2} (prg_enc_sem sd{2}); auto => />.
+  inline {1} 2; inline {1} 3; inline {2} 2.
+  wp; conseq (: _ ==> ={noise1,noise2,e2}); 1: smt().
   by sim;inline *;auto => />.
 
 have -> : Pr[PRG_ENC.IND(PRG_ENC.PRGi, A).main() @ &m : res] = 
@@ -1339,14 +1333,41 @@ byequiv => //.
 proc; inline {2} 2;wp;call(: true).
 inline {1} 2. inline {2} 1. inline {2} 2. conseq />.
 transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample_vec_real(); e2 <@ CBD2rnd.sample_real(); x <- (noise1,noise2,e2); }
-       (true ==> ={x})
+       (true ==> x{1} = (poly2alg x{2}.`1, poly2alg x{2}.`2, x{2}.`3))
        (true ==> ={x}); 1,2: smt().
 + transitivity {2} { noise1 <@ CBD2rnd.sample_vec_ideal(); noise2 <@ CBD2rnd.sample_vec_ideal(); e2 <@ CBD2rnd.sample_ideal(); x <- (noise1,noise2,e2); }
-       (true ==> ={x})
+       (true ==> x{1} = (poly2alg x{2}.`1, poly2alg x{2}.`2, x{2}.`3))
        (true ==> ={x}); 1,2: smt().
-   + inline *. swap {1} [1..2] 1. swap {2} 4 1. swap {2} 2 3.
-     wp;rnd{1}. conseq(: _ ==> r{1} = (v{2}, v0{2}, p{2}));1: by smt().
-     by rndsem*{2} 0;auto => /> /#.
+  + inline *. swap {1} [1..2] 1. swap {2} 4 1. swap {2} 2 3.
+    wp;rnd{1}. conseq(: _ ==> r{1} = (poly2alg v{2}, poly2alg v0{2}, p{2}));1: by smt().
+    rndsem*{2} 0.
+    have HIE : prg_enc_ideal = dmap (dlet (dmap (dlist dshort_R kvec) (fun (l : poly list) => KVec.init (nth witness l))) (fun (v1 : poly KVec.t) => dlet (dmap (dlist dshort_R kvec) (fun (l : poly list) => KVec.init (nth witness l))) (fun (v0_0 : poly KVec.t) => dmap dshort_R (fun (p0 : poly) => (v1, v0_0, p0))))) (fun (t : PolyVec.polyvec * PolyVec.polyvec * poly) => (poly2alg t.`1, poly2alg t.`2, t.`3)).
+    + rewrite /prg_enc_ideal /dshort !dvector_poly2alg.
+      rewrite !dmap_comp /(\o) /=.
+      rewrite !dlet_dmap; simplify.
+      rewrite dmap_dlet.
+      congr.
+      simplify.
+      apply fun_ext => a.
+      rewrite !dmap_dlet; simplify.
+      rewrite !dlet_dmap; simplify.
+      apply eq_dlet; first done.
+      move=> a0 /=; rewrite /dmap !dlet_dlet /(\o) /=.
+      apply eq_dlet; first done.
+      move=> x1 /=; rewrite !dlet_unit /=.
+      by rewrite dlet_unit /=.
+    rnd (fun (r : KMatrix.vector * KMatrix.vector * KMatrix.R) => (alg2poly r.`1, alg2poly r.`2, r.`3)) (fun (t : PolyVec.polyvec * PolyVec.polyvec * poly) => (poly2alg t.`1, poly2alg t.`2, t.`3)).
+    skip => &1 &2 _.
+    split; first by move=> vv0pR _ /=; rewrite !alg2polyK; case: vv0pR.
+    move=> _; split.
+    + move=> vv0pR _; rewrite HIE (dmap1E_can _ _ (fun (r : KMatrix.vector * KMatrix.vector * KMatrix.R) => (alg2poly r.`1, alg2poly r.`2, r.`3))).
+      + by move=> x /=; rewrite !poly2algK; case: x.
+      + by move=> a _ /=; rewrite !alg2polyK; case: a.
+      by rewrite /= !alg2polyK; case: vv0pR.
+    move=> _ rL HrL; rewrite HIE in HrL; case/supp_dmap: HrL => t [ht ->].
+    rewrite /= !alg2polyK.
+    split; first by move: ht; case: t => t1 t2 t3 /= h; exact h.
+    by move=> _.
   by symmetry;wp; call(CBD2rnd_equiv); do 2!call(CBD2rnd_vec_equiv); auto => />.
 
  seq 0 4: (_N{2} = 0 /\ 
@@ -1362,7 +1383,7 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
    rcondt {2} 4.
    +  move=> *; wp; skip => &hr /> ??? Hm ?.
       rewrite -implybF => H.
-      by move: (Hm _ H); rewrite implybF of_uintK /#.
+      by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_val).
    wp; while (#[/:4,7:]pre /\ ={bytes} /\ i1{1} = i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
               (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
@@ -1373,10 +1394,10 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
     case: (k= 2*i0{2}+1) => E2.
      by rewrite set_eqiE 1..2:/# set_eqiE /#.
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#. 
-   wp; rnd; wp; skip => /> &1 &2; rewrite !setvE !getvE => ?????????; split.
+   wp; rnd; wp; skip => /> &1 &2; move => ?????????; split.
     split; 1:   by rewrite FMap.get_set_sameE.
     move=> x; case: (x=W8.of_int i{2}) => E.
-     by move=> _; rewrite E of_uintK modz_small /#.
+     by move=> _; rewrite E of_uintK; smt(kvec_val).
     rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i0 p2 ?????? H; split; first smt().
@@ -1384,11 +1405,11 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
     by apply Array256.tP => k kb; apply H; smt().
    split; last smt().
    move=> k HkL HkR; case: (k = i{2}) => E.
-    by rewrite /set E !offunvE /= /#.
-   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
-  auto => /> &1 &2; split; first smt().
-  move=> v1 m i v2 => ??????; split; last smt().
-  apply KVec.ext_eq => k kb;smt(setvE getvE).
+    by rewrite E; smt(KVec.get_setE).
+   by smt(KVec.get_setE).
+  auto => /> &1 &2; split; first smt(gt0_k).
+  move=> v1 m i v2 => ??????; split; last smt(kvec_val).
+  apply KVec.ext_eq => k kb;smt(KVec.get_setE).
  wp; seq 1 2: (={noise1,noise2} /\ _N{2} = 6 /\
            forall (x:W8.t), FMap.dom RF.m{2} x => W8.to_uint x < _N{2}).
   inline*; wp.
@@ -1398,7 +1419,7 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
    rcondt {2} 4.
     move=> *; wp; skip => &hr /> ??? Hm ?.
     rewrite -implybF => H.
-    by move: (Hm _ H); rewrite implybF of_uintK /#.
+    by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_val).
    wp; while (#[/:5,8:]pre /\ bytes{1}=bytes{2} /\ i1{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
               (forall (x1 : W8.t), FMap.dom RF.m{2} x1 => to_uint x1 <= _N{2}) /\
               forall k, 0 <= k < j{2} => p0{1}.[k] = rr{2}.[k]).
@@ -1410,10 +1431,10 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
     case: (k= 2*i0{2}+1) => E2.
      by rewrite set_eqiE 1..2:/# set_eqiE /#.
     by rewrite set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE 1..2:/# set_neqiE /#.
-   wp; rnd; wp; skip => /> &1 &2; rewrite !getvE !setvE => ?????????; split.
+   wp; rnd; wp; skip => /> &1 &2; move => ?????????; split.
     split; 1:  by rewrite FMap.get_set_sameE.
     move=> x; case: (x=W8.of_int (3+i{2})) => E.
-     by move=> _; rewrite E of_uintK modz_small /#.
+     by move=> _; rewrite E of_uintK; smt(kvec_val).
     rewrite FMap.domE FMap.get_set_neqE 1:// => H. 
     by apply StdOrder.IntOrder.ltrW; smt().
    move => p1 i1 p2 ?????? H; split; first smt().
@@ -1422,17 +1443,17 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
    split; first smt().
    split; last smt().
    move=> k HkL HkR; case: (k = i{2}) => E.
-    by rewrite /set E !offunvE /= /#.
-   by rewrite /set !offunvE /= 1..2:/# (eq_sym _ k) E /= /#.
-  auto => /> &1 &2; split; first smt().
-  move=> v1 m i v2 ??????; split; last smt().
-  by apply KVec.ext_eq => k kb;smt(setvE getvE).
+    by rewrite E; smt(KVec.get_setE).
+   by smt(KVec.get_setE).
+  auto => /> &1 &2; split; first smt(gt0_k).
+  move=> v1 m i v2 ??????; split; last smt(kvec_val).
+  by apply KVec.ext_eq => k kb;smt(KVec.get_setE).
  conseq />.
   inline*; wp.
   rcondt {2} 4.
    move=> *; wp; skip => &hr /> Hm. 
    rewrite -implybF => H.
-   by move: (Hm _ H); rewrite implybF of_uintK /#.
+   by move: (Hm _ H); rewrite implybF of_uintK; smt(kvec_val).
    while (#[/:-2]pre /\ bytes{1}=bytes{2} /\ i0{1}=i0{2} /\ 0 <= i0{2} <= 128 /\ j{2} = i0{2}*2 /\
           forall k, 0 <= k < j{2} => p{1}.[k] = rr{2}.[k]).
     wp; skip => /> &1&2 *; split; first smt(). 

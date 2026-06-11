@@ -14,15 +14,15 @@ from Jasmin require import JArray.
 (* ------------------------------------------------------------------ *)
 require Matrix.
 clone import Matrix as KMatrix with
-    op size <- kvec,
-    type ZR.t <- poly,
-    op ZR.zeror <- Rq.zero,
-    op ZR.oner <- Rq.one,
+    op size <= kvec,
+    type ZR.t <= poly,
+    op ZR.zeror <= Rq.zero,
+    op ZR.oner <= Rq.one,
     pred ZR.unit = Rq.unit,
-    op ZR.(+) <- Rq.(&+),
-    op ZR.([-]) <- Rq.(&-),
-    op ZR.( * ) <- Rq.(&*),
-    op ZR.invr <- Rq.invr
+    op ZR.(+) <= Rq.(&+),
+    op ZR.([-]) <= Rq.(&-),
+    op ZR.( * ) <= Rq.(&*),
+    op ZR.invr <= Rq.invr
     proof ZR.addrA by smt(Rq.add_lift Rq.poly2polyrK addrA)
     proof ZR.addrC by smt(Rq.add_lift Rq.poly2polyrK addrC)
     proof ZR.add0r by smt(Rq.zero_lift Rq.add_lift Rq.poly2polyrK add0r Rq.polyr2polyK)
