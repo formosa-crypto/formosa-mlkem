@@ -23,6 +23,12 @@ idirs = Spec:proof/spec
 idirs = Spec:proof/spec/properties
 
 idirs = JazzEC:proof/arrays
+
+# TEMP (interactive emacs only — REVERT before commit / running make check):
+# inject the 768 extraction so common files (Fq_avx2, NTT_avx2_poly, …) that
+# require Jkem_avx2 resolve in PG without per-dir project files.
+idirs = JazzEC:code/jasmin/768/avx2/extraction
+
 # The mlkem extraction (jkem_avx2.ec, same filename per variant) is NOT on the
 # root path — each variant is injected via `args = -I JazzEC:.../<v>/.../extraction`
 # in config/tests.config, so the two same-named files never clash.

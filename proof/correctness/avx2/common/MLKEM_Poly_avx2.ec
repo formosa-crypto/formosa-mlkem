@@ -9,6 +9,7 @@ from JazzEC require import Jkem_avx2.
 require import AVX2_Ops.
 
 require import MLKEM_avx2_auxlemmas.
+require import Fq_avx2.
 
 module Mprevec = {
   proc shuffle8 (a:t16u16, b:t16u16) : t16u16 * t16u16 = {
@@ -201,7 +202,7 @@ module Mprevec = {
     while (i < 16) {
       r <- lift2poly (get256_direct (WArray512.init16 (fun i => rp.[i])) (32 * i));
 
-      r <@ red16x (r, qx16, vx16);
+      r <@ Fq_avx2.MprevecT0.red16x (r, qx16, vx16);
 
       rp <- fill (fun k => r.[k %% 16]) (16*i) 16 rp;
 
@@ -227,7 +228,7 @@ module Mprevec = {
     i <- 0;
     while (i < aux) {
       t <- lift2poly(get256 (WArray512.init16 (fun i => rp.[i])) i);
-      t <@ fqmulx16 (t, dmontx16, qx16, qinvx16);
+      t <@ Fq_avx2.MprevecT0.fqmulx16 (t, dmontx16, qx16, qinvx16);
 
       rp <- fill (fun k => t.[k %% 16]) (16*i) 16 rp;
 
@@ -813,14 +814,14 @@ proof.  by conseq poly_reduce_ll (poly_reduce_corr_h ap). qed.
 lemma poly_frommont_corr_h ap:
   hoare[ Mprevec.poly_frommont :
        ap = map W16.to_sint rp ==>
-       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) ap].
+       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions_W16.R 2) %% q))) ap].
 proof. 
   proc.
   while(0 <= i <= 16 /\ aux = 16 /\
         (forall k, 0 <= k < 16 => dmontx16.[k] = W16.of_int 1353) /\
         (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
         (forall k, 0 <= k < 16 => qinvx16.[k] = W16.of_int (-3327)) /\
-        (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) /\
+        (forall k, 0 <= k < 16 * i => W16.to_sint rp.[k] = SREDC (ap.[k] * ((Ring.IntID.(^) SignedReductions_W16.R 2) %% q))) /\
         (forall k, 16 * i <= k < 256 => W16.to_sint rp.[k] = ap.[k])); last first.
   auto => />.
   move => &hr.
@@ -944,7 +945,7 @@ qed.
 lemma poly_frommont_corr ap:
   phoare[ Mprevec.poly_frommont :
        ap = map W16.to_sint rp ==>
-       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions.R 2) %% q))) ap] = 1%r
+       map W16.to_sint res = map (fun x => SREDC (x * ((Ring.IntID.(^) SignedReductions_W16.R 2) %% q))) ap] = 1%r
  by conseq poly_frommont_ll (poly_frommont_corr_h ap) => />.
 
 op lift_array16 (p: W16.t Array16.t) =
@@ -1473,7 +1474,7 @@ equiv eq_poly_reduce:
 proof.
   proc.
   while(={rp, i} /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2} /\ is16u16 vx16{1} vx16{2}).
-  inline Mprevec.red16x Mvec.red16x.
+  inline MprevecT0.red16x Mvec.red16x.
   wp.
   do !(call eq_iVPSUB_16u16 || call eq_iVPMULL_16u16 || call eq_iVPSRA_16u16 || call eq_iVPMULH_256).
   wp. skip. rewrite /is16u16 => />. move => &2 i_lb i_ub.
@@ -1512,7 +1513,7 @@ equiv eq_poly_frommont:
 proof.
   proc.
   while(={rp, i, aux} /\ aux{1} = 16 /\ 0 <= i{1} /\ is16u16 qx16{1} qx16{2} /\ is16u16 qinvx16{1} qinvx16{2} /\ is16u16 dmontx16{1} dmontx16{2}).
-  inline Mprevec.fqmulx16 Mvec.fqmulx16.
+  inline MprevecT0.fqmulx16 Mvec.fqmulx16.
   wp.
   do !(call eq_iVPSUB_16u16 || call eq_iVPMULH_256 || call eq_iVPMULL_16u16).
   wp. skip. rewrite /is16u16 => />. move => &2 i_lb i_ub.
@@ -1805,7 +1806,6 @@ equiv prevec_eq_shuffle1_sym:
 symmetry. conseq prevec_eq_shuffle1 => />. qed.
 
 require import NTT_avx2 NTT_avx2_poly NTT_AVX_j.
-require import.
 
 lemma list_arr16 (x:'a Array16.t):
   [x.[0];x.[1];x.[2];x.[3];x.[4];x.[5];x.[6];x.[7];x.[8];x.[9];x.[10];x.[11];x.[12];x.[13];x.[14];x.[15]] = to_list x.

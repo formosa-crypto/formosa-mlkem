@@ -6,7 +6,7 @@ from JazzEC require import Array16 WArray512 WArray32 WArray16.
 require import W16extra.
 
 require import Fq MLKEMFCLib.
-require import AVX2_Ops MLKEM_Poly_avx2_prevec.
+require import AVX2_Ops.
 require import Montgomery16.
 
 import Fq.
@@ -64,8 +64,33 @@ module MLKEM_avx2_encdec = {
 }.
 
 
+(* Tier-0 SIMD field ops (Array16), lifted out of MLKEM_Poly_avx2_prevec.Mprevec so
+   Fq_avx2 is self-contained common: the poly-level prevec now calls these. *)
+module MprevecT0 = {
+  proc fqmulx16 (a b qx16 qinvx16: W16.t Array16.t) : W16.t Array16.t = {
+    var rd:W16.t Array16.t;
+    var rhi:W16.t Array16.t;
+    var rlo:W16.t Array16.t;
+    rhi <@ Ops.iVPMULH_256(a, b);
+    rlo <@ Ops.iVPMULL_16u16(a, b);
+    rlo <@ Ops.iVPMULL_16u16(rlo, qinvx16);
+    rlo <@ Ops.iVPMULH_256(rlo, qx16);
+    rd <@  Ops.iVPSUB_16u16(rhi, rlo);
+    return (rd);
+  }
+
+  proc red16x (r:W16.t Array16.t, qx16:W16.t Array16.t, vx16:W16.t Array16.t) : W16.t Array16.t = {
+    var x:W16.t Array16.t;
+    x <@ Ops.iVPMULH_256(r, vx16);
+    x <@ Ops.iVPSRA_16u16(x, (W8.of_int 10));
+    x <@ Ops.iVPMULL_16u16(x, qx16);
+    r <@ Ops.iVPSUB_16u16(r, x);
+    return (r);
+  }
+}.
+
 lemma barret_red16x_corr_h:
-  equiv [Mprevec.red16x ~ MLKEM_avx2_encdec.__red_x16 :
+  equiv [MprevecT0.red16x ~ MLKEM_avx2_encdec.__red_x16 :
          ={r} /\
          (forall k, 0 <= k < 16 => qx16{1}.[k] = W16.of_int 3329) /\
          (forall k, 0 <= k < 16 => vx16{1}.[k] = W16.of_int 20159) ==>
@@ -201,7 +226,9 @@ proof.
 
     rewrite (_: w %% 4294967296 %/ 65536 %/ 1024 = w %% 4294967296 %/ 67108864) //=.
       smt().
-    rewrite W32.of_uintK /= /W16.smod /= /#.
+    rewrite W32.of_uintK /= /W16.smod /=.
+    rewrite (W16.to_sintK_small 20159) 1:/#.
+    rewrite (W16.to_sintK_small (to_sint r{2}.[x] * 20159 %/ 65536));smt().
   (*****)
   move =>  /= r_lt0.
     move : (W16.to_sint_cmp r{2}.[x]) => /= rs_bnds.
@@ -230,15 +257,15 @@ proof.
     rewrite -(modz_pow2_div 32 16) //=. 
     congr; congr. 
 
-    apply W16.to_uint_eq; rewrite !of_uintK /=.
-    smt().
+    apply W16.to_uint_eq; rewrite !of_uintK /=  (W16.of_sintK 20159).
+    rewrite (W16.to_sintK_small (to_sint r{2}.[x] * 20159 %/ 65536)) /#.
 qed.
 
 lemma barret_red16x_ll:
-  islossless Mprevec.red16x by proc; islossless.
+  islossless MprevecT0.red16x by proc; islossless.
 
 lemma barret_red16x_corr _a:
-  phoare [Mprevec.red16x:
+  phoare [MprevecT0.red16x:
           _a = lift_array16 r /\
           (forall k, 0 <= k < 16 => qx16.[k] = jqx16.[k]) /\
           (forall k, 0 <= k < 16 => vx16.[k] = jvx16.[k]) ==>
@@ -309,14 +336,14 @@ by smt().
 qed.
 
 lemma barret_red16x_corr_hh _a:
-  hoare [Mprevec.red16x:
+  hoare [MprevecT0.red16x:
           _a = lift_array16 r /\
           (forall k, 0 <= k < 16 => qx16.[k] = jqx16.[k]) /\
           (forall k, 0 <= k < 16 => vx16.[k] = jvx16.[k]) ==>
           forall k, 0 <= k < 16 => W16.to_sint res.[k] = BREDC _a.[k] 26].
 hoare.
 bypr => &m; rewrite Pr[ mu_not] => [#] ???. 
-have -> : Pr[Mprevec.red16x(r{m}, qx16{m}, vx16{m}) @ &m :
+have -> : Pr[MprevecT0.red16x(r{m}, qx16{m}, vx16{m}) @ &m :
    forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = BREDC _a.[k] 26] = 1%r.
 + byphoare (_: _a = lift_array16 r /\
           (forall k, 0 <= k < 16 => qx16.[k] = jqx16.[k]) /\
@@ -324,13 +351,13 @@ have -> : Pr[Mprevec.red16x(r{m}, qx16{m}, vx16{m}) @ &m :
           forall k, 0 <= k < 16 => W16.to_sint res.[k] = BREDC _a.[k] 26) => //.
   by apply barret_red16x_corr.
 
-have -> : Pr[Mprevec.red16x(r{m}, qx16{m}, vx16{m}) @ &m : true] = 1%r; last by auto.
+have -> : Pr[MprevecT0.red16x(r{m}, qx16{m}, vx16{m}) @ &m : true] = 1%r; last by auto.
 
 byphoare => //; apply barret_red16x_ll.
 qed.
 
 lemma fqmulx16_corr_h:
-  equiv [Mprevec.fqmulx16 ~ MLKEM_avx2_encdec.__fqmul_x16 :
+  equiv [MprevecT0.fqmulx16 ~ MLKEM_avx2_encdec.__fqmul_x16 :
          ={a, b} /\
          (forall k, 0 <= k < 16 => qx16{1}.[k] = W16.of_int 3329) /\
          (forall k, 0 <= k < 16 => qinvx16{1}.[k] = W16.of_int (-3327)) ==>
@@ -534,7 +561,13 @@ case (2147483648 <= (abxs - abxuexp) %% 4294967296).
   have -> : 4294967296 = 65536*65536 by auto. rewrite divzMDr // modzDl.
   congr; congr. 
   have -> : abxs - abxuexp = abxs %/ 65536 * 65536 + abxs %% 65536 - abxuexp %/ 65536 * 65536 - abxuexp %% 65536 by smt(divz_eq).
-  have -> : abxs %% 65536 = abxuexp %% 65536; last by smt().
+  have -> : abxs %% 65536 = abxuexp %% 65536; last first.
+  + rewrite W16.of_sintK /smod /=.
+    have ->: (if 32768 <= abxu * 62209 %% 65536 then abxu * 62209 %% 65536 - 65536
+          else abxu * 62209 %% 65536) * 3329 = abxuexp by rewrite /abxuexp /W16.smod /=.
+    have ->: abxs %/ 65536 * 65536 + abxuexp %% 65536 - abxuexp %/ 65536 * 65536 - abxuexp %% 65536 = (abxs %/ 65536 - abxuexp %/ 65536) * 65536 by ring.
+    by rewrite mulzK.
+
   apply modzB_eq0 => //. rewrite /abxs /abxuexp /abxu.
   have -> : W16.smod (to_uint (a{2}.[x] * b{2}.[x]) * 62209 %% 65536) =
              (to_sint (a{2}.[x] * b{2}.[x] * (of_int 62209)%W16))
@@ -555,7 +588,12 @@ case (0 <= abxs - abxuexp).
   + rewrite StdOrder.IntOrder.ger0_norm //=. smt().
   congr; congr. 
   have -> : abxs - abxuexp = abxs %/ 65536 * 65536 + abxs %% 65536 - abxuexp %/ 65536 * 65536 - abxuexp %% 65536 by smt(divz_eq).
-  have -> : abxs %% 65536 = abxuexp %% 65536; last by smt().
+  have -> : abxs %% 65536 = abxuexp %% 65536; last first.
+  + rewrite W16.of_sintK /smod /=.
+    have ->: (if 32768 <= abxu * 62209 %% 65536 then abxu * 62209 %% 65536 - 65536
+          else abxu * 62209 %% 65536) * 3329 = abxuexp by rewrite /abxuexp /W16.smod /=.
+    have ->: abxs %/ 65536 * 65536 + abxuexp %% 65536 - abxuexp %/ 65536 * 65536 - abxuexp %% 65536 = (abxs %/ 65536 - abxuexp %/ 65536) * 65536 by ring.
+    by rewrite mulzK.
   apply modzB_eq0 => //. rewrite /abxs /abxuexp /abxu.
   have -> : W16.smod (to_uint (a{2}.[x] * b{2}.[x]) * 62209 %% 65536) =
              (to_sint (a{2}.[x] * b{2}.[x] * (of_int 62209)%W16))
@@ -595,10 +633,10 @@ rewrite modNz /= 1,2:/#.
 qed.
 
 lemma fqmulx16_ll:
-  islossless Mprevec.fqmulx16 by proc; islossless.
+  islossless MprevecT0.fqmulx16 by proc; islossless.
 
 lemma fqmulx16_corr _a _b:
-  phoare [Mprevec.fqmulx16 :
+  phoare [MprevecT0.fqmulx16 :
           _a = lift_array16 a /\
           _b = lift_array16 b /\
           (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
@@ -668,7 +706,7 @@ qed.
 
 
 lemma fqmulx16_corr_hh _a _b:
-  hoare [Mprevec.fqmulx16 :
+  hoare [MprevecT0.fqmulx16 :
           _a = lift_array16 a /\
           _b = lift_array16 b /\
           (forall k, 0 <= k < 16 => qx16.[k] = W16.of_int 3329) /\
@@ -676,7 +714,7 @@ lemma fqmulx16_corr_hh _a _b:
           forall k, 0 <= k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])].
 hoare.
 bypr => &m; rewrite Pr[ mu_not] => [#] ???H. 
-have -> : Pr[Mprevec.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m :
+have -> : Pr[MprevecT0.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m :
    forall (k : int), 0 <= k && k < 16 => to_sint res.[k] = SREDC (_a.[k] * _b.[k])] = 1%r.
 + byphoare (_: _a = lift_array16 a /\
           _b = lift_array16 b /\
@@ -686,7 +724,7 @@ have -> : Pr[Mprevec.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m :
   + by apply fqmulx16_corr. 
   do split; 1..3: by auto.
   by move => k kb; rewrite H //.
-have -> : Pr[Mprevec.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m : true] = 1%r; last by auto.
+have -> : Pr[MprevecT0.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m : true] = 1%r; last by auto.
 
 byphoare => //; apply fqmulx16_ll.
 qed.
