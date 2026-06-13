@@ -1,3 +1,171 @@
+(* ==== from MLKEM_PolyVec_avx2_prevec.ec ==== *)
+require import AllCore List Int IntDiv CoreMap.
+
+from Jasmin require import JModel.
+from JazzEC require import Array4 Array16 Array32 Array128 Array256 Array400 Array768 Array960.
+from JazzEC require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800.
+
+require import AVX2_Ops.
+from JazzEC require import Jkem_avx2.
+require import MLKEM_Poly_avx2.
+require import MLKEM_avx2_auxlemmas.
+
+module Mprevec = {
+  proc polyvec_add2 (r:W16.t Array768.t, b:W16.t Array768.t) : W16.t Array768.t = {
+    var aux: W16.t Array256.t;
+    
+    aux <@ MLKEM_Poly_avx2.Mprevec.poly_add2 ((Array256.init (fun i => r.[0 + i])),
+    (Array256.init (fun i => b.[0 + i])));
+    r <- Array768.init
+         (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else r.[i]);
+    aux <@ MLKEM_Poly_avx2.Mprevec.poly_add2 ((Array256.init (fun i => r.[256 + i])),
+    (Array256.init (fun i => b.[256 + i])));
+    r <- Array768.init
+         (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else r.[i]);
+    aux <@ MLKEM_Poly_avx2.Mprevec.poly_add2 ((Array256.init (fun i => r.[(2 * 256) + i])),
+    (Array256.init (fun i => b.[(2 * 256) + i])));
+    r <- Array768.init
+         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         else r.[i]);
+    return (r);
+  }
+
+
+  proc polyvec_reduce (r:W16.t Array768.t) : W16.t Array768.t = {
+    var aux: W16.t Array256.t;
+    
+    
+    
+    aux <@ MLKEM_Poly_avx2.Mprevec.poly_reduce ((Array256.init (fun i => r.[0 + i])));
+    r <- Array768.init
+         (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else r.[i]);
+    aux <@ MLKEM_Poly_avx2.Mprevec.poly_reduce ((Array256.init (fun i => r.[256 + i])));
+    r <- Array768.init
+         (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else r.[i]);
+    aux <@ MLKEM_Poly_avx2.Mprevec.poly_reduce ((Array256.init (fun i => r.[(2 * 256) + i])));
+    r <- Array768.init
+         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         else r.[i]);
+    return (r);
+  }
+
+
+}.
+
+(* ==== from MLKEM_PolyVec_avx2_vec.ec ==== *)
+require import AllCore List Int IntDiv CoreMap.
+
+from Jasmin require import JModel.
+from JazzEC require import Array16 Array32 Array128 Array256 Array400 Array768 Array960.
+from JazzEC require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800 WArray960.
+require import AVX2_Ops.
+from JazzEC require import Jkem_avx2.
+
+
+require import MLKEM_avx2_auxlemmas.
+
+module Mvec = {
+  proc polyvec_add2 (r:W16.t Array768.t, b:W16.t Array768.t) : W16.t Array768.t = {
+    var aux: W16.t Array256.t;
+    
+    aux <@ MLKEM_Poly_avx2.Mvec.poly_add2 ((Array256.init (fun i => r.[0 + i])),
+    (Array256.init (fun i => b.[0 + i])));
+    r <- Array768.init
+         (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else r.[i]);
+    aux <@ MLKEM_Poly_avx2.Mvec.poly_add2 ((Array256.init (fun i => r.[256 + i])),
+    (Array256.init (fun i => b.[256 + i])));
+    r <- Array768.init
+         (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else r.[i]);
+    aux <@ MLKEM_Poly_avx2.Mvec.poly_add2 ((Array256.init (fun i => r.[(2 * 256) + i])),
+    (Array256.init (fun i => b.[(2 * 256) + i])));
+    r <- Array768.init
+         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         else r.[i]);
+    return (r);
+  }
+
+
+  proc polyvec_reduce (r:W16.t Array768.t) : W16.t Array768.t = {
+    var aux: W16.t Array256.t;
+    
+    
+    
+    aux <@ MLKEM_Poly_avx2.Mvec.poly_reduce ((Array256.init (fun i => r.[0 + i])));
+    r <- Array768.init
+         (fun i => if 0 <= i < 0 + 256 then aux.[i-0] else r.[i]);
+    aux <@ MLKEM_Poly_avx2.Mvec.poly_reduce ((Array256.init (fun i => r.[256 + i])));
+    r <- Array768.init
+         (fun i => if 256 <= i < 256 + 256 then aux.[i-256] else r.[i]);
+    aux <@ MLKEM_Poly_avx2.Mvec.poly_reduce ((Array256.init (fun i => r.[(2 * 256) + i])));
+    r <- Array768.init
+         (fun i => if (2 * 256) <= i < (2 * 256) + 256 then aux.[i-(2 * 256)]
+         else r.[i]);
+    return (r);
+  }
+}.
+
+theory MLKEM_PolyVecAVXVec.
+
+import MLKEM_PolyAVXVec.
+
+equiv eq_polyvec_add2 :
+  Mprevec.polyvec_add2 ~ Mvec.polyvec_add2: ={r, b} ==> ={res}.
+proof.
+  proc.
+  do 3!(wp; call eq_poly_add2).
+  auto => />.
+qed.
+
+
+equiv eq_polyvec_reduce :
+  Mprevec.polyvec_reduce ~ Mvec.polyvec_reduce: ={r} ==> ={res}.
+proof.
+  proc.
+  do 3!(wp; call eq_poly_reduce).
+  auto => />.
+qed.
+
+equiv veceq_polyvec_add2 :
+  Mvec.polyvec_add2 ~Jkem_avx2.M.__polyvec_add2: ={r, b} ==> ={res}.
+proof.
+  proc.
+  unroll for {2}  2.
+  do 3!(wp; call veceq_poly_add2).
+  auto => />.
+qed.
+
+equiv veceq_polyvec_reduce :
+  Mvec.polyvec_reduce ~ Jkem_avx2.M.__polyvec_reduce: ={r} ==> ={res}.
+proof.
+  proc.
+  unroll for {2}  2.
+  do 3!(wp; call veceq_poly_reduce).
+  auto => />.
+qed.
+
+equiv prevec_eq_polyvec_add2 :
+  Mprevec.polyvec_add2 ~Jkem_avx2.M.__polyvec_add2: ={r, b} ==> ={res}.
+proof.
+  transitivity Mvec.polyvec_add2 (={r, b} ==> ={res}) (={r, b} ==> ={res}).
+smt(). trivial.
+apply eq_polyvec_add2.
+apply veceq_polyvec_add2.
+qed.
+
+
+equiv prevec_eq_polyvec_reduce :
+  Mprevec.polyvec_reduce ~Jkem_avx2.M.__polyvec_reduce: ={r} ==> ={res}.
+proof.
+  transitivity Mvec.polyvec_reduce (={r} ==> ={res}) (={r} ==> ={res}).
+smt(). trivial.
+apply eq_polyvec_reduce.
+apply veceq_polyvec_reduce.
+qed.
+
+
+end MLKEM_PolyVecAVXVec.
+
+(* ==== from MLKEM_PolyVec_avx2_proof.ec ==== *)
 require import AllCore List Int IntDiv CoreMap Real Number.
 
 from Jasmin require import JModel.
@@ -5,23 +173,23 @@ from JazzEC require import Array4 Array8 Array16 Array32 Array128 Array256 Array
 from JazzEC require import WArray32 WArray256 WArray512 WArray800 WArray1536 WArray168 WArray800.
 require import AVX2_Ops W16extra.
 from JazzEC require import Jkem_avx2.
-require import MLKEM_PolyVec_avx2_prevec.
-require import MLKEM_Poly_avx2_vec.
-require import MLKEM_Poly_avx2_proof.
-require import MLKEM_Poly_avx2_vec.
+
+
+
+
 require import Fq_avx2.
-require import MLKEM_PolyVec_avx2_vec.
+
 require import NTT_avx2.
 require import MLKEMFCLib.
 import MLKEMFCLib768.
 require import MLKEM_avx2_auxlemmas.
 
-from Spec require import GFq Rq VecMat Serialization Correctness768.
-import Serialization768 VecMat768.
+from Spec require import GFq Rq VecMat Serialization Correctness.
+import Serialization VecMat.
 
 theory MLKEM_PolyvecAVX.
 
-import MLKEM768.
+
 import Zq.
 import MLKEM_PolyAVX.
 import MLKEM_PolyAVXVec.
@@ -114,96 +282,6 @@ lemma polvec_add_corr _a _b ab bb:
   conseq (polyvec_add_ll) (polvec_add_corr_h _a _b ab bb abb bbb).
   by smt().
 qed.
-
-lemma polyvec_csubq_corr_h ap :
-  hoare[Mprevec.polyvec_csubq:
-       ap = lift_array768 r /\
-       pos_bound768_cxq r 0 768 2
-       ==>
-       ap = lift_array768 res /\
-       pos_bound768_cxq res 0 768 1].
-proof.
-  proc; sp.
-  wp.
-  ecall (MLKEM_PolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[2 * 256 + i])))).
-  wp.
-  ecall (MLKEM_PolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[256 + i])))).
-  wp.
-  ecall (MLKEM_PolyAVX.poly_csubq_corr_h (lift_array256 (Array256.init (fun (i : int) => r.[i])))).
-   wp. skip => &hr.
-   rewrite /lift_array768 /lift_array256 /pos_bound256_cxq !tP;move =>  [ap_def pos_bound_r]; split.
-   split; trivial; smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE). 
-   move => [r_eq_r_1 pos_bound_r_1 res1 [r_eq_res_1 pos_bound_res_1] res_1_def]; split.
-   split; trivial => k kb @/res_1_def; rewrite !initiE //=.
-   smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE).  
-   move => [r_eq_r_2 pos_bound_r_2 res2 [r_eq_res_2 pos_bound_res_2] res_2_def]; split.
-   split; trivial => k kb @/res_2_def; rewrite !initiE //=; smt(Array768.initiE qE).
-   move => [r_eq_r_3 pos_bound_r_3 res3 [r_eq_res_3 pos_bound_res_3] res_3_def]; split.
-   rewrite /res_3_def /res_2_def /res_1_def /=.
-   rewrite tP => k kb; rewrite ap_def // !mapiE //= initiE //=.
-   case (512 <= k < 768) => k_si. 
-   rewrite tP in r_eq_res_3; move : (r_eq_res_3 (k - 512) _);  1:by smt().
-   rewrite !mapiE 1,2:/# /= => <-.
-   do rewrite initiE 1:/# //=.
-   case (256 <= k < 512) => k_ssi.
-   rewrite tP in r_eq_res_2; move : (r_eq_res_2 (k - 256) _);  1:by smt().
-   rewrite !mapiE 1,2:/# /= => <-.
-   do rewrite initiE 1:/# //=.
-   rewrite tP in r_eq_res_1; move : (r_eq_res_1 (k ) _);  1:by smt().
-   rewrite !mapiE 1,2:/# /=.
-   do rewrite initiE 1:/# //=.
-    by smt(). by smt().
-   case (256 <= k < 512) => k_ssi.
-   do rewrite initiE 1:/# //= k_ssi /=.
-   rewrite tP in r_eq_res_2; move : (r_eq_res_2 (k - 256) _);  1:by smt().
-   rewrite !mapiE 1,2:/# /= => <-.
-   do rewrite initiE 1:/# //=. smt().
-   rewrite tP in r_eq_res_1; move : (r_eq_res_1 (k ) _);  1:by smt().
-   rewrite !mapiE 1,2:/# /=.
-   do rewrite initiE 1:/# //=.
-    by smt(). 
-   rewrite /pos_bound768_cxq => k k_i.
-   do rewrite initiE //=.
-   rewrite /pos_bound256_cxq /bpos16 //=in pos_bound_res_3.
-   rewrite /pos_bound256_cxq /bpos16 //=in pos_bound_res_2.
-   rewrite /pos_bound256_cxq /bpos16 //=in pos_bound_res_1.
-   move : (pos_bound_res_3 (k - 512))  (pos_bound_res_2 (k - 256))  (pos_bound_res_1 k).
-   smt(Array256.mapiE Array256.initiE Array768.mapiE Array768.initiE).    
-qed.
-
-lemma polyvec_csubq_ll: islossless Mprevec.polyvec_csubq.
-  by proc; do 3!(wp; call MLKEM_PolyAVX.poly_csubq_ll).
-qed.
-
-lemma polyvec_csubq_corr ap:
-  phoare[Mprevec.polyvec_csubq:
-       ap = lift_array768 r /\
-       pos_bound768_cxq r 0 768 2
-       ==>
-       ap = lift_array768 res /\
-       pos_bound768_cxq res 0 768 1] = 1%r.
-  conseq (polyvec_csubq_ll) (polyvec_csubq_corr_h ap).
-  by smt().
-qed.
-
-(* TODO: move to W8 theory ?? *)
-lemma shl_shlw_w8 (k: int) (w: W8.t):
-  0 <= k < W8.size =>
-  w `<<` W8.of_int k = w `<<<` k.
-proof.
-  move=> *; rewrite /(`<<`) of_uintK.
-  by rewrite modz_small //; smt().
-qed.
-
-lemma shr_shrw_w8 (k: int) (w: W8.t):
-  0 <= k < W8.size =>
-  w `>>` W8.of_int k = w `>>>` k.
-proof.
-  move=> *; rewrite /(`>>`) of_uintK.
-  by rewrite pmod_small //; smt().
-qed.
-
-
 
 lemma polyvec_reduce_corr_h _a:
   hoare[Mprevec.polyvec_reduce:

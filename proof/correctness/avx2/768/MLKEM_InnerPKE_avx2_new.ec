@@ -5,17 +5,17 @@ from JazzEC require import WArray64 WArray1184 WArray512 WArray128 WArray384 WAr
 
 require import AVX2_Ops W16extra.
 from JazzEC require import Jkem_avx2.
-require import MLKEM_PolyVec_avx2_prevec.
-require import MLKEM_Poly_avx2_prevec.
+require import MLKEM_PolyVec_avx2.
+require import MLKEM_Poly_avx2.
 require import NTT_avx2.
 require import MLKEM_W16_Rep.
 require import Fq_avx2.
 require import NTT_Fq.
 require import MLKEM_avx2_auxlemmas.
-require import MLKEM_Poly_avx2_proof.
-require import MLKEM_PolyVec_avx2_proof.
-require import MLKEM_Poly_avx2_vec.
-require import MLKEM_PolyVec_avx2_vec.
+require import MLKEM_Poly_avx2.
+require import MLKEM_PolyVec_avx2.
+require import MLKEM_Poly_avx2.
+require import MLKEM_PolyVec_avx2.
 require import MLKEMFCLib.
 import MLKEMFCLib768.
 require import MLKEM_avx2_equivs.
@@ -99,7 +99,7 @@ lemma polyvec_add_corr_avx ab bb :
 proof.
   move => abbnd bbbnd _a _b.
   bypr => &m Hpre.
-  have ->: 1%r = Pr[MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_add2(r{m}, b{m}) @ &m :
+  have ->: 1%r = Pr[MLKEM_PolyVec_avx2.Mprevec.polyvec_add2(r{m}, b{m}) @ &m :
                 signed_bound768_cxq res 0 768 (ab + bb) /\
                 forall k, 0 <= k < 768 => incoeff (to_sint res.[k]) = _a.[k] + _b.[k]].
   + by byphoare (polvec_add_corr _a _b ab bb abbnd bbbnd) => //=; smt().
@@ -145,7 +145,7 @@ lemma polyvec_reduce_corr_avx _a :
     forall k, 0 <= k < 768 => bpos16 res.[k] (2*q)] = 1%r.
 proof.
   bypr => &m Hpre.
-  have ->: 1%r = Pr[MLKEM_PolyVec_avx2_prevec.Mprevec.polyvec_reduce(r{m}) @ &m :
+  have ->: 1%r = Pr[MLKEM_PolyVec_avx2.Mprevec.polyvec_reduce(r{m}) @ &m :
                 _a = lift_array768 res /\
                 forall k, 0 <= k < 768 => bpos16 res.[k] (2*q)].
   + by byphoare (MLKEM_PolyvecAVX.polvec_reduce_corr _a) => //=; smt().

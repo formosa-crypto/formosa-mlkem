@@ -6,17 +6,17 @@ from JazzEC require import WArray512 WArray128 WArray384 WArray32 WArray16 WArra
 
 require import AVX2_Ops W16extra.
 from JazzEC require import Jkem_avx2.
-require import MLKEM_PolyVec_avx2_prevec.
-require import MLKEM_Poly_avx2_prevec.
+require import MLKEM_PolyVec_avx2.
+require import MLKEM_Poly_avx2.
 require import NTT_avx2.
 require import MLKEM_W16_Rep.
 require import Fq_avx2.
 require import NTT_Fq.
 require import MLKEM_avx2_auxlemmas.
-require import MLKEM_Poly_avx2_proof.
-require import MLKEM_PolyVec_avx2_proof.
-require import MLKEM_Poly_avx2_vec.
-require import MLKEM_PolyVec_avx2_vec.
+require import MLKEM_Poly_avx2.
+require import MLKEM_PolyVec_avx2.
+require import MLKEM_Poly_avx2.
+require import MLKEM_PolyVec_avx2.
 require import MLKEMFCLib.
 import MLKEMFCLib768.
 
