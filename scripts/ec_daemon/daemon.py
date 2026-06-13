@@ -51,8 +51,10 @@ def count_commands(text):
             n += 1
     return n
 
+EXTRA_ARGS = sys.argv[1:]  # e.g. -I JazzEC:code/jasmin/768/avx2/extraction
+
 ec = subprocess.Popen(
-    ['easycrypt', 'llm', '-p', 'Z3', '-timeout', '5'],
+    ['easycrypt', 'llm', '-p', 'Z3', '-timeout', '5'] + EXTRA_ARGS,
     stdin=subprocess.PIPE,
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,

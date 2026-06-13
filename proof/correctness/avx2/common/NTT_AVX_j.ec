@@ -8,11 +8,10 @@ from JazzEC require import Array400 WArray800.
 
 
 require import NTT_AVX_Fq MLKEMFCLib.
-import MLKEMFCLib1024.
 
 (******* *)
 
-from Spec require import GFq Correctness1024.
+from Spec require import GFq Correctness.
 
 require import Fq.
 import Zq.
@@ -727,6 +726,10 @@ module Tmp = {
 (* Preprocessed <=> Implementation *)
 (***********************************)
 
+(***********************************)
+(* Preprocessed <=> Implementation *)
+(***********************************)
+
 equiv basemul_avx2_eq_:
 Jkem_avx2.M._poly_basemul ~ Tmp._poly_basemul:
  ={rp,ap,bp} ==> ={res}.
@@ -894,7 +897,6 @@ while (#[/2:]pre /\ 0 <= i{2}).
   by smt(). 
 by auto.
 qed.
-
 
 (************)
 (** BASEMUL *)
@@ -1807,15 +1809,15 @@ lemma sbred16_spec x y:
   Iu16_ub 2 (sbred16 x) y.
 proof.
 move => ->. rewrite /Iu16_ub -sbred16_eq.
-move: (Fq.SignedReductions.BREDCp_corr (to_sint x) 26 _ _ _ _ _ _).
-+ by rewrite /Fq.SignedReductions.R /q /=.
-+ by rewrite /Fq.SignedReductions.R /q /=.
-+ by rewrite /Fq.SignedReductions.R /q /=.
-+ by rewrite /Fq.SignedReductions.R /q /=.
-+ by move: (W16.to_sint_cmp x); rewrite /Fq.SignedReductions.R /q /= /#.
+move: (SignedReductions_W16.BREDCp_corr (to_sint x) 26 _ _ _ _ _ _).
++ by rewrite /SignedReductions_W16.R /q /=.
++ by rewrite /SignedReductions_W16.R /q /=.
++ by rewrite /SignedReductions_W16.R /q /=.
++ by rewrite /SignedReductions_W16.R /q /=.
++ by move: (W16.to_sint_cmp x); rewrite /SignedReductions_W16.R /q /= /#.
 + move=> n.
   by rewrite /barrett_pred /barrett_pred_low /barrett_pred_high
-       /barrett_fun /barrett_fun_aux /q /Fq.SignedReductions.R /= /#.
+       /barrett_fun /barrett_fun_aux /q /SignedReductions_W16.R /= /#.
 smt().
 qed.
 
@@ -2467,7 +2469,7 @@ seq 11 16: (x16_spec q qx16{2} /\ zetasp{2}=zetas_inv_op  /\ i{2}=0 /\
   by rewrite /= !C2RK /zetas_inv_op !initiE //=.
  pose xx := List.all _ _.
  have ->: xx.
-  rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q //=. 
+  by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
  clear xx; pose xx := List.all _ _.
  have ->: xx.
   by rewrite /xx /z3R /z3L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.

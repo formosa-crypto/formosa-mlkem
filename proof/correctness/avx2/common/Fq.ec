@@ -13,18 +13,8 @@ import Zq.
 
 theory Fq.
 
-clone import SignedReductions with
-    op k <- 16,
-    op q <- q,
-    op qinv <- 62209,
-    op Rinv <- 169
-    proof q_bnd by (rewrite /R qE => />) 
-    proof q_odd1 by (rewrite qE => />)
-(*    proof q_odd2 by (rewrite qE => />) *)
-    proof qqinv by (rewrite /R qE  => />)
-    proof Rinv_gt0 by (auto => />)
-    proof RRinv by (rewrite /R qE  => />)
-    proof qinv_bnd by (rewrite /R  => />).
+(* Reuse the single W16 Montgomery instantiation from MLKEMFCLib (no second clone). *)
+import SignedReductions_W16.
 
 lemma smod_W16 a:
   smod a W16.modulus = W16.smod (a %% W16.modulus)

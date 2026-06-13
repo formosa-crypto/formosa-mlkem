@@ -6,15 +6,11 @@ from JazzEC require import Array16 WArray512 WArray32 WArray16.
 require import W16extra.
 
 require import Fq MLKEMFCLib.
-import MLKEMFCLib1024.
 require import AVX2_Ops MLKEM_Poly_avx2_prevec.
 require import Montgomery16.
 
-(* require import NTT_Fq.
-require import Jkem1024. *)
-
 import Fq.
-import SignedReductions.
+import SignedReductions_W16.
 
 (* relocated from ref's MLKEM_Poly.ec (pure Zq/Montgomery fact). *)
 from Spec require import GFq.
@@ -547,8 +543,7 @@ case (2147483648 <= (abxs - abxuexp) %% 4294967296).
   have -> : 3329 = -(to_sint (of_int (-3329)))%W16 by rewrite /to_sint /smod /=.
   rewrite -Ring.IntID.mulNr Ring.IntID.mulrNN modzM_sint /= to_uintM /= to_uintM /=.
   smt().
-
-  move => H.
+move => H.
 case (0 <= abxs - abxuexp). 
 + move => *. rewrite (modz_small _ 4294967296) /=. 
   have /= ? : -32768 * 32768 %/ 65536 <= abxs %/ 65536 <= 32768 * 32768 %/ 65536.
@@ -696,98 +691,7 @@ have -> : Pr[Mprevec.fqmulx16(a{m}, b{m}, qx16{m}, qinvx16{m}) @ &m : true] = 1%
 byphoare => //; apply fqmulx16_ll.
 qed.
 
-from Spec require import GFq Correctness1024.
+from Spec require import GFq Correctness.
 import Zq.
-
-lemma compress_avx2_impl_small (a: W16.t):
-  bpos16 a q =>
-  msb
-  (packss16
-     (((W16.of_int 1664) - a) `^` ((W16.of_int 1664) - a `|>>` (W8.of_int 15)) - (W16.of_int 832))) =
-  b_decode (incoeff (W16.to_sint a)).
-proof.
-  rewrite /bpos16 qE => abnd.
-  rewrite /b_decode /=.
-  rewrite /as_sint //=.
-  rewrite qE (_: 3329 %/ 2 = 1664) 1://=.
-  rewrite /packss16 //=.
-  do rewrite (fun_if W8.msb).
-
-  rewrite incoeffK (pmod_small _ q); first by rewrite qE abnd.
-
-  case ((W16.of_int 1664) \slt a) => a_gt_hq.
-    have hq_s_a_lt0: ((W16.of_int 1664) - a) \slt W16.zero.
-      move : a_gt_hq. rewrite /W16.(\slt).
-      rewrite to_sintB_small.
-       rewrite of_sintK /smod //=.
-       move : abnd => /#.
-      do (rewrite of_sintK /smod //=).
-      rewrite /to_sint /smod /= /#.
-    rewrite getsignNeg 1:hq_s_a_lt0 1:/W16.onew //=.
-    have ->/=: 1664 < to_sint a.
-      move : a_gt_hq. rewrite /W16.(\slt).
-    do (rewrite of_sintK /smod //=).
-    rewrite /msb //=.
-    rewrite W16.sltE W16.sleE -lezNgt.
-    do (rewrite of_sintK /smod //=).
-
-    rewrite (_: `|to_sint a - 3329| = 3329 - to_sint a).
-      move : abnd => /#.
-    rewrite (_: W16.of_int 65535 = W16.onew). by rewrite /W16.onew //=.
-    rewrite xorw1 (_: invw ((W16.of_int 1664) - a) = -((W16.of_int 1664) - a) - W16.one).
-          move : (W16.twos_compl ((W16.of_int 1664) - a)). 
-          by move => ->;ring.
-    do !(rewrite to_sintB_small || rewrite to_sintN || rewrite /smod //=); first 7 by move : hq_s_a_lt0 a_gt_hq abnd => /#.
-    rewrite bits8_div 1://= //=.
-    do (rewrite to_uintD || rewrite to_uintN || rewrite to_uintK //= || rewrite of_uintK //=).
-    rewrite -to_sint_unsigned. by move : a_gt_hq => /#.
-    rewrite modzNm.
-    rewrite (_: (- to_sint a) %% 65536 = - to_sint a + 65536) 1://=.
-      move : a_gt_hq. rewrite sltE of_sintK /smod //=.
-      move : abnd => /#.
-    rewrite (_: (- (1664 + ((- to_sint a) + 65536))) %% 65536 =
-                (to_sint a - 1664) %% 65536).
-      smt(modzNm modzDr).
-    rewrite (pmod_small (to_sint a - 1664) 65536).
-      move : a_gt_hq. rewrite sltE of_sintK /smod //=.
-      move : abnd => /#.
-      smt().
-
-  move : a_gt_hq. 
-  rewrite /W16.(\slt) -lezNgt -/W16.(\sle) -W16.sleE => hq_gte_a.
-  have hq_s_a_gt0: W16.zero \sle ((W16.of_int 1664) - a).
-    move : hq_gte_a. rewrite /W16.(\sle).
-    rewrite to_sintB_small of_sintK /smod //=.
-    move : abnd.
-    smt().
-    do (rewrite /smod //=).
-    smt().
-  rewrite (_: (W16.of_int 1664) - a `|>>` (W8.of_int 15) = W16.zero).
-    move : hq_s_a_gt0.
-    smt(getsignPos).
-  simplify.
-  have ->: !1664 < to_sint a.
-    move : hq_gte_a. rewrite /W16.(\sle).
-    rewrite of_sintK /smod //= lezNgt //=.
-  rewrite /msb //=.
-  rewrite /smod //=.
-  rewrite W16.sleE -lezNgt -ltzNge.
-  rewrite to_sintB_small.
-    rewrite to_sintB_small.
-      + rewrite of_sintK /smod //=. move : abnd. smt().
-    do (rewrite  /smod //=). move : abnd. smt().
-  rewrite to_sintB_small.
-    rewrite of_sintK /smod //=. move : abnd. smt().
-  do (rewrite /smod //=).
-  rewrite (_: `|to_sint a| = to_sint a).
-    move : abnd => /#.
-  rewrite bits8_div 1://= //=.
-  rewrite to_uintD to_uintN to_uintD to_uintN //=.
-  rewrite -to_sint_unsigned.
-    move : abnd => /#.
-  case (to_sint a = 0) => a_0.
-    rewrite a_0 //=.
-    smt(). 
-qed.
 
 end Fq_avx2.

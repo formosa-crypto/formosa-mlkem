@@ -11,12 +11,12 @@ axiom prime_q : prime q.
    crepr and its algebraic laws (creprD, crepr_mulE, creprN, inzmodK_centered,
    rg_crepr, |.|).  as_sint is exactly crepr. *)
 clone include ZModPCentered.ZpCenteredField with
-  op ZMR.p <- q
+  op ZMF.p <- q
   rename "zmod"       as "coeff"
-         "ZMR"        as "Zq"
+         "ZMF"        as "Zq"
          "ZModpRing"  as "ZqRing"
          "ZModpField" as "ZqField"
-  proof prime_p by apply prime_q.
+  proof ZMF.prime_p by apply prime_q.
 import Zq.
 
 (* Signed (centered) representation = the kernel's centered representative *)
