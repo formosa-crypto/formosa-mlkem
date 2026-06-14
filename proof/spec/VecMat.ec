@@ -120,6 +120,11 @@ import PolyVec PolyMat.
 op ntt_dotp (v1 v2 : polyvec) : poly =
   foldr (fun (i : int) (a : poly) => basemul v1.[i] v2.[i] &+ a) Rq.zero (iota_ 0 kvec).
 
+(* concrete polyvec dot-product in the poly ring; the concrete-rep analogue
+   of the algebraic dotp on poly2alg-converted vectors (see dotpwE below). *)
+op dotpw (v1 v2 : polyvec) : poly =
+  foldr (fun (i : int) (a : poly) => (v1.[i] &* v2.[i]) &+ a) Rq.zero (iota_ 0 kvec).
+
 op ntt_mmul (m : polymat, v : polyvec) : polyvec =
   KVec.init (fun (i : int) =>
     foldr (fun (j : int) (a : poly) => basemul m.[i, j] v.[j] &+ a) Rq.zero (iota_ 0 kvec)).
@@ -224,6 +229,14 @@ qed.
 lemma ntt_dotpE v1 v2 :
   ntt_dotp v1 v2 = Big.BAdd.bigi predT (fun (i : int) => basemul v1.[i] v2.[i]) 0 kvec.
 proof. by rewrite /ntt_dotp nttsum_big /range /=. qed.
+
+(* bridge: concrete dotpw = algebraic Vector.dotp on poly2alg-converted vectors. *)
+lemma dotpwE (v1 v2 : polyvec) : dotpw v1 v2 = dotp (poly2alg v1) (poly2alg v2).
+proof.
+rewrite /dotpw nttsum_big /dotp /range /=.
+apply KMatrix.Big.BAdd.eq_big_seq => j /mem_iota jb /=.
+by rewrite !poly2algE 1,2:/#.
+qed.
 
 lemma ntt_mmulE m v :
    poly2alg (ntt_mmul m v) =

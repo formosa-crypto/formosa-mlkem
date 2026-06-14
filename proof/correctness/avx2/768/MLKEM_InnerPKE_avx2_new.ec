@@ -7,7 +7,7 @@ require import AVX2_Ops W16extra.
 from JazzEC require import Jkem_avx2.
 require import MLKEM_PolyVec_avx2.
 require import MLKEM_Poly_avx2.
-require import NTT_avx2.
+require import NTT_avx2 NTT_avx2_poly.
 require import MLKEM_W16_Rep.
 require import Fq_avx2.
 require import NTT_Fq.
@@ -59,7 +59,7 @@ lemma poly_add_corr_avx ab bb :
 proof.
   move => abbnd bbbnd _a _b.
   bypr => &m Hpre.
-  have ->: 1%r = Pr[Mprevec.poly_add2(rp{m}, bp{m}) @ &m :
+  have ->: 1%r = Pr[MLKEM_Poly_avx2.Mprevec.poly_add2(rp{m}, bp{m}) @ &m :
                 signed_bound_cxq res 0 256 (ab + bb) /\
                 forall k, 0 <= k < 256 => incoeff (to_sint res.[k]) = _a.[k] + _b.[k]].
   + by byphoare (MLKEM_PolyAVX.poly_add_corr _a _b ab bb abbnd bbbnd) => //=; smt().
@@ -79,7 +79,7 @@ lemma poly_sub_corr_avx ab bb :
 proof.
   move => abbnd bbbnd _a _b.
   bypr => &m Hpre.
-  have ->: 1%r = Pr[Mprevec.poly_sub(rp{m}, ap{m}, bp{m}) @ &m :
+  have ->: 1%r = Pr[MLKEM_Poly_avx2.Mprevec.poly_sub(rp{m}, ap{m}, bp{m}) @ &m :
                 signed_bound_cxq res 0 256 (ab + bb) /\
                 forall k, 0 <= k < 256 => incoeff (to_sint res.[k]) = _a.[k] - _b.[k]].
   + by byphoare (MLKEM_PolyAVX.poly_sub_corr _a _b ab bb abbnd bbbnd) => //=; smt().
@@ -115,7 +115,7 @@ lemma poly_reduce_corr_avx ap :
     forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)] = 1%r.
 proof.
   bypr => &m Hpre.
-  have ->: 1%r = Pr[Mprevec.poly_reduce(rp{m}) @ &m :
+  have ->: 1%r = Pr[MLKEM_Poly_avx2.Mprevec.poly_reduce(rp{m}) @ &m :
                 ap = lift_array256 res /\
                 forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)].
   + by byphoare (MLKEM_PolyAVX.poly_reduce_corr ap) => //=; smt().
@@ -127,12 +127,12 @@ lemma poly_frommont_corr_avx ap :
     ap = map W16.to_sint rp
     ==>
     map W16.to_sint res =
-      map (fun x => Fq.Fq.SignedReductions.SREDC (x * ((Ring.IntID.(^) Fq.Fq.SignedReductions.R 2) %% q))) ap] = 1%r.
+      map (fun x => SignedReductions_W16.SREDC (x * ((Ring.IntID.(^) SignedReductions_W16.R 2) %% q))) ap] = 1%r.
 proof.
   bypr => &m Hpre.
-  have ->: 1%r = Pr[Mprevec.poly_frommont(rp{m}) @ &m :
+  have ->: 1%r = Pr[MLKEM_Poly_avx2.Mprevec.poly_frommont(rp{m}) @ &m :
                 map W16.to_sint res =
-                  map (fun x => Fq.Fq.SignedReductions.SREDC (x * ((Ring.IntID.(^) Fq.Fq.SignedReductions.R 2) %% q))) ap].
+                  map (fun x => SignedReductions_W16.SREDC (x * ((Ring.IntID.(^) SignedReductions_W16.R 2) %% q))) ap].
   + by byphoare (MLKEM_PolyAVX.poly_frommont_corr ap) => //=; smt().
   byequiv => //. symmetry. proc*. call prevec_eq_poly_frommont. auto.
 qed.
@@ -192,7 +192,7 @@ qed.
 
 (* avx2 port of ref's polyvec_pointwise_acc_corr_h. Parameterized over the
    three coefficient-array pairs and their pre-computed scaled basemuls;
-   the algebraic close (dotp expansion, nttZero) lives in _alg_avx below.
+   the algebraic close (dotpw expansion, nttZero) lives in _alg_avx below.
    Stated as phoare directly (= 1%r) since our basemul/add wrappers are
    already phoare — avoids writing hoare versions of those. *)
 lemma polyvec_pointwise_acc_corr_avx_ph
@@ -292,7 +292,7 @@ lemma polyvec_pointwise_acc_corr_alg_avx (va vb : PolyVec.polyvec) (a_ref b_ref 
     signed_bound768_cxq b 0 768 2
     ==>
     signed_bound_cxq res 0 256 3 /\
-    lift_array256 res = nttunpack (scale (ntt (dotp va vb)) (incoeff 169))
+    lift_array256 res = nttunpack (scale (ntt (dotpw va vb)) (incoeff 169))
   ] = 1%r.
 proof.
 pose A0 := (PolyVec.nttv va).[0]%PolyVec; pose A1 := (PolyVec.nttv va).[1]%PolyVec; pose A2 := (PolyVec.nttv va).[2]%PolyVec.
@@ -311,7 +311,7 @@ conseq H.
 + move => &hr [Hva [Habnd [Hvb [Hbbnd [Halift [Hblift [Hab Hbb]]]]]]]; do split => //;
     rewrite /A0 /A1 /A2 /B0 /B1 /B2 ?Hva ?Hvb /lift_polyvec;
     rewrite tP => k kb;rewrite getvE;   smt(Vector.offunvE).
-move => &hr Hpre result; have ->: nttunpack (scale (ntt (dotp va vb)) (incoeff 169)) = nttunpack R; last done.
+move => &hr Hpre result; have ->: nttunpack (scale (ntt (dotpw va vb)) (incoeff 169)) = nttunpack R; last done.
 congr; rewrite mulvec.
 rewrite !add_comm_ntt !nttK.
 have HEva : forall i, 0 <= i < 3 => tofunv va i = va.[i]%Vector by smt().
@@ -402,8 +402,8 @@ case Hkdiv => [H0 | [H0 | H0]]; rewrite H0.
 qed.
 
 lemma ntt_dotp_invnttv (s u : PolyVec.polyvec) :
-  ntt (dotp (PolyVec.invnttv s) u) = ntt_dotp s (PolyVec.nttv u).
-proof. by rewrite comm_ntt_dotp nttK. qed.
+  ntt (dotpw (PolyVec.invnttv s) u) = ntt_dotp s (PolyVec.nttv u).
+proof. by rewrite dotpwE comm_ntt_dotp nttK. qed.
 
 (* Row extraction from unlift_matrix: the j-th poly of the i-th row of an
    unlifted matrix (viewed as a polyvec) is exactly the (i,j) coefficient
@@ -441,8 +441,8 @@ lemma frommont_cancels_at_slot (rr0 rr1 : W16.t Array256.t) (X : poly) :
   signed_bound_cxq rr0 0 256 3 =>
   (forall (k : int), 0 <= k < 256 =>
      to_sint rr1.[k]
-     = Fq.Fq.SignedReductions.SREDC
-         (to_sint rr0.[k] * (Fq.Fq.SignedReductions.R ^ 2 %% q))) =>
+     = SignedReductions_W16.SREDC
+         (to_sint rr0.[k] * (SignedReductions_W16.R ^ 2 %% q))) =>
   lift_array256 rr0 = nttunpack (scale X (incoeff 169)) =>
   lift_array256 rr1 = nttunpack X.
 proof.
@@ -452,16 +452,16 @@ rewrite mapiE //=.
 have ->: NTT_AVX_j.incoeffW16 rr1.[k] = incoeff (to_sint rr1.[k]) by done.
 rewrite Hrr1k //.
 have [? Hredv] :=
-  Fq.Fq.SignedReductions.SREDCp_corr
-    (to_sint rr0.[k] * (Fq.Fq.SignedReductions.R ^ 2 %% q)) _ _.
-+ by rewrite /Fq.Fq.SignedReductions.R; smt(qE).
+  SignedReductions_W16.SREDCp_corr
+    (to_sint rr0.[k] * (SignedReductions_W16.R ^ 2 %% q)) _ _.
++ by rewrite /SignedReductions_W16.R; smt(qE).
 + have := Hrr0v k _; 1: smt().
-  by rewrite /Fq.Fq.SignedReductions.R; smt(qE @Fq.Fq.SignedReductions).
+  by rewrite /SignedReductions_W16.R; smt(qE @SignedReductions_W16).
 have ->: incoeff
-   (Fq.Fq.SignedReductions.SREDC
-      (to_sint rr0.[k] * (Fq.Fq.SignedReductions.R ^ 2 %% q)))
+   (SignedReductions_W16.SREDC
+      (to_sint rr0.[k] * (SignedReductions_W16.R ^ 2 %% q)))
        = incoeff
-   (to_sint rr0.[k] * (Fq.Fq.SignedReductions.R ^ 2 %% q) * 169)
+   (to_sint rr0.[k] * (SignedReductions_W16.R ^ 2 %% q) * 169)
   by rewrite -eq_incoeff; apply Hredv.
 rewrite !incoeffM.
 have Hresk : incoeff (to_sint rr0.[k])
@@ -470,18 +470,18 @@ have Hresk : incoeff (to_sint rr0.[k])
 rewrite Hresk.
 rewrite /nttunpack initiE //= /scale mapiE //=;
   1: smt(nttunpack_bnd Array256.allP mem_iota).
-have ->: incoeff (Fq.Fq.SignedReductions.R ^ 2 %% q)
-       = incoeff Fq.Fq.SignedReductions.R * incoeff Fq.Fq.SignedReductions.R.
+have ->: incoeff (SignedReductions_W16.R ^ 2 %% q)
+       = incoeff SignedReductions_W16.R * incoeff SignedReductions_W16.R.
 + rewrite -incoeffM -eq_incoeff modz_mod.
-  have ->: Fq.Fq.SignedReductions.R ^ 2
-         = Fq.Fq.SignedReductions.R * Fq.Fq.SignedReductions.R by ring.
+  have ->: SignedReductions_W16.R ^ 2
+         = SignedReductions_W16.R * SignedReductions_W16.R by ring.
   done.
 have ->: X.[nttunpack_idx.[k]] * incoeff 169
-        * (incoeff Fq.Fq.SignedReductions.R * incoeff Fq.Fq.SignedReductions.R)
+        * (incoeff SignedReductions_W16.R * incoeff SignedReductions_W16.R)
         * incoeff 169
        = X.[nttunpack_idx.[k]]
-        * (incoeff Fq.Fq.SignedReductions.R * incoeff 169)
-        * (incoeff Fq.Fq.SignedReductions.R * incoeff 169) by ring.
+        * (incoeff SignedReductions_W16.R * incoeff 169)
+        * (incoeff SignedReductions_W16.R * incoeff 169) by ring.
 rewrite rrinvcoeff !ZqField.mulr1.
 smt(Array256.initiE). 
 qed.
@@ -589,7 +589,7 @@ qed.
 
 lemma ntt_dotp_row_eq_ntt_mmul (a : polymat) (sv : W16.t Array768.t) (i : int) :
   0 <= i < 3 =>
-  ntt (dotp (PolyVec.invnttv (lift_polyvec
+  ntt (dotpw (PolyVec.invnttv (lift_polyvec
               (nttpackv (subarray768 (nttunpackm (unlift_matrix a)) i))))
             (PolyVec.invnttv (lift_polyvec (nttpackv sv))))
   = (ntt_mmul a (lift_polyvec (nttpackv sv))).[i]%PolyVec.
@@ -1514,24 +1514,24 @@ while {1} (
   rewrite initiE 1:/# /=.
   case (i{hr} * 256 <= k < i{hr} * 256 + 256) => Hk1.
   + have Hrr1k : to_sint rr1.[k - i{hr} * 256]
-               = Fq.Fq.SignedReductions.SREDC
+               = SignedReductions_W16.SREDC
                    (to_sint rr0.[k - i{hr} * 256]
-                    * (Fq.Fq.SignedReductions.R ^ 2 %% q)).
+                    * (SignedReductions_W16.R ^ 2 %% q)).
     + move: Hrr1; rewrite tP => /(_ (k - i{hr} * 256) _); 1: smt().
       rewrite !mapiE 1..3:/# /= initiE 1:/# /= initiE 1:/# /= ifT 1:/# /=.
       by have ->: i{hr} * 256 + (k - i{hr} * 256) - i{hr} * 256 = k - i{hr} * 256 by ring.
-    have [#] := Fq.Fq.SignedReductions.SREDCp_corr
+    have [#] := SignedReductions_W16.SREDCp_corr
                   (to_sint rr0.[k - i{hr} * 256]
-                   * (Fq.Fq.SignedReductions.R ^ 2 %% q)) _ _.
-    + by rewrite /Fq.Fq.SignedReductions.R; smt(qE).
+                   * (SignedReductions_W16.R ^ 2 %% q)) _ _.
+    + by rewrite /SignedReductions_W16.R; smt(qE).
     + have := Hrr0v (k - i{hr} * 256) _; 1: smt().
-      by rewrite /Fq.Fq.SignedReductions.R; smt(qE @Fq.Fq.SignedReductions).
+      by rewrite /SignedReductions_W16.R; smt(qE @SignedReductions_W16).
     move => Hl Hh _; rewrite /b16 Hrr1k.
-    have := Fq.Fq.SignedReductions.SREDCp_corr
-              (to_sint rr0.[k - i{hr} * 256] * (Fq.Fq.SignedReductions.R ^ 2 %% q)) _ _.
-    + by rewrite /Fq.Fq.SignedReductions.R; smt(qE).
+    have := SignedReductions_W16.SREDCp_corr
+              (to_sint rr0.[k - i{hr} * 256] * (SignedReductions_W16.R ^ 2 %% q)) _ _.
+    + by rewrite /SignedReductions_W16.R; smt(qE).
     + have := Hrr0v (k - i{hr} * 256) _; 1: smt().
-      by rewrite /Fq.Fq.SignedReductions.R; smt(qE @Fq.Fq.SignedReductions).
+      by rewrite /SignedReductions_W16.R; smt(qE @SignedReductions_W16).
     smt().
   rewrite initiE 1:/# /= ifF 1:/#.
   move: H4; rewrite /signed_bound768_cxq => H4'.

@@ -7,7 +7,7 @@ require import AVX2_Ops W16extra.
 from JazzEC require import Jkem_avx2.
 require import MLKEM_PolyVec_avx2.
 require import MLKEM_Poly_avx2.
-require import NTT_avx2.
+require import NTT_avx2 NTT_avx2_poly.
 require import MLKEM_W16_Rep.
 require import Fq_avx2.
 require import NTT_Fq.
@@ -59,7 +59,7 @@ lemma poly_add_corr_avx ab bb :
 proof.
   move => abbnd bbbnd _a _b.
   bypr => &m Hpre.
-  have ->: 1%r = Pr[Mprevec.poly_add2(rp{m}, bp{m}) @ &m :
+  have ->: 1%r = Pr[MLKEM_Poly_avx2.Mprevec.poly_add2(rp{m}, bp{m}) @ &m :
                 signed_bound_cxq res 0 256 (ab + bb) /\
                 forall k, 0 <= k < 256 => incoeff (to_sint res.[k]) = _a.[k] + _b.[k]].
   + by byphoare (MLKEM_PolyAVX.poly_add_corr _a _b ab bb abbnd bbbnd) => //=; smt().
@@ -79,7 +79,7 @@ lemma poly_sub_corr_avx ab bb :
 proof.
   move => abbnd bbbnd _a _b.
   bypr => &m Hpre.
-  have ->: 1%r = Pr[Mprevec.poly_sub(rp{m}, ap{m}, bp{m}) @ &m :
+  have ->: 1%r = Pr[MLKEM_Poly_avx2.Mprevec.poly_sub(rp{m}, ap{m}, bp{m}) @ &m :
                 signed_bound_cxq res 0 256 (ab + bb) /\
                 forall k, 0 <= k < 256 => incoeff (to_sint res.[k]) = _a.[k] - _b.[k]].
   + by byphoare (MLKEM_PolyAVX.poly_sub_corr _a _b ab bb abbnd bbbnd) => //=; smt().
@@ -115,7 +115,7 @@ lemma poly_reduce_corr_avx ap :
     forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)] = 1%r.
 proof.
   bypr => &m Hpre.
-  have ->: 1%r = Pr[Mprevec.poly_reduce(rp{m}) @ &m :
+  have ->: 1%r = Pr[MLKEM_Poly_avx2.Mprevec.poly_reduce(rp{m}) @ &m :
                 ap = lift_array256 res /\
                 forall k, 0 <= k < 256 => bpos16 res.[k] (2*q)].
   + by byphoare (MLKEM_PolyAVX.poly_reduce_corr ap) => //=; smt().
@@ -127,12 +127,12 @@ lemma poly_frommont_corr_avx ap :
     ap = map W16.to_sint rp
     ==>
     map W16.to_sint res =
-      map (fun x => Fq.Fq.SignedReductions.SREDC (x * ((Ring.IntID.(^) Fq.Fq.SignedReductions.R 2) %% q))) ap] = 1%r.
+      map (fun x => SignedReductions_W16.SREDC (x * ((Ring.IntID.(^) SignedReductions_W16.R 2) %% q))) ap] = 1%r.
 proof.
   bypr => &m Hpre.
-  have ->: 1%r = Pr[Mprevec.poly_frommont(rp{m}) @ &m :
+  have ->: 1%r = Pr[MLKEM_Poly_avx2.Mprevec.poly_frommont(rp{m}) @ &m :
                 map W16.to_sint res =
-                  map (fun x => Fq.Fq.SignedReductions.SREDC (x * ((Ring.IntID.(^) Fq.Fq.SignedReductions.R 2) %% q))) ap].
+                  map (fun x => SignedReductions_W16.SREDC (x * ((Ring.IntID.(^) SignedReductions_W16.R 2) %% q))) ap].
   + by byphoare (MLKEM_PolyAVX.poly_frommont_corr ap) => //=; smt().
   byequiv => //. symmetry. proc*. call prevec_eq_poly_frommont. auto.
 qed.
@@ -159,20 +159,20 @@ lemma lift_subarray_nttunpackvE (aref ahr : W16.t Array1024.t) (j : int) :
   0 <= j < 4 =>
   lift_array1024 ahr = nttunpackv (lift_array1024 aref) =>
   lift_array256 (Array256.init (fun (i : int) => ahr.[256*j + i])) =
-    nttunpack (lift_array256 (Serialization.subarray256 aref j)).
+    nttunpack (lift_array256 (subarray256 aref j)).
 proof.
 move => jb Hlift.
 have HkR : 0 <= 256*j <= 768 by smt().
 rewrite (lift_array_256_1024_k ahr (256*j) HkR) Hlift.
-have ->: lift_array256 (Serialization.subarray256 aref j) = Serialization.subarray256 (lift_array1024 aref) j.
-+ rewrite /lift_array256 /lift_array1024 /Serialization.subarray256 /map tP => k kb.
+have ->: lift_array256 (subarray256 aref j) = subarray256 (lift_array1024 aref) j.
++ rewrite /lift_array256 /lift_array1024 /subarray256 /map tP => k kb.
   by rewrite !initiE //= initiE 1:/# /= initiE //= /#.
 rewrite tP => i ib; rewrite initiE //= /nttunpack initiE //=.
 have Hidxbnd : 0 <= nttunpack_idx.[i] < 256
   by smt(nttunpack_bnd Array256.allP mem_iota).
-rewrite /Serialization.subarray256 initiE //=.
+rewrite /subarray256 initiE //=.
 have -> : (nttunpackv (lift_array1024 aref)).[256 * j + i] =
-          (nttunpack (Serialization.subarray256 (lift_array1024 aref) j)).[i].
+          (nttunpack (subarray256 (lift_array1024 aref) j)).[i].
 + rewrite /nttunpackv initiE 1:/#.
   have Hjr : j = 0 \/ j = 1 \/ j = 2 \/ j = 3 by smt().
   case Hjr => [-> | [-> | [-> | ->]]] /=.
@@ -180,7 +180,7 @@ have -> : (nttunpackv (lift_array1024 aref)).[256 * j + i] =
   - by rewrite ifF 1:/# ifT 1:/#; congr; smt().
   - by rewrite ifF 1:/# ifF 1:/# ifT 1:/#; congr; smt().
   - by rewrite ifF 1:/# ifF 1:/# ifF 1:/#; congr; smt().
-by rewrite /nttunpack /Serialization.subarray256 initiE //= initiE 1:/#.
+by rewrite /nttunpack /subarray256 initiE //= initiE 1:/#.
 qed.
 
 lemma polyvec_pointwise_acc_corr_avx_ph
@@ -192,14 +192,14 @@ lemma polyvec_pointwise_acc_corr_avx_ph
   _p3 = scale (basemul _a3 _b3) (incoeff 169) =>
   (forall k, 0 <= k < 256 => _r.[k] = _p0.[k] + _p1.[k] + _p2.[k] + _p3.[k]) =>
   phoare [Jkem_avx2.M.__polyvec_pointwise_acc :
-    _a0 = lift_array256 (Serialization.subarray256 a_ref 0) /\
-    _a1 = lift_array256 (Serialization.subarray256 a_ref 1) /\
-    _a2 = lift_array256 (Serialization.subarray256 a_ref 2) /\
-    _a3 = lift_array256 (Serialization.subarray256 a_ref 3) /\
-    _b0 = lift_array256 (Serialization.subarray256 b_ref 0) /\
-    _b1 = lift_array256 (Serialization.subarray256 b_ref 1) /\
-    _b2 = lift_array256 (Serialization.subarray256 b_ref 2) /\
-    _b3 = lift_array256 (Serialization.subarray256 b_ref 3) /\
+    _a0 = lift_array256 (subarray256 a_ref 0) /\
+    _a1 = lift_array256 (subarray256 a_ref 1) /\
+    _a2 = lift_array256 (subarray256 a_ref 2) /\
+    _a3 = lift_array256 (subarray256 a_ref 3) /\
+    _b0 = lift_array256 (subarray256 b_ref 0) /\
+    _b1 = lift_array256 (subarray256 b_ref 1) /\
+    _b2 = lift_array256 (subarray256 b_ref 2) /\
+    _b3 = lift_array256 (subarray256 b_ref 3) /\
     lift_array1024 a = nttunpackv (lift_array1024 a_ref) /\
     lift_array1024 b = nttunpackv (lift_array1024 b_ref) /\
     signed_bound1024_cxq a 0 1024 2 /\
@@ -303,7 +303,7 @@ lemma polyvec_pointwise_acc_corr_alg_avx (va vb : PolyVec.polyvec) (a_ref b_ref 
     signed_bound1024_cxq b 0 1024 2
     ==>
     signed_bound_cxq res 0 256 4 /\
-    lift_array256 res = nttunpack (scale (ntt (dotp va vb)) (incoeff 169))
+    lift_array256 res = nttunpack (scale (ntt (dotpw va vb)) (incoeff 169))
   ] = 1%r.
 proof.
 pose A0 := (PolyVec.nttv va).[0]%PolyVec; pose A1 := (PolyVec.nttv va).[1]%PolyVec.
@@ -326,7 +326,7 @@ conseq H.
 + move => &hr [Hva [Habnd [Hvb [Hbbnd [Halift [Hblift [Hab Hbb]]]]]]]; do split => //;
     rewrite /A0 /A1 /A2 /A3 /B0 /B1 /B2 /B3 ?Hva ?Hvb /lift_polyvec;
     rewrite tP => k kb; rewrite getvE; smt(Vector.offunvE).
-move => &hr Hpre result; have ->: nttunpack (scale (ntt (dotp va vb)) (incoeff 169)) = nttunpack R; last done.
+move => &hr Hpre result; have ->: nttunpack (scale (ntt (dotpw va vb)) (incoeff 169)) = nttunpack R; last done.
 congr; rewrite mulvec.
 rewrite !add_comm_ntt !nttK.
 have HEva : forall i, 0 <= i < 4 => tofunv va i = va.[i]%Vector by smt().
@@ -402,30 +402,30 @@ have Hkr : k = 256 * (k %/ 256) + k %% 256 by smt().
 have Hkdiv : k %/ 256 = 0 \/ k %/ 256 = 1 \/ k %/ 256 = 2 \/ k %/ 256 = 3 by smt().
 case Hkdiv => [H0 | [H0 | [H0 | H0]]]; rewrite H0.
 + rewrite ifF 1:/# ifT 1:/# ifF 1:/# ifT 1:/# ifF 1:/# ifT 1:/# ifT 1:/#.
-  rewrite mapiE 1:/# /Serialization.subarray256 initiE 1:/#;beta.
+  rewrite mapiE 1:/# /subarray256 initiE 1:/#;beta.
   rewrite of_sintK Montgomery16.smod_small.
   + have := as_sint_range (incoeff vi.[256 * 0 + k %% 256]); smt(qE).
   by rewrite as_sintK; have -> : 256 * 0 + k %% 256 = k by move : Hkr; smt().
 + rewrite ifF 1:/# ifT 1:/# ifF 1:/# ifT 1:/# ifT 1:/#.
-  rewrite mapiE 1:/# /Serialization.subarray256 initiE 1:/#;beta.
+  rewrite mapiE 1:/# /subarray256 initiE 1:/#;beta.
   rewrite of_sintK Montgomery16.smod_small.
   + have := as_sint_range (incoeff vi.[256 * 1 + k %% 256]); smt(qE).
   by rewrite as_sintK; have -> : 256 * 1 + k %% 256 = k by move : Hkr; smt().
 + rewrite ifF 1:/# ifT 1:/# ifT 1:/#.
-  rewrite mapiE 1:/# /Serialization.subarray256 initiE 1:/#;beta.
+  rewrite mapiE 1:/# /subarray256 initiE 1:/#;beta.
   rewrite of_sintK Montgomery16.smod_small.
   + have := as_sint_range (incoeff vi.[256 * 2 + k %% 256]); smt(qE).
   by rewrite as_sintK; have -> : 256 * 2 + k %% 256 = k by move : Hkr; smt().
 + rewrite ifT 1:/#.
-  rewrite mapiE 1:/# /Serialization.subarray256 initiE 1:/#;beta.
+  rewrite mapiE 1:/# /subarray256 initiE 1:/#;beta.
   rewrite of_sintK Montgomery16.smod_small.
   + have := as_sint_range (incoeff vi.[256 * 3 + k %% 256]); smt(qE).
   by rewrite as_sintK; have -> : 256 * 3 + k %% 256 = k by move : Hkr; smt().
 qed.
 
 lemma ntt_dotp_invnttv (s u : PolyVec.polyvec) :
-  ntt (dotp (PolyVec.invnttv s) u) = ntt_dotp s (PolyVec.nttv u).
-proof. by rewrite comm_ntt_dotp nttK. qed.
+  ntt (dotpw (PolyVec.invnttv s) u) = ntt_dotp s (PolyVec.nttv u).
+proof. by rewrite dotpwE comm_ntt_dotp nttK. qed.
 
 (* j-th poly of the i-th row of an unlifted matrix (viewed as a polyvec) equals
    the (i,j) coefficient block of the original polymat. 1024 variant. *)
@@ -451,8 +451,8 @@ lemma frommont_cancels_at_slot (rr0 rr1 : W16.t Array256.t) (X : poly) :
   signed_bound_cxq rr0 0 256 4 =>
   (forall (k : int), 0 <= k < 256 =>
      to_sint rr1.[k]
-     = Fq.Fq.SignedReductions.SREDC
-         (to_sint rr0.[k] * (Fq.Fq.SignedReductions.R ^ 2 %% q))) =>
+     = SignedReductions_W16.SREDC
+         (to_sint rr0.[k] * (SignedReductions_W16.R ^ 2 %% q))) =>
   lift_array256 rr0 = nttunpack (scale X (incoeff 169)) =>
   lift_array256 rr1 = nttunpack X.
 proof.
@@ -462,16 +462,16 @@ rewrite mapiE //=.
 have ->: NTT_AVX_j.incoeffW16 rr1.[k] = incoeff (to_sint rr1.[k]) by done.
 rewrite Hrr1k //.
 have [? Hredv] :=
-  Fq.Fq.SignedReductions.SREDCp_corr
-    (to_sint rr0.[k] * (Fq.Fq.SignedReductions.R ^ 2 %% q)) _ _.
-+ by rewrite /Fq.Fq.SignedReductions.R; smt(qE).
+  SignedReductions_W16.SREDCp_corr
+    (to_sint rr0.[k] * (SignedReductions_W16.R ^ 2 %% q)) _ _.
++ by rewrite /SignedReductions_W16.R; smt(qE).
 + have := Hrr0v k _; 1: smt().
-  by rewrite /Fq.Fq.SignedReductions.R; smt(qE @Fq.Fq.SignedReductions).
+  by rewrite /SignedReductions_W16.R; smt(qE @SignedReductions_W16).
 have ->: incoeff
-   (Fq.Fq.SignedReductions.SREDC
-      (to_sint rr0.[k] * (Fq.Fq.SignedReductions.R ^ 2 %% q)))
+   (SignedReductions_W16.SREDC
+      (to_sint rr0.[k] * (SignedReductions_W16.R ^ 2 %% q)))
        = incoeff
-   (to_sint rr0.[k] * (Fq.Fq.SignedReductions.R ^ 2 %% q) * 169)
+   (to_sint rr0.[k] * (SignedReductions_W16.R ^ 2 %% q) * 169)
   by rewrite -eq_incoeff; apply Hredv.
 rewrite !incoeffM.
 have Hresk : incoeff (to_sint rr0.[k])
@@ -480,18 +480,18 @@ have Hresk : incoeff (to_sint rr0.[k])
 rewrite Hresk.
 rewrite /nttunpack initiE //= /scale mapiE //=;
   1: smt(nttunpack_bnd Array256.allP mem_iota).
-have ->: incoeff (Fq.Fq.SignedReductions.R ^ 2 %% q)
-       = incoeff Fq.Fq.SignedReductions.R * incoeff Fq.Fq.SignedReductions.R.
+have ->: incoeff (SignedReductions_W16.R ^ 2 %% q)
+       = incoeff SignedReductions_W16.R * incoeff SignedReductions_W16.R.
 + rewrite -incoeffM -eq_incoeff modz_mod.
-  have ->: Fq.Fq.SignedReductions.R ^ 2
-         = Fq.Fq.SignedReductions.R * Fq.Fq.SignedReductions.R by ring.
+  have ->: SignedReductions_W16.R ^ 2
+         = SignedReductions_W16.R * SignedReductions_W16.R by ring.
   done.
 have ->: X.[nttunpack_idx.[k]] * incoeff 169
-        * (incoeff Fq.Fq.SignedReductions.R * incoeff Fq.Fq.SignedReductions.R)
+        * (incoeff SignedReductions_W16.R * incoeff SignedReductions_W16.R)
         * incoeff 169
        = X.[nttunpack_idx.[k]]
-        * (incoeff Fq.Fq.SignedReductions.R * incoeff 169)
-        * (incoeff Fq.Fq.SignedReductions.R * incoeff 169) by ring.
+        * (incoeff SignedReductions_W16.R * incoeff 169)
+        * (incoeff SignedReductions_W16.R * incoeff 169) by ring.
 rewrite rrinvcoeff !ZqField.mulr1.
 smt(Array256.initiE).
 qed.
@@ -499,22 +499,22 @@ qed.
 lemma subarray256_double_init_fallthrough
   (pkpv : W16.t Array1024.t) (rr0 rr1 : W16.t Array256.t) (i j : int) :
   0 <= j < i => 0 <= i < 4 =>
-  Serialization.subarray256
+  subarray256
     (Array1024.init (fun (i_0 : int) =>
        if i * 256 <= i_0 < i * 256 + 256 then rr1.[i_0 - i * 256]
        else (Array1024.init (fun (i_0_0 : int) =>
               if i * 256 <= i_0_0 < i * 256 + 256
               then rr0.[i_0_0 - i * 256] else pkpv.[i_0_0])).[i_0])) j
-  = Serialization.subarray256 pkpv j.
+  = subarray256 pkpv j.
 proof.
 move => Hji Hi.
-rewrite /Serialization.subarray256; apply Array256.tP => k Hk.
+rewrite /subarray256; apply Array256.tP => k Hk.
 by rewrite initiE //= initiE //= initiE 1:/# /= ifF 1:/# initiE 1:/# /= /= ifF 1:/#.
 qed.
 
 lemma kg_loop_post_to_target (pkpv : W16.t Array1024.t) (mm : PolyVec.polyvec) :
   (forall (j : int), 0 <= j < 4 =>
-     lift_array256 (Serialization.subarray256 pkpv j) = nttunpack mm.[j]%PolyVec) =>
+     lift_array256 (subarray256 pkpv j) = nttunpack mm.[j]%PolyVec) =>
   lift_polyvec (nttpackv pkpv) = mm.
 proof.
 move => Hslots.
@@ -525,13 +525,13 @@ rewrite -Hslotsj.
 rewrite /lift_polyvec offunvE 1:/# /=.
 have lift_subarrayE : forall (X : W16.t Array1024.t) (jj : int),
   0 <= jj < 4 =>
-  lift_array256 (Serialization.subarray256 X jj) =
-    Serialization.subarray256 (lift_array1024 X) jj.
+  lift_array256 (subarray256 X jj) =
+    subarray256 (lift_array1024 X) jj.
 + move => X jj jjb.
-  rewrite /lift_array256 /lift_array1024 /Serialization.subarray256 /map tP => k kb.
+  rewrite /lift_array256 /lift_array1024 /subarray256 /map tP => k kb.
   by rewrite !initiE //= initiE 1:/# /= initiE //= /#.
 rewrite !(lift_subarrayE _ _ _) 1..2:/# -nttpackv_lift.
-rewrite /Serialization.subarray256 /nttpackv tP => k Hk.
+rewrite /subarray256 /nttpackv tP => k Hk.
 rewrite initiE 1:/# /= initiE 1:/# /=.
 case (j = 0) => Hj0; 1: by rewrite Hj0 /= ifT 1:/#.
 case (j = 1) => Hj1.
@@ -634,7 +634,7 @@ qed.
 
 lemma ntt_dotp_row_eq_ntt_mmul (a : polymat) (sv : W16.t Array1024.t) (i : int) :
   0 <= i < 4 =>
-  ntt (dotp (PolyVec.invnttv (lift_polyvec
+  ntt (dotpw (PolyVec.invnttv (lift_polyvec
               (nttpackv (subarray1024 (nttunpackm (unlift_matrix a)) i))))
             (PolyVec.invnttv (lift_polyvec (nttpackv sv))))
   = (ntt_mmul a (lift_polyvec (nttpackv sv))).[i]%PolyVec.
@@ -1527,24 +1527,24 @@ while {1} (
   rewrite initiE 1:/# /=.
   case (i{hr} * 256 <= k < i{hr} * 256 + 256) => Hk1.
   + have Hrr1k : to_sint rr1.[k - i{hr} * 256]
-               = Fq.Fq.SignedReductions.SREDC
+               = SignedReductions_W16.SREDC
                    (to_sint rr0.[k - i{hr} * 256]
-                    * (Fq.Fq.SignedReductions.R ^ 2 %% q)).
+                    * (SignedReductions_W16.R ^ 2 %% q)).
     + move: Hrr1; rewrite tP => /(_ (k - i{hr} * 256) _); 1: smt().
       rewrite !mapiE 1..3:/# /= initiE 1:/# /= initiE 1:/# /= ifT 1:/# /=.
       by have ->: i{hr} * 256 + (k - i{hr} * 256) - i{hr} * 256 = k - i{hr} * 256 by ring.
-    have [#] := Fq.Fq.SignedReductions.SREDCp_corr
+    have [#] := SignedReductions_W16.SREDCp_corr
                   (to_sint rr0.[k - i{hr} * 256]
-                   * (Fq.Fq.SignedReductions.R ^ 2 %% q)) _ _.
-    + by rewrite /Fq.Fq.SignedReductions.R; smt(qE).
+                   * (SignedReductions_W16.R ^ 2 %% q)) _ _.
+    + by rewrite /SignedReductions_W16.R; smt(qE).
     + have := Hrr0v (k - i{hr} * 256) _; 1: smt().
-      by rewrite /Fq.Fq.SignedReductions.R; smt(qE @Fq.Fq.SignedReductions).
+      by rewrite /SignedReductions_W16.R; smt(qE @SignedReductions_W16).
     move => Hl Hh _; rewrite /b16 Hrr1k.
-    have := Fq.Fq.SignedReductions.SREDCp_corr
-              (to_sint rr0.[k - i{hr} * 256] * (Fq.Fq.SignedReductions.R ^ 2 %% q)) _ _.
-    + by rewrite /Fq.Fq.SignedReductions.R; smt(qE).
+    have := SignedReductions_W16.SREDCp_corr
+              (to_sint rr0.[k - i{hr} * 256] * (SignedReductions_W16.R ^ 2 %% q)) _ _.
+    + by rewrite /SignedReductions_W16.R; smt(qE).
     + have := Hrr0v (k - i{hr} * 256) _; 1: smt().
-      by rewrite /Fq.Fq.SignedReductions.R; smt(qE @Fq.Fq.SignedReductions).
+      by rewrite /SignedReductions_W16.R; smt(qE @SignedReductions_W16).
     smt().
   rewrite initiE 1:/# /= ifF 1:/#.
   move: H4; rewrite /signed_bound1024_cxq => H4'.
