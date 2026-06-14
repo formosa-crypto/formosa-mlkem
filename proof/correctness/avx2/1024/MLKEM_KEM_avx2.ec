@@ -5,8 +5,8 @@ from JazzEC require import Jkem_avx2.
 from JazzEC require import Array1152 Array32 Array1408 Array1568 Array1536 Array64 Array128 Array160 Array3168 WArray3168 WArray1568 WArray64 Array1600.
 from Jasmin require import JModel.
 
-from Spec require import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE1024 MLKEM1024 Correctness1024.
-import Serialization1024 Symmetric1024 VecMat1024.
+from Spec require import GFq Rq Sampling Serialization Symmetric VecMat KPKE MLKEM Correctness.
+import Serialization Symmetric VecMat.
 require import Fq MLKEM_InnerPKE_avx2_new MLKEMFCLib.
 import MLKEMFCLib1024.
 
@@ -15,7 +15,7 @@ require import MLKEM_keccak_avx2.
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
 
 lemma mlkem_kem_correct_kg  : 
-   equiv [Jkem_avx2.M.__crypto_kem_keypair_jazz ~ MLKEM1024.kg_derand : 
+   equiv [Jkem_avx2.M.__crypto_kem_keypair_jazz ~ MLKEM.kg_derand : 
         coins{2}.`1 = Array32.init(fun i => randomnessp{1}.[0 + i]) /\
         coins{2}.`2 = Array32.init(fun i => randomnessp{1}.[32 + i])
         ==> 
@@ -119,7 +119,7 @@ qed.
 from JazzEC require import WArray32 Array4.
 
 lemma mlkem_kem_correct_enc  : 
-   equiv [Jkem_avx2.M.__crypto_kem_enc_jazz ~ MLKEM1024.enc_derand: 
+   equiv [Jkem_avx2.M.__crypto_kem_enc_jazz ~ MLKEM.enc_derand: 
      randomnessp{1} = coins{2} /\
      pk{2}.`1 = Array1536.init( fun i => pk{1}.[i]) /\
      pk{2}.`2 = Array32.init( fun i => pk{1}.[1536+i])
@@ -310,7 +310,7 @@ lemma cmov_correct _dst _src _cnd:
 
 from JazzEC require import Array196.
 lemma mlkem_kem_correct_dec  : 
-   equiv [Jkem_avx2.M.__crypto_kem_dec_jazz ~ MLKEM1024.dec: 
+   equiv [Jkem_avx2.M.__crypto_kem_dec_jazz ~ MLKEM.dec: 
      sk{2}.`1 = Array1536.init (fun i =>  sk{1}.[i]) /\
      sk{2}.`2.`1 = Array1536.init (fun i => sk{1}.[i + 1536]) /\
      sk{2}.`2.`2 = Array32.init (fun i =>  sk{1}.[i + 1536 + 1536]) /\

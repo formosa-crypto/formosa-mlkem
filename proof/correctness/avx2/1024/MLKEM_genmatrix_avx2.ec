@@ -5,7 +5,8 @@ from Jasmin require import JModel.
 from JazzEC require import WArray512 WArray256 WArray128 WArray8 WArray2 WArray64 WArray32.
 from JazzEC require import Array2 Array8 Array16 Array25 Array32 Array33 Array64 Array128 Array136 Array1024 Array1408 Array1024 Array1536 Array4096 Array2144 Array536 Array256.
 
-require import MLKEM_W16_Rep NTT_avx2 MLKEMFCLib AVX2_Ops NTT_AVX_Fq MLKEM_Poly_avx2.
+require import MLKEM_W16_Rep NTT_avx2 NTT_avx2_poly MLKEMFCLib AVX2_Ops NTT_AVX_Fq MLKEM_Poly_avx2.
+require import MLKEM1024_prelude.
 import MLKEMFCLib1024.
 
 require import MLKEM_keccak_avx2.
@@ -14,35 +15,39 @@ import NTT_Avx2.
 
 from JazzEC require import Jkem_avx2.
 
-import GFq Rq Sampling Serialization Symmetric VecMat InnerPKE1024 MLKEM1024 Fq Correctness1024.
-import Symmetric1024 Serialization1024 VecMat1024 PolyMat.
+import GFq Rq Sampling Serialization Symmetric VecMat KPKE MLKEM Fq Correctness Parameters.
+import Symmetric Serialization VecMat PolyMat.
 import KMatrix.Matrix.
 import MLKEM_PolyAVXVec.
 
-(* Matrix lift/unlift bridge (relocated from ref's MLKEM_InnerPKE.ec).
-   lift_matrix lives in MLKEM_W16_Rep, unlift_matrix in Correctness1024. *)
-lemma matrixcols (m : 'a Array4096.t) (f : 'a -> 'b) i j : 0 <= i < 4 => 0<=j <4 =>
-    Array256.map f (subarray256 ((Array1024.init ((fun (i_0 : int) => m.[j*1024 + i_0])))) i) =
-                      (subarray256 (subarray1024 (map f m) j) i).
-move => ib jb;rewrite /subarray256 /subarray1024 tP => k kb.
-by rewrite mapiE //= !initiE //= !initiE 1,2:/# /= mapiE /#.
-qed.
-
+(* Matrix lift/unlift bridge: unlift is a right-inverse of lift, plus the
+   coefficient bound.  lift_matrix/unlift_matrix live in MLKEM_W16_Rep. *)
 lemma matrix_unlift a :
     lift_matrix (unlift_matrix a) = a /\
     pos_bound4096_cxq (unlift_matrix a) 0 4096 2.
 proof.
 split.
-+ rewrite /lift_matrix /unlift_matrix eq_matrixP => i j bounds.
-  rewrite offunmE //= /subarray256 /subarray1024 /lift_array4096 /= tP => k kb.
-  rewrite initiE //= initiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= /to_sint /smod /=.
-  rewrite  !(modz_small _ 65536); 1: smt(Zq.rg_asint).
-  rewrite !(mulzC 1024) !(edivz_eq) 1:/# !(emodz_eq) 1:/# fun_if !Zq.asintK.
-  rewrite !(mulzC 256) !(edivz_eq) 1:/#.
-  rewrite (_: i*1024 = (4*i)*256) 1:/# !modzMDl.
-  by smt(Zq.rg_asint).
-rewrite /unlift_matrix /pos_bound4096_cxq => k kb; rewrite initiE 1:/# /=.
-rewrite /smod /=;smt(Zq.rg_asint qE).
++ apply eq_polymatP => i j bi bj.
+  rewrite /lift_matrix {1}/PolyMat."_.[_]" KMat.initiE 1:/# /=.
+  have ->: (i * kvec + j) %/ kvec = i by smt(kvec_val).
+  have ->: (i * kvec + j) %% kvec = j by smt(kvec_val).
+  rewrite tP => k kb.
+  rewrite /subarray256 initiE 1:/# /=.
+  rewrite /subarray1024 /=.
+  rewrite Array1024.initiE; first by smt(kvec_val).
+  simplify.
+  rewrite /lift_array4096 Array4096.mapiE; first by smt(kvec_val).
+  simplify.
+  rewrite /unlift_matrix Array4096.initiE; first by smt(kvec_val).
+  simplify.
+  have ->: (1024 * i + (256 * j + k)) %/ 1024 = i by smt(kvec_val).
+  have ->: (1024 * i + (256 * j + k)) %% 1024 %/ 256 = j by smt(kvec_val).
+  have ->: (1024 * i + (256 * j + k)) %% 256 = k by smt(kvec_val).
+  have ->: W16.to_sint (of_int (Zq.asint a.[i, j].[k])) = Zq.asint a.[i, j].[k].
+  + rewrite W16.to_sintE W16.of_uintK /smod /=; smt(Zq.rg_asint qE).
+  by rewrite Zq.asintK.
+rewrite /unlift_matrix /pos_bound4096_cxq => k kb; rewrite initiE //=.
+rewrite W16.to_sintE W16.of_uintK /smod /=; smt(Zq.rg_asint qE).
 qed.
 
 (********* MOVED HERE TO AVOID CIRCULAR DEPS ************)
@@ -330,14 +335,6 @@ apply Array256.ext_eq => i Hi.
 by rewrite initiE //= mapiE //.
 qed.
 
-lemma getm_setE (m:polymat) a b x i j:
- mrange i j =>
- (m.[a, b <- x].[i,j])%KMatrix.Matrix
- = if a=i /\ b=j then x else (m.[i,j])%KMatrix.Matrix.
-proof.
-by move=> H; rewrite setmE offunmE //= /#.
-qed.
-
 lemma unlift_polyu_getm (A: polymat) i j:
  0 <= i < 4 =>
  0 <= j < 4 =>
@@ -349,9 +346,10 @@ apply Array256.ext_eq => k Hk.
 rewrite initiE 1:/# initiE 1:/# /=.
 rewrite initiE 1:/# /=.
 rewrite initiE 1:/# /=.
-congr; congr; congr; last smt().
-rewrite -getmE; congr.
-smt().
+have ->: (1024 * i + (256 * j + k)) %/ 1024 = i by smt().
+have ->: (1024 * i + (256 * j + k)) %% 1024 %/ 256 = j by smt().
+have ->: (1024 * i + (256 * j + k)) %% 256 = k by smt().
+done.
 qed.
 
 require import JWordList EclibExtra.
@@ -729,7 +727,6 @@ move => Hk Hab.
 rewrite /buf4x_buf /sub; apply eq_in_mkseq => i Hi /=.
 by rewrite initiE 1:/# /#.
 qed.
-locate idx_from_pos.
 lemma sub_gen_matrix_indexes idxs _pos _t _k (_a:WArray8.t):
  (_pos = 0 \/ _pos = 4 \/ _pos = 8 \/ _pos = 12) =>
  0 <= _k < 4 =>
@@ -742,13 +739,13 @@ proof.
 move=> Hpos Hk ->.
 have: _k \in iotared 0 4 by smt().
 move: {Hk} _k; apply /List.allP => /=.
- case Hpos;1 : by case: _t;rewrite ?b2i1 ?b2i0 /pos2ji /sub /mkseq -iotaredE //=. 
+ case Hpos;1 : by case: _t;rewrite ?b2i1 ?b2i0 /pos2ji kvec_val /sub /mkseq -iotaredE //=. 
  move => Hpos.
- case Hpos;1 : by case: _t;rewrite ?b2i1 ?b2i0 /pos2ji /sub /mkseq -iotaredE //=. 
+ case Hpos;1 : by case: _t;rewrite ?b2i1 ?b2i0 /pos2ji kvec_val /sub /mkseq -iotaredE //=. 
  move => Hpos.
- case Hpos;1 : by case: _t;rewrite ?b2i1 ?b2i0 /pos2ji /sub /mkseq -iotaredE //=. 
+ case Hpos;1 : by case: _t;rewrite ?b2i1 ?b2i0 /pos2ji kvec_val /sub /mkseq -iotaredE //=. 
  move => Hpos.
- by rewrite Hpos;case: _t;rewrite ?b2i1 ?b2i0 /pos2ji /sub /mkseq -iotaredE //=. 
+ by rewrite Hpos;case: _t;rewrite ?b2i1 ?b2i0 /pos2ji kvec_val /sub /mkseq -iotaredE //=. 
 qed.
 
 equiv sample_four_polynomials_eq:
@@ -854,7 +851,7 @@ op mat4atPos (m: polymat) pos =
  ( m.[idx_from_pos pos]
  , m.[idx_from_pos (pos+1)]
  , m.[idx_from_pos (pos+2)]
- , m.[idx_from_pos (pos+3)])%KMatrix.Matrix.
+ , m.[idx_from_pos (pos+3)]).
 
 lemma sample3buf_4x_ph _rho _pos _t:
  0 <= _pos <= 4*4 - 4 =>
@@ -871,13 +868,13 @@ wp; call (sampleFilter_sem _rho (pos2ji (_pos+2) _t).`1 (pos2ji (_pos+2) _t).`2)
 wp; call (sampleFilter_sem _rho (pos2ji (_pos+1) _t).`1 (pos2ji (_pos+1) _t).`2).
 wp; call (sampleFilter_sem _rho (pos2ji _pos _t).`1 (pos2ji _pos _t).`2).
 auto => />.
-rewrite /sampleA /mat4atPos /pos2ji /idx_from_pos /=.
-have: _pos \in iota_ 0 (16-3). rewrite -iotaredE /= /#.
-clear Hpos; move: _pos.
-apply/List.allP.
-case: _t => ?.
- by rewrite -iotaredE /= !trmxE !getm_setE //=.
-by rewrite -iotaredE /= !getm_setE //=.
+rewrite /mat4atPos /pos2ji /idx_from_pos /=.
+case: _t => _.
++ do 4! (rewrite trmxE; 1,2: smt(kvec_val)).
+  do 4! (rewrite sampleAE; 1,2: smt(kvec_val)).
+  done.
+do 4! (rewrite sampleAE; 1,2: smt(kvec_val)).
+done.
 qed.
 
 lemma pack4poly_subarray1024 (A: polymat) p:
@@ -895,17 +892,17 @@ rewrite initiE 1:/# /=.
 rewrite -!catA nth_cat size_to_list /=.
 case: (i < 256) => Hi1.
  rewrite initiE 1:/# /= /mat4atPos /=.
- by congr; congr; congr; smt().
+ by congr; congr; congr; smt(kvec_val).
 rewrite nth_cat size_to_list /=.
 case: (i-256 < 256) => Hi2.
  rewrite initiE 1:/# /= /mat4atPos /=.
- by congr; congr; congr; smt().
+ by congr; congr; congr; smt(kvec_val).
 rewrite nth_cat size_to_list /=.
 case: (i-512 < 256) => Hi3.
  rewrite initiE 1:/# /= /mat4atPos /=.
- by congr; congr; congr; smt().
+ by congr; congr; congr; smt(kvec_val).
 rewrite initiE 1:/# /= /mat4atPos /=.
-by congr; congr; congr; smt().
+by congr; congr; congr; smt(kvec_val).
 qed.
 
 lemma sample_four _sd _rc b :
@@ -936,16 +933,16 @@ proc => /=.
 while (0<=i<=4 /\ rho = _sd /\ 
     ((forall kk, 0 <= kk < i => subarray1024 matrix kk = nttunpackv (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))) /\
      (forall kk, i <= kk < 4 => subarray1024 matrix kk = (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))) (kvec-i).
-+ move => *; wp => />. move => &m; smt().
++ move => *; wp => />. move => &m; smt(kvec_val).
   while (0<=i<4 /\ 0 <= j <= 4 /\ rho = _sd /\
     ((forall kk, 0 <= kk < i => subarray1024 matrix kk = nttunpackv (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))) /\
      (forall kk, i+1 <= kk < 4 => subarray1024 matrix kk = (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk)) /\
      (forall kk, 0 <= kk < j => subarray256 (subarray1024 matrix i) kk = nttunpack (subarray256 (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) i) kk)) /\
      (forall kk, j <= kk < 4 => subarray256 (subarray1024 matrix i) kk = subarray256 (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) i) kk)) (kvec-j); last first.
-  + auto => /> &hr ?? H H0 ?;do split;1..3:smt().
-    + move => j0 m;do split;1:smt().
-      move => ??? H1 H2 H3 H4;do split;1,2,4..:smt(). 
-      move => kk kkbl kkbh;case(kk=i{hr});2: by smt().
+  + auto => /> &hr ?? H H0 ?;do split;1..3:smt(kvec_val).
+    + move => j0 m;do split;1:smt(kvec_val).
+      move => ??? H1 H2 H3 H4;do split;1,2,4..:smt(kvec_val). 
+      move => kk kkbl kkbh;case(kk=i{hr});2: by smt(kvec_val).
       move => ->;rewrite /nttunpackv /= tP => ii iib.
       rewrite !initiE //=.
       case(0 <= ii && ii < 256).
@@ -958,7 +955,7 @@ while (0<=i<=4 /\ rho = _sd /\
   move => *.
   exlim matrix, i, j => _m _i _j.
   wp;call(nttunpack_corr ((init (fun (i_0 : int) => _m.[_i * (4 * 256) + _j * 256 + i_0]))%Array256)).
-  auto => /> ?? H H0 H1 H2 H3 H4 ?;do split; 1,2,7..:smt(). 
+  auto => /> ?? H H0 H1 H2 H3 H4 ?;do split; 1,2,7..:smt(kvec_val). 
   + move => ii??. 
     rewrite  tP => kk kkb.
     have -> : (subarray1024
@@ -968,7 +965,7 @@ while (0<=i<=4 /\ rho = _sd /\
             (nttunpack ((init (fun (i_0_0 : int) => _m.[_i * 1024 + _j * 256 + i_0_0])))%Array256).[
             i_0 - (_i * 1024 + _j * 256)]
           else _m.[i_0])))%Array4096 ii) =
-          subarray1024 _m ii; last by smt().
+          subarray1024 _m ii; last by smt(kvec_val).
      by rewrite tP => jj jjb; rewrite !initiE //= initiE 1:/# /= ifF 1:/#.  
  + move => ii iibl iibh.    
     have -> : (subarray1024
@@ -978,7 +975,7 @@ while (0<=i<=4 /\ rho = _sd /\
             (nttunpack ((init (fun (i_0_0 : int) => _m.[_i * 1024 + _j * 256 + i_0_0])))%Array256).[
             i_0 - (_i * 1024 + _j * 256)]
           else _m.[i_0])))%Array4096 ii) =
-          subarray1024 _m ii; last by smt().
+          subarray1024 _m ii; last by smt(kvec_val).
      by rewrite tP => jj jjb; rewrite !initiE //= initiE 1:/# /= ifF 1:/#.  
  + move => ii iibl iibh.
    case (ii = _j); last first.  
@@ -987,13 +984,13 @@ while (0<=i<=4 /\ rho = _sd /\
      by rewrite !initiE 1,2:/# /= !initiE 1:/# /= 1:/# initiE /#.
    move => ->. 
    rewrite /subarray256 /subarray1024  tP => *.
-   rewrite initiE /= 1:/# initiE 1:/# /= initiE 1:/# /= ifT 1:/#;congr;2:smt().
+   rewrite initiE /= 1:/# initiE 1:/# /= initiE 1:/# /= ifT 1:/#;congr;2:smt(kvec_val).
    congr;rewrite tP => i0 i0b; rewrite !initiE 1,2:/# /= initiE 1:/# /=.
-   move : (H4 _j _); 1:smt().
+   move : (H4 _j _); 1:smt(kvec_val).
    rewrite tP => H4u. 
-   move : (H4u i0 _);1:smt().
+   move : (H4u i0 _);1:smt(kvec_val).
    do 6!(rewrite initiE 1:/# /=).
-   by smt().
+   by smt(kvec_val).
 
  + move => ii iibl iibh.
    rewrite -H4 1:/#.
@@ -1001,9 +998,9 @@ while (0<=i<=4 /\ rho = _sd /\
    by rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# initiE 1:/# /= ifF /#. 
 
 wp;conseq (_:  (forall kk, 0 <= kk < 4 =>  subarray1024 matrix kk = (subarray1024 (unlift_matrix (if b then trmx (sampleA _sd) else (sampleA _sd))) kk))).
-move =>/> m0 rr; split;1:smt().
+move =>/> m0 rr; split;1:smt(kvec_val).
 case b => hb.
-+ move => i1 m1 *; split;1: smt(). 
++ move => i1 m1 *; split;1: smt(kvec_val). 
   move => ???H0 H1. 
   rewrite /nttunpackm tP => k kb; rewrite !initiE //=.
   case (0 <= k && k < 1024).
@@ -1013,7 +1010,7 @@ case b => hb.
   case (2048 <= k && k < 3072).
   + by move =>? kbb;rewrite -H0 1:/# /subarray1024 initiE 1:/# /=.  
   by move =>? ?kbb;rewrite -H0 1:/# /subarray1024 initiE 1:/# /=.
-move => i1 m1 *; split;1: smt(). 
+move => i1 m1 *; split;1: smt(kvec_val). 
 move => ???H0 H1. 
 rewrite /nttunpackm tP => k kb; rewrite !initiE //=.
 case (0 <= k && k < 1024).

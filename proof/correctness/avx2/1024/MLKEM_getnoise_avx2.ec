@@ -1,6 +1,6 @@
 (* Ref-free AVX2 noise sampling machinery.
    Builds the chain
-     Jkem_avx2.M._poly_getnoise_eta1_4x  ~  4x cbd2sample (PRF seed nonce_i)
+     Jkem_avx2.M._poly_getnoise_eta1_4x  ~  4x samplePolyCBD (PRF seed nonce_i)
    without dragging ref-Jasmin via AuxMLKEM / ref's _poly_getnoise.
 
    This file relocates pure W8 bit-algebra lemmas (parallel_noisesum_low/high
@@ -12,7 +12,7 @@ from Jasmin require import JModel JUtils.
 from JazzEC require import Array8 Array16 Array32 Array33 Array128 Array256.
 from JazzEC require import WArray128.
 from JazzEC require import Jkem_avx2.
-from Spec require import GFq Rq Sampling Symmetric InnerPKE1024_Op.
+from Spec require import GFq Rq Sampling Symmetric InnerPKE_Op.
 require import MLKEMFCLib NTT_AVX_Fq AVX2_Ops Montgomery16.
 import MLKEMFCLib1024.
 require import MLKEM_keccak_avx2.
@@ -608,12 +608,12 @@ module AuxMLKEMAvx2 = {
 }.
 
 (* ============================================================
-   AuxMLKEMAvx2._poly_getnoise ~ CBD2.sample.
+   AuxMLKEMAvx2._poly_getnoise ~ SamplePolyCBD.sample.
    The "noise function" semantic equivalence.
    ============================================================ *)
 
-equiv aux_poly_getnoise_cbd2sample :
-  AuxMLKEMAvx2._poly_getnoise ~ CBD2.sample :
+equiv aux_poly_getnoise_samplePolyCBD :
+  AuxMLKEMAvx2._poly_getnoise ~ SamplePolyCBD.sample :
     arg{2} = SHAKE256_33_128 arg{1}.`2 arg{1}.`3
     ==>
     lift_array256 res{1} = res{2} /\
@@ -710,7 +710,7 @@ proof. apply cbd2_ref_ll'. qed.
 lemma aux_poly_getnoise_ll : islossless AuxMLKEMAvx2._poly_getnoise.
 proof. proc; call cbd2_ref_ll; auto. qed.
 
-lemma CBD2_sample_ll : islossless CBD2.sample.
+lemma CBD2_sample_ll : islossless SamplePolyCBD.sample.
 proof.
 proc; while (0 <= i <= 128) (128 - i); 1: by move => z; auto => /> /#.
 auto => /> /#.
@@ -720,14 +720,14 @@ phoare aux_poly_getnoise_ph _seed _nonce :
   [AuxMLKEMAvx2._poly_getnoise :
     seed = _seed /\ nonce = _nonce
     ==>
-    lift_array256 res = cbd2sample (SHAKE256_33_128 _seed _nonce) /\
+    lift_array256 res = samplePolyCBD (SHAKE256_33_128 _seed _nonce) /\
     forall k, 0 <= k < 256 => -5 < to_sint res.[k] < 5] = 1%r.
 proof.
 bypr => &m [-> ->].
-have <-: Pr[CBD2.sample(SHAKE256_33_128 _seed _nonce) @ &m :
-            res = cbd2sample (SHAKE256_33_128 _seed _nonce)] = 1%r
+have <-: Pr[SamplePolyCBD.sample(SHAKE256_33_128 _seed _nonce) @ &m :
+            res = samplePolyCBD (SHAKE256_33_128 _seed _nonce)] = 1%r
   by byphoare (cbd2sample_ph (SHAKE256_33_128 _seed _nonce)).
-byequiv aux_poly_getnoise_cbd2sample => />; smt().
+byequiv aux_poly_getnoise_samplePolyCBD => />; smt().
 qed.
 
 (* ============================================================
@@ -787,10 +787,10 @@ phoare aux_poly_getnoise_4x_ph _seed _nonce :
   [AuxMLKEMAvx2.__poly_getnoise_eta1_4x :
     noiseseed = _seed /\ nonce = _nonce
     ==>
-    lift_array256 res.`1 = cbd2sample (SHAKE256_33_128 _seed _nonce) /\
-    lift_array256 res.`2 = cbd2sample (SHAKE256_33_128 _seed (_nonce + W8.of_int 1)) /\
-    lift_array256 res.`3 = cbd2sample (SHAKE256_33_128 _seed (_nonce + W8.of_int 2)) /\
-    lift_array256 res.`4 = cbd2sample (SHAKE256_33_128 _seed (_nonce + W8.of_int 3)) /\
+    lift_array256 res.`1 = samplePolyCBD (SHAKE256_33_128 _seed _nonce) /\
+    lift_array256 res.`2 = samplePolyCBD (SHAKE256_33_128 _seed (_nonce + W8.of_int 1)) /\
+    lift_array256 res.`3 = samplePolyCBD (SHAKE256_33_128 _seed (_nonce + W8.of_int 2)) /\
+    lift_array256 res.`4 = samplePolyCBD (SHAKE256_33_128 _seed (_nonce + W8.of_int 3)) /\
     (forall k, 0 <= k < 256 => -5 < to_sint res.`1.[k] < 5) /\
     (forall k, 0 <= k < 256 => -5 < to_sint res.`2.[k] < 5) /\
     (forall k, 0 <= k < 256 => -5 < to_sint res.`3.[k] < 5) /\
@@ -808,10 +808,10 @@ phoare jkem_getnoise_4x_ph _seed _nonce :
   [Jkem_avx2.M._poly_getnoise_eta1_4x :
     seed = _seed /\ nonce = _nonce
     ==>
-    lift_array256 res.`1 = cbd2sample (SHAKE256_33_128 _seed _nonce) /\
-    lift_array256 res.`2 = cbd2sample (SHAKE256_33_128 _seed (_nonce + W8.of_int 1)) /\
-    lift_array256 res.`3 = cbd2sample (SHAKE256_33_128 _seed (_nonce + W8.of_int 2)) /\
-    lift_array256 res.`4 = cbd2sample (SHAKE256_33_128 _seed (_nonce + W8.of_int 3)) /\
+    lift_array256 res.`1 = samplePolyCBD (SHAKE256_33_128 _seed _nonce) /\
+    lift_array256 res.`2 = samplePolyCBD (SHAKE256_33_128 _seed (_nonce + W8.of_int 1)) /\
+    lift_array256 res.`3 = samplePolyCBD (SHAKE256_33_128 _seed (_nonce + W8.of_int 2)) /\
+    lift_array256 res.`4 = samplePolyCBD (SHAKE256_33_128 _seed (_nonce + W8.of_int 3)) /\
     (forall k, 0 <= k < 256 => -5 < to_sint res.`1.[k] < 5) /\
     (forall k, 0 <= k < 256 => -5 < to_sint res.`2.[k] < 5) /\
     (forall k, 0 <= k < 256 => -5 < to_sint res.`3.[k] < 5) /\
@@ -820,10 +820,10 @@ proof.
 bypr => &m [-> ->].
 have <-: Pr[AuxMLKEMAvx2.__poly_getnoise_eta1_4x
               (r0{m}, r1{m}, r2{m}, r3{m}, _seed, _nonce) @ &m :
-            lift_array256 res.`1 = cbd2sample (SHAKE256_33_128 _seed _nonce) /\
-            lift_array256 res.`2 = cbd2sample (SHAKE256_33_128 _seed (_nonce + W8.of_int 1)) /\
-            lift_array256 res.`3 = cbd2sample (SHAKE256_33_128 _seed (_nonce + W8.of_int 2)) /\
-            lift_array256 res.`4 = cbd2sample (SHAKE256_33_128 _seed (_nonce + W8.of_int 3)) /\
+            lift_array256 res.`1 = samplePolyCBD (SHAKE256_33_128 _seed _nonce) /\
+            lift_array256 res.`2 = samplePolyCBD (SHAKE256_33_128 _seed (_nonce + W8.of_int 1)) /\
+            lift_array256 res.`3 = samplePolyCBD (SHAKE256_33_128 _seed (_nonce + W8.of_int 2)) /\
+            lift_array256 res.`4 = samplePolyCBD (SHAKE256_33_128 _seed (_nonce + W8.of_int 3)) /\
             (forall k, 0 <= k < 256 => -5 < to_sint res.`1.[k] < 5) /\
             (forall k, 0 <= k < 256 => -5 < to_sint res.`2.[k] < 5) /\
             (forall k, 0 <= k < 256 => -5 < to_sint res.`3.[k] < 5) /\
@@ -855,12 +855,12 @@ phoare jkem_getnoise_eta2_ph _seed _nonce :
   [Jkem_avx2.M._poly_getnoise_eta2 :
     seed = _seed /\ nonce = _nonce
     ==>
-    lift_array256 res = cbd2sample (SHAKE256_33_128 _seed _nonce) /\
+    lift_array256 res = samplePolyCBD (SHAKE256_33_128 _seed _nonce) /\
     (forall k, 0 <= k < 256 => -5 < to_sint res.[k] < 5)] = 1%r.
 proof.
 bypr => &m [-> ->].
 have <-: Pr[AuxMLKEMAvx2._poly_getnoise(rp{m}, _seed, _nonce) @ &m :
-            lift_array256 res = cbd2sample (SHAKE256_33_128 _seed _nonce) /\
+            lift_array256 res = samplePolyCBD (SHAKE256_33_128 _seed _nonce) /\
             forall k, 0 <= k < 256 => -5 < to_sint res.[k] < 5] = 1%r
   by byphoare (aux_poly_getnoise_ph _seed _nonce).
 by byequiv getnoise_eta2_avx_aux => />.

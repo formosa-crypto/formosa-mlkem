@@ -13,13 +13,13 @@ import BitChunking BS2Int.
 op lift_polyvec (vec: W16.t Array768.t) : polyvec =
   KVec.init (fun i => lift_array256 (subarray256 vec i)).
 
-(* lift_matrix / unlift_matrix are now in Correctness768.ec (spec side) --
-   no duplicate here. *)
-
 op lift_matrix( a : W16.t Array2304.t) : polymat =
    KMat.init (fun flat => subarray256 (subarray768 (lift_array2304 a) (flat %/ kvec)) (flat %% kvec)).
 
-(* Spec-side bound on decoded 12-bit ints (analog of EncDecCorrectness768.decode1_bnd
+op unlift_matrix(a : polymat) : W16.t Array2304.t = Array2304.init
+   (fun i => W16.of_int (asint (a.[i %/ 768, i %% 768 %/ 256].[i %% 256]))%Matrix).
+
+(* Spec-side bound on decoded 12-bit ints (analog of EncDecCorrectness.decode1_bnd
    but for decode12_vec). Proof modeled on decode1_bnd. *)
 lemma decode12_vec_bnd (a : W8.t BytesPKVec.t) (k : int) :
   0 <= k < 768 => 0 <= (decode12_vec a).[k] < 4096.

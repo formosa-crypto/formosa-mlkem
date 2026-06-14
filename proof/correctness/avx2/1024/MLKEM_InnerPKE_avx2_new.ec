@@ -23,9 +23,9 @@ require import MLKEM_keccak_avx2.
 require import MLKEM_genmatrix_avx2.
 require import MLKEM_getnoise_avx2.
 
-from Spec require import EncDecCorrectness1024.
-from Spec require import InnerPKE1024_Op.
-import GFq Rq Symmetric Symmetric1024 Serialization Serialization1024 Sampling VecMat VecMat1024 InnerPKE1024 MLKEM1024 Correctness1024.
+from Spec require import EncDecCorrectness.
+from Spec require import InnerPKE_Op.
+import GFq Rq Symmetric Symmetric Serialization Serialization Sampling VecMat VecMat KPKE MLKEM Correctness.
 import PolyVec PolyMat KMatrix.
 
 import Zq.
@@ -40,7 +40,7 @@ import MLKEM_PolyVecAVXVec.
 
 require import Mlkem_bindings.
 import KMatrix Vector.
-import InnerPKE1024.
+import KPKE.
 require Montgomery.
 
 
@@ -159,20 +159,20 @@ lemma lift_subarray_nttunpackvE (aref ahr : W16.t Array1024.t) (j : int) :
   0 <= j < 4 =>
   lift_array1024 ahr = nttunpackv (lift_array1024 aref) =>
   lift_array256 (Array256.init (fun (i : int) => ahr.[256*j + i])) =
-    nttunpack (lift_array256 (Serialization1024.subarray256 aref j)).
+    nttunpack (lift_array256 (Serialization.subarray256 aref j)).
 proof.
 move => jb Hlift.
 have HkR : 0 <= 256*j <= 768 by smt().
 rewrite (lift_array_256_1024_k ahr (256*j) HkR) Hlift.
-have ->: lift_array256 (Serialization1024.subarray256 aref j) = Serialization1024.subarray256 (lift_array1024 aref) j.
-+ rewrite /lift_array256 /lift_array1024 /Serialization1024.subarray256 /map tP => k kb.
+have ->: lift_array256 (Serialization.subarray256 aref j) = Serialization.subarray256 (lift_array1024 aref) j.
++ rewrite /lift_array256 /lift_array1024 /Serialization.subarray256 /map tP => k kb.
   by rewrite !initiE //= initiE 1:/# /= initiE //= /#.
 rewrite tP => i ib; rewrite initiE //= /nttunpack initiE //=.
 have Hidxbnd : 0 <= nttunpack_idx.[i] < 256
   by smt(nttunpack_bnd Array256.allP mem_iota).
-rewrite /Serialization1024.subarray256 initiE //=.
+rewrite /Serialization.subarray256 initiE //=.
 have -> : (nttunpackv (lift_array1024 aref)).[256 * j + i] =
-          (nttunpack (Serialization1024.subarray256 (lift_array1024 aref) j)).[i].
+          (nttunpack (Serialization.subarray256 (lift_array1024 aref) j)).[i].
 + rewrite /nttunpackv initiE 1:/#.
   have Hjr : j = 0 \/ j = 1 \/ j = 2 \/ j = 3 by smt().
   case Hjr => [-> | [-> | [-> | ->]]] /=.
@@ -180,7 +180,7 @@ have -> : (nttunpackv (lift_array1024 aref)).[256 * j + i] =
   - by rewrite ifF 1:/# ifT 1:/#; congr; smt().
   - by rewrite ifF 1:/# ifF 1:/# ifT 1:/#; congr; smt().
   - by rewrite ifF 1:/# ifF 1:/# ifF 1:/#; congr; smt().
-by rewrite /nttunpack /Serialization1024.subarray256 initiE //= initiE 1:/#.
+by rewrite /nttunpack /Serialization.subarray256 initiE //= initiE 1:/#.
 qed.
 
 lemma polyvec_pointwise_acc_corr_avx_ph
@@ -192,14 +192,14 @@ lemma polyvec_pointwise_acc_corr_avx_ph
   _p3 = scale (basemul _a3 _b3) (incoeff 169) =>
   (forall k, 0 <= k < 256 => _r.[k] = _p0.[k] + _p1.[k] + _p2.[k] + _p3.[k]) =>
   phoare [Jkem_avx2.M.__polyvec_pointwise_acc :
-    _a0 = lift_array256 (Serialization1024.subarray256 a_ref 0) /\
-    _a1 = lift_array256 (Serialization1024.subarray256 a_ref 1) /\
-    _a2 = lift_array256 (Serialization1024.subarray256 a_ref 2) /\
-    _a3 = lift_array256 (Serialization1024.subarray256 a_ref 3) /\
-    _b0 = lift_array256 (Serialization1024.subarray256 b_ref 0) /\
-    _b1 = lift_array256 (Serialization1024.subarray256 b_ref 1) /\
-    _b2 = lift_array256 (Serialization1024.subarray256 b_ref 2) /\
-    _b3 = lift_array256 (Serialization1024.subarray256 b_ref 3) /\
+    _a0 = lift_array256 (Serialization.subarray256 a_ref 0) /\
+    _a1 = lift_array256 (Serialization.subarray256 a_ref 1) /\
+    _a2 = lift_array256 (Serialization.subarray256 a_ref 2) /\
+    _a3 = lift_array256 (Serialization.subarray256 a_ref 3) /\
+    _b0 = lift_array256 (Serialization.subarray256 b_ref 0) /\
+    _b1 = lift_array256 (Serialization.subarray256 b_ref 1) /\
+    _b2 = lift_array256 (Serialization.subarray256 b_ref 2) /\
+    _b3 = lift_array256 (Serialization.subarray256 b_ref 3) /\
     lift_array1024 a = nttunpackv (lift_array1024 a_ref) /\
     lift_array1024 b = nttunpackv (lift_array1024 b_ref) /\
     signed_bound1024_cxq a 0 1024 2 /\
@@ -402,22 +402,22 @@ have Hkr : k = 256 * (k %/ 256) + k %% 256 by smt().
 have Hkdiv : k %/ 256 = 0 \/ k %/ 256 = 1 \/ k %/ 256 = 2 \/ k %/ 256 = 3 by smt().
 case Hkdiv => [H0 | [H0 | [H0 | H0]]]; rewrite H0.
 + rewrite ifF 1:/# ifT 1:/# ifF 1:/# ifT 1:/# ifF 1:/# ifT 1:/# ifT 1:/#.
-  rewrite mapiE 1:/# /Serialization1024.subarray256 initiE 1:/#;beta.
+  rewrite mapiE 1:/# /Serialization.subarray256 initiE 1:/#;beta.
   rewrite of_sintK Montgomery16.smod_small.
   + have := as_sint_range (incoeff vi.[256 * 0 + k %% 256]); smt(qE).
   by rewrite as_sintK; have -> : 256 * 0 + k %% 256 = k by move : Hkr; smt().
 + rewrite ifF 1:/# ifT 1:/# ifF 1:/# ifT 1:/# ifT 1:/#.
-  rewrite mapiE 1:/# /Serialization1024.subarray256 initiE 1:/#;beta.
+  rewrite mapiE 1:/# /Serialization.subarray256 initiE 1:/#;beta.
   rewrite of_sintK Montgomery16.smod_small.
   + have := as_sint_range (incoeff vi.[256 * 1 + k %% 256]); smt(qE).
   by rewrite as_sintK; have -> : 256 * 1 + k %% 256 = k by move : Hkr; smt().
 + rewrite ifF 1:/# ifT 1:/# ifT 1:/#.
-  rewrite mapiE 1:/# /Serialization1024.subarray256 initiE 1:/#;beta.
+  rewrite mapiE 1:/# /Serialization.subarray256 initiE 1:/#;beta.
   rewrite of_sintK Montgomery16.smod_small.
   + have := as_sint_range (incoeff vi.[256 * 2 + k %% 256]); smt(qE).
   by rewrite as_sintK; have -> : 256 * 2 + k %% 256 = k by move : Hkr; smt().
 + rewrite ifT 1:/#.
-  rewrite mapiE 1:/# /Serialization1024.subarray256 initiE 1:/#;beta.
+  rewrite mapiE 1:/# /Serialization.subarray256 initiE 1:/#;beta.
   rewrite of_sintK Montgomery16.smod_small.
   + have := as_sint_range (incoeff vi.[256 * 3 + k %% 256]); smt(qE).
   by rewrite as_sintK; have -> : 256 * 3 + k %% 256 = k by move : Hkr; smt().
@@ -499,22 +499,22 @@ qed.
 lemma subarray256_double_init_fallthrough
   (pkpv : W16.t Array1024.t) (rr0 rr1 : W16.t Array256.t) (i j : int) :
   0 <= j < i => 0 <= i < 4 =>
-  Serialization1024.subarray256
+  Serialization.subarray256
     (Array1024.init (fun (i_0 : int) =>
        if i * 256 <= i_0 < i * 256 + 256 then rr1.[i_0 - i * 256]
        else (Array1024.init (fun (i_0_0 : int) =>
               if i * 256 <= i_0_0 < i * 256 + 256
               then rr0.[i_0_0 - i * 256] else pkpv.[i_0_0])).[i_0])) j
-  = Serialization1024.subarray256 pkpv j.
+  = Serialization.subarray256 pkpv j.
 proof.
 move => Hji Hi.
-rewrite /Serialization1024.subarray256; apply Array256.tP => k Hk.
+rewrite /Serialization.subarray256; apply Array256.tP => k Hk.
 by rewrite initiE //= initiE //= initiE 1:/# /= ifF 1:/# initiE 1:/# /= /= ifF 1:/#.
 qed.
 
 lemma kg_loop_post_to_target (pkpv : W16.t Array1024.t) (mm : PolyVec.polyvec) :
   (forall (j : int), 0 <= j < 4 =>
-     lift_array256 (Serialization1024.subarray256 pkpv j) = nttunpack mm.[j]%PolyVec) =>
+     lift_array256 (Serialization.subarray256 pkpv j) = nttunpack mm.[j]%PolyVec) =>
   lift_polyvec (nttpackv pkpv) = mm.
 proof.
 move => Hslots.
@@ -525,13 +525,13 @@ rewrite -Hslotsj.
 rewrite /lift_polyvec offunvE 1:/# /=.
 have lift_subarrayE : forall (X : W16.t Array1024.t) (jj : int),
   0 <= jj < 4 =>
-  lift_array256 (Serialization1024.subarray256 X jj) =
-    Serialization1024.subarray256 (lift_array1024 X) jj.
+  lift_array256 (Serialization.subarray256 X jj) =
+    Serialization.subarray256 (lift_array1024 X) jj.
 + move => X jj jjb.
-  rewrite /lift_array256 /lift_array1024 /Serialization1024.subarray256 /map tP => k kb.
+  rewrite /lift_array256 /lift_array1024 /Serialization.subarray256 /map tP => k kb.
   by rewrite !initiE //= initiE 1:/# /= initiE //= /#.
 rewrite !(lift_subarrayE _ _ _) 1..2:/# -nttpackv_lift.
-rewrite /Serialization1024.subarray256 /nttpackv tP => k Hk.
+rewrite /Serialization.subarray256 /nttpackv tP => k Hk.
 rewrite initiE 1:/# /= initiE 1:/# /=.
 case (j = 0) => Hj0; 1: by rewrite Hj0 /= ifT 1:/#.
 case (j = 1) => Hj1.
@@ -871,7 +871,7 @@ seq 1 0 : (#{/~lift_polyvec sp_0{1} = rv{2}}
      and the slot-by-slot signed-bound case-split needs a 4th case. *)
 seq 2 0 : (#pre /\
            (forall j, 0 <= j < 4 =>
-              lift_array256 (subarray256 bp{1} j)%Serialization1024 =
+              lift_array256 (subarray256 bp{1} j)%Serialization =
                 nttunpack (scale (ntt_mmul aT{2}
                                    (lift_polyvec (nttpackv sp_0{1}))).[j]%Vector
                                   (incoeff 169))) /\
@@ -885,7 +885,7 @@ seq 2 0 : (#pre /\
          PolyVec.nttv rv{2} = lift_polyvec (nttpackv sp_0{1}) /\
          pos_bound1024_cxq sp_0{1} 0 1024 2 /\
          (forall j, 0 <= j < w{1} =>
-            lift_array256 (subarray256 bp{1} j)%Serialization1024 =
+            lift_array256 (subarray256 bp{1} j)%Serialization =
               nttunpack (scale (ntt_mmul aT{2}
                                  (lift_polyvec (nttpackv sp_0{1}))).[j]%Vector
                                 (incoeff 169))) /\
@@ -968,13 +968,13 @@ seq 1 0 : (#pre /\
 
 (* === Step 8: invNTT bp. === *)
 seq 1 0 : (#{/~forall j, 0 <= j < 4 =>
-                lift_array256 (subarray256 bp{1} j)%Serialization1024 =
+                lift_array256 (subarray256 bp{1} j)%Serialization =
                   nttunpack (scale (ntt_mmul aT{2}
                                      (lift_polyvec (nttpackv sp_0{1}))).[j]%Vector
                                     (incoeff 169))}
             {/~signed_bound1024_cxq bp{1} 0 1024 4}pre /\
            (forall j, 0 <= j < 4 =>
-              lift_array256 (subarray256 bp{1} j)%Serialization1024 =
+              lift_array256 (subarray256 bp{1} j)%Serialization =
                 (invntt (ntt_mmul aT{2}
                           (lift_polyvec (nttpackv sp_0{1}))).[j]%Vector)) /\
            signed_bound1024_cxq bp{1} 0 1024 1).
@@ -983,9 +983,9 @@ seq 1 0 : (#{/~forall j, 0 <= j < 4 =>
   split; first by rewrite nttpackv_lift.
   move => ? result Hres Hresbnd.
   move => j Hjbl Hjbh.
-  have HrsJ : lift_array256 (subarray256 result j)%Serialization1024 =
+  have HrsJ : lift_array256 (subarray256 result j)%Serialization =
             scale (invntt (lift_polyvec (nttpackv bp{1})).[j]%Vector) (incoeff 65536).
-  + have <- : (lift_polyvec result).[j]%Vector = lift_array256 (subarray256 result j)%Serialization1024
+  + have <- : (lift_polyvec result).[j]%Vector = lift_array256 (subarray256 result j)%Serialization
        by rewrite /lift_polyvec offunvE 1:/# //.
     rewrite -Hres /scale mapvE /= offunvE 1:/# //=;congr;1:smt().
     rewrite /invnttv mapvE !offunvE 1:/# //= offunvK /vclamp ifT 1:/#.
@@ -1027,7 +1027,7 @@ seq 1 0 : (#{/~lift_array256 v{1} =
 
 (* === Step 10: bp += ep. === *)
 seq 1 0 : (#{/~forall j, 0 <= j < 4 =>
-                lift_array256 (subarray256 bp{1} j)%Serialization1024 =
+                lift_array256 (subarray256 bp{1} j)%Serialization =
                   (invntt (ntt_mmul aT{2}
                             (lift_polyvec (nttpackv sp_0{1}))).[j])%Vector}
             {/~signed_bound1024_cxq bp{1} 0 1024 1}pre /\
@@ -1126,7 +1126,7 @@ rewrite initiE 1:/# /=;do congr;smt().
 qed.
 
 lemma mlkem_correct_enc_1_avx2 _pkp :
-  equiv [Jkem_avx2.M.__indcpa_enc ~ InnerPKE1024.enc_derand :
+  equiv [Jkem_avx2.M.__indcpa_enc ~ KPKE.enc_derand :
     msgp{1} = m{2} /\ pk{1} = _pkp /\
     noiseseed{1} = coins{2} /\
     pk{2}.`1 = Array1536.init (fun i => pk{1}.[i]) /\
@@ -1450,7 +1450,7 @@ while {1} (
   pos_bound1024_cxq skpv{1} 0 1024 2 /\
   pos_bound1024_cxq e{1} 0 1024 2 /\
   (forall j, 0 <= j < i{1} =>
-     lift_array256 (subarray256 pkpv{1} j)%Serialization1024 =
+     lift_array256 (subarray256 pkpv{1} j)%Serialization =
      nttunpack ((ntt_mmul a{2} s{2}).[j])%PolyVec) /\ 
   (forall j, 0 <= j < 4 =>
      signed_bound1024_cxq (nttpackv (subarray1024 aa{1} j)) 0 1024 2) /\
@@ -1473,21 +1473,21 @@ while {1} (
       pose P := fun (c : W16.t) => - 2 * q <= to_sint c < 2 * q.
       (* TODO 1024: 4-way case-split (was 3-way in 768) *)
       case (0 <= k < 256) => ?.
-      + have : all P (nttpack (subarray256 skpv{hr} 0))%Serialization1024;
+      + have : all P (nttpack (subarray256 skpv{hr} 0))%Serialization;
           last by rewrite allP /P; smt(Array256.allP).
         rewrite nttpack_pred allP /P /subarray256 => kk Hkk.
         rewrite initiE 1:/# /= /#.
       case (256 <= k < 512) => ?.
-      + have : all P (nttpack (subarray256 skpv{hr} 1))%Serialization1024;
+      + have : all P (nttpack (subarray256 skpv{hr} 1))%Serialization;
           last by rewrite allP /P; smt(Array256.allP).
         rewrite nttpack_pred allP /P /subarray256 => kk Hkk.
         rewrite initiE 1:/# /= /#.
       case (512 <= k < 768) => ?.
-      + have : all P (nttpack (subarray256 skpv{hr} 2))%Serialization1024;
+      + have : all P (nttpack (subarray256 skpv{hr} 2))%Serialization;
           last by rewrite allP /P; smt(Array256.allP).
         rewrite nttpack_pred allP /P /subarray256 => kk Hkk.
         rewrite initiE 1:/# /= /#.
-      have : all P (nttpack (subarray256 skpv{hr} 3))%Serialization1024;
+      have : all P (nttpack (subarray256 skpv{hr} 3))%Serialization;
         last by rewrite allP /P; smt(Array256.allP).
       rewrite nttpack_pred allP /P /subarray256 => kk Hkk.
       rewrite initiE 1:/# /= /#.
@@ -1507,7 +1507,7 @@ while {1} (
     case Hcase => [Hjlt | Hjeq].
     + rewrite (subarray256_double_init_fallthrough pkpv{hr} rr0 rr1 i{hr} j) 1,2:/#; smt().
     rewrite Hjeq.
-    have ->: subarray256%Serialization1024
+    have ->: subarray256%Serialization
       (Array1024.init
         (fun (i_0 : int) =>
            if i{hr} * 256 <= i_0 < i{hr} * 256 + 256 then rr1.[i_0 - i{hr} * 256]
@@ -1571,9 +1571,9 @@ do split; 2: smt().
 qed.
 
 (* DERIVED: original target via transitivity through InnerPKE_Op (operator
-   form spec) using kg_op_eq from InnerPKE1024_Op. *)
+   form spec) using kg_op_eq from InnerPKE_Op. *)
 lemma mlkem_correct_kg_avx2 :
-  equiv [Jkem_avx2.M.__indcpa_keypair ~ InnerPKE1024.kg_derand :
+  equiv [Jkem_avx2.M.__indcpa_keypair ~ KPKE.kg_derand :
     randomnessp{1} = coins{2}
     ==>
     let (pk,sk) = res{2} in let (t,rho) = pk in
@@ -1598,7 +1598,7 @@ qed.
 (********** TOP-LEVEL: mlkem_correct_dec for avx2 (1024) **************)
 
 lemma mlkem_correct_dec :
-  equiv [Jkem_avx2.M.__indcpa_dec ~ InnerPKE1024.dec :
+  equiv [Jkem_avx2.M.__indcpa_dec ~ KPKE.dec :
     ={sk} /\
     let (c1,c2) = cph{2} in
       c1 = Array1408.init (fun i => ct{1}.[i]) /\

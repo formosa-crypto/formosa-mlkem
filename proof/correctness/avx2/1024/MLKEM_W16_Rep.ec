@@ -16,6 +16,9 @@ op lift_polyvec (vec: W16.t Array1024.t) : polyvec =
 op lift_matrix( a : W16.t Array4096.t) : polymat =
    KMat.init (fun flat => subarray256 (subarray1024 (lift_array4096 a) (flat %/ kvec)) (flat %% kvec)).
 
+op unlift_matrix(a : polymat) : W16.t Array4096.t = Array4096.init
+   (fun i => W16.of_int (asint (a.[i %/ 1024, i %% 1024 %/ 256].[i %% 256]))%Matrix).
+
 (* toipolyvec/lift_polyvec bridge (relocated from ref's MLKEM_InnerPKE.ec). *)
 lemma toipolivec_lift (_v : W16.t Array1024.t) :
   toipolyvec (lift_polyvec _v) = IPVec.init (fun idx => asint (lift_array1024 _v).[idx]).

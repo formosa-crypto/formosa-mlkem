@@ -47,7 +47,9 @@ conseq (: rp = _aw /\ all (fun c => W16.zero \sle c && c \slt W16.of_int 6658) r
 (* BDEP pre conseq *)
 + move => &hr />. rewrite /pos_bound256_cxq /bpos16 qE /= => H.
   rewrite /(\slt) /(\sle) /= /smod /= allP /=.
-  by exact H.
+  have ->: to_sint (W16.of_int 6658) = 6658 by rewrite /to_sint /smod /=.
+  have ->: to_sint W16.zero = 0 by rewrite /to_sint /smod /=.
+  exact H.
 
 (* BDEP post conseq *)
 

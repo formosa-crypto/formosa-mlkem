@@ -57,7 +57,9 @@ conseq (: r = _aw /\ all (fun c => W16.zero \sle c && c \slt W16.of_int 6658) r 
 (* BDEP pre conseq *)
 + move => &hr />. rewrite /pos_bound1024_cxq /bpos16 qE /= => H.
   rewrite /(\slt) /(\sle) /= /smod /= allP /=.
-  by exact H.
+  have ->: to_sint (W16.of_int 6658) = 6658 by rewrite /to_sint /smod /=.
+  have ->: to_sint W16.zero = 0 by rewrite /to_sint /smod /=.
+  exact H.
 
 (* BDEP post conseq *)
 
@@ -346,7 +348,7 @@ auto => /> &1;rewrite vpmaddwd_alt_corr; last by rewrite /VPMADDWD_alt /=.
 move => i ib /=; rewrite /VPBROADCAST_16u16 /=.
 rewrite Montgomery16.bits16_W16u16 ib /= get_of_list 1:/# /= (nth_map witness) /=;1:smt(size_iota).
 have -> : 2047 = 2^11 -1 by auto.
-rewrite and_mod 1:/# /= /smod /= /#.
+rewrite and_mod 1:/# /= of_sintK /= /smod /= /#.
 qed.
 
 lemma polyvec_frombytes_ll : islossless Jkem_avx2.M.__i_polyvec_frombytes.
@@ -680,7 +682,7 @@ conseq (:
       let bidx = idx %% 12 in
       W12."_.[_]" (ret.[aidx]) bidx))); last by circuit.
       
-+ move => &hr />; rewrite allP /= /pos_bound1024_cxq /(\sle) /(\slt) /= /qE /smod /=.
++ move => &hr />; rewrite allP /= /pos_bound1024_cxq /(\sle) /(\slt) /= /qE !of_sintK /smod /=.
   by rewrite qE /= => H k ?; move : (H k _) => //=.
 
 move => &hr [#]/=; rewrite /pos_bound1024_cxq /bpos16 => H0 <- rr ->.

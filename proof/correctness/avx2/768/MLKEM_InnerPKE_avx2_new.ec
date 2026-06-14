@@ -23,9 +23,9 @@ require import MLKEM_keccak_avx2.
 require import MLKEM_genmatrix_avx2.
 require import MLKEM_getnoise_avx2.
 
-from Spec require import EncDecCorrectness768.
-from Spec require import InnerPKE768_Op.
-import GFq Rq Symmetric Symmetric768 Serialization Serialization768 Sampling VecMat VecMat768 InnerPKE768 MLKEM768 Correctness768.
+from Spec require import EncDecCorrectness.
+from Spec require import InnerPKE_Op.
+import GFq Rq Symmetric Symmetric Serialization Serialization Sampling VecMat VecMat KPKE MLKEM Correctness.
 import PolyVec PolyMat KMatrix.
 
 import Zq.
@@ -40,7 +40,7 @@ import MLKEM_PolyVecAVXVec.
 
 require import Mlkem_bindings.
 import KMatrix Vector.
-import InnerPKE768.
+import KPKE.
 require Montgomery.
 
 
@@ -700,18 +700,18 @@ seq 2 1 : (#pre /\
              (nttunpackv (subarray768 (unlift_matrix (trmx (sampleA rho{2}))) 0)));
                  last by smt(Array768.allP).
            rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
-           move : (matrix_unlift_pos_bound (trmx (sampleA rho{2}))); smt().
+           move : (matrix_unlift (trmx (sampleA rho{2}))); smt().
          case (768 <= k < 1536) => kbb'.
           + have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
              (nttunpackv (subarray768 (unlift_matrix (trmx (sampleA rho{2}))) 1)));
                 last by smt(Array768.allP).
              rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
-             move : (matrix_unlift_pos_bound (trmx (sampleA rho{2}))); smt().
+             move : (matrix_unlift (trmx (sampleA rho{2}))); smt().
          have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
            (nttunpackv (subarray768 (unlift_matrix (trmx (sampleA rho{2}))) 2)));
                last by smt(Array768.allP).
          rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
-         move : (matrix_unlift_pos_bound (trmx (sampleA rho{2}))); smt().
+         move : (matrix_unlift (trmx (sampleA rho{2}))); smt().
 
 
 (* === Step 3: first getnoise_4x call.  Samples (nonce 0,1,2,3) →
@@ -894,7 +894,7 @@ seq 2 0 : (#pre /\
        move => j Hjl Hjh.
        rewrite nttpackv_subarray768_nttunpackm 1:/#.
        rewrite /signed_bound768_cxq => k Hk; rewrite /subarray768 initiE 1:/# /=.
-       have := matrix_unlift_pos_bound (trmx (sampleA rho{2})).
+       have := matrix_unlift (trmx (sampleA rho{2})).
        rewrite /pos_bound2304_cxq /bpos16 /b16; smt().
 
 (* === Step 7: pointwise_acc for v = pkpv · sp_0.
@@ -1114,7 +1114,7 @@ by rewrite initiE 1:/# /=  initiE 1:/# /=  initiE 1:/# /= ifT 1:/# Hresv Hvv ini
 qed.
 
 lemma mlkem_correct_enc_1_avx2 _pkp :
-  equiv [Jkem_avx2.M.__indcpa_enc ~ InnerPKE768.enc_derand :
+  equiv [Jkem_avx2.M.__indcpa_enc ~ KPKE.enc_derand :
     msgp{1} = m{2} /\ pk{1} = _pkp /\
     noiseseed{1} = coins{2} /\
     pk{2}.`1 = Array1152.init (fun i => pk{1}.[i]) /\
@@ -1242,18 +1242,18 @@ seq 2 1 : (#pre /\ aa{1} = nttunpackm (unlift_matrix a{2}) /\
              (nttunpackv (subarray768 (unlift_matrix (sampleA rho{2})) 0)));
       last by smt(Array768.allP).
     rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
-    by smt(matrix_unlift_pos_bound).
+    by smt(matrix_unlift).
   case (768 <= k < 1536) => kbb'.
   + have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
              (nttunpackv (subarray768 (unlift_matrix (sampleA rho{2})) 1)));
       last by smt(Array768.allP).
     rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
-    by smt(matrix_unlift_pos_bound).
+    by smt(matrix_unlift).
   have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
            (nttunpackv (subarray768 (unlift_matrix (sampleA rho{2})) 2)));
     last by smt(Array768.allP).
   rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray768 initiE 1:/# /=.
-  by smt(matrix_unlift_pos_bound).
+  by smt(matrix_unlift).
 
 seq 6 0 : (#pre /\
   (forall i, 0 <= i < 3 =>
@@ -1559,9 +1559,9 @@ do split; 2: smt().
 qed.
 
 (* DERIVED: original target via transitivity through InnerPKE_Op (operator
-   form spec) using kg_op_eq from InnerPKE768_Op. *)
+   form spec) using kg_op_eq from InnerPKE_Op. *)
 lemma mlkem_correct_kg_avx2 :
-  equiv [Jkem_avx2.M.__indcpa_keypair ~ InnerPKE768.kg_derand :
+  equiv [Jkem_avx2.M.__indcpa_keypair ~ KPKE.kg_derand :
     randomnessp{1} = coins{2}
     ==>
     let (pk,sk) = res{2} in let (t,rho) = pk in
@@ -1583,7 +1583,7 @@ transitivity InnerPKE_Op.kg_derand
 qed.
 
 lemma mlkem_correct_dec :
-  equiv [Jkem_avx2.M.__indcpa_dec ~ InnerPKE768.dec :
+  equiv [Jkem_avx2.M.__indcpa_dec ~ KPKE.dec :
     ={sk} /\
     let (c1,c2) = cph{2} in
       c1 = Array960.init (fun i => ct{1}.[i]) /\
