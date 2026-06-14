@@ -6,7 +6,14 @@ provers = Z3@4.8
 
 spec = proof/eclib/specs/avx2.spec
 
-rdirs = proof
+# Explicit per-folder includes (NOT recursive `rdirs = proof`): the recursive form
+# pulled BOTH variant dirs (768/ and 1024/) onto one path, clashing on `kvec_val`
+# (MLKEM768_prelude: kvec=3 vs MLKEM1024_prelude: kvec=4). The variant dirs are built
+# via their own per-variant easycrypt.project; the root path carries only common code.
+idirs = proof/eclib
+idirs = proof/correctness/avx2/common
+idirs = proof/safety
+idirs = proof/security
 
 rdirs = Jasmin:jasmin/eclib
 

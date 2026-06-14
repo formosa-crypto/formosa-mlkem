@@ -8,7 +8,7 @@ from JazzEC require import WArray32 WArray256 WArray512 WArray800 WArray1536 WAr
 require import AVX2_Ops.
 from JazzEC require import Jkem_avx2.
 require import MLKEM_Poly_avx2.
-require import MLKEM_avx2_auxlemmas.
+require import AVX2_Ops MLKEMFCLib.
 
 module Mprevec = {
   proc polyvec_add2 (r:W16.t Array1024.t, b:W16.t Array1024.t) : W16.t Array1024.t = {
@@ -71,7 +71,7 @@ require import AVX2_Ops.
 from JazzEC require import Jkem_avx2.
 
 
-require import MLKEM_avx2_auxlemmas.
+require import AVX2_Ops MLKEMFCLib.
 
 module Mvec = {
   proc polyvec_add2 (r:W16.t Array1024.t, b:W16.t Array1024.t) : W16.t Array1024.t = {
@@ -235,7 +235,7 @@ require import Fq_avx2.
 require import NTT_avx2.
 require import MLKEMFCLib.
 import MLKEMFCLib1024.
-require import MLKEM_avx2_auxlemmas.
+require import AVX2_Ops MLKEMFCLib.
 
 from Spec require import GFq Rq VecMat Serialization Correctness.
 import Serialization VecMat.

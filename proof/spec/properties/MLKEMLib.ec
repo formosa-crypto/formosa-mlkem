@@ -108,7 +108,7 @@ lemma frac_inv_gt1 x: 1%r < x => frac (inv x) = inv x.
 proof. by move=> H; rewrite /frac; smt(floor_bound). qed.
 
 
-require import GFq.
+from Spec require import GFq.
 
 lemma round_mono (x y: real):
  x <= y => round x <= round y

@@ -2256,3 +2256,33 @@ do rewrite map_cons.
 smt().
 qed.
 
+
+
+(* lane-layout conversions (relocated from MLKEM_avx2_auxlemmas) *)
+
+op lift2poly (p: W256.t): W16.t Array16.t =
+  Array16.init (fun (n : int) => p \bits16 n).
+
+op f16u16_t8u32 (t: t16u16): t8u32 = Array8.init (fun i => pack2_t (W2u16.Pack.init (fun j => t.[2*i + j]))).
+op f8u32_t16u16 (t: t8u32): t16u16 = Array16.init (fun i => t.[i %/ 2] \bits16 (i %% 2)).
+
+op f32u8_t16u16 (t: t32u8): t16u16 = Array16.init (fun i => pack2_t (W2u8.Pack.init (fun j => t.[2*i + j]))).
+op f16u16_t32u8 (t: t16u16): t32u8 = Array32.init (fun i => t.[i %/ 2] \bits8 (i %% 2)).
+
+op f8u32_t4u64 (t: t8u32): t4u64 = Array4.init (fun i => pack2_t (W2u32.Pack.init (fun j => t.[2*i + j]))).
+op f4u64_t8u32 (t: t4u64): t8u32 = Array8.init (fun i => t.[i %/ 2] \bits32 (i %% 2)).
+
+op f32u8_t4u64 (t: t32u8): t4u64 = Array4.init (fun i => pack8_t (W8u8.Pack.init (fun j => t.[8*i + j]))).
+op f4u64_t32u8 (t: t4u64): t32u8 = Array32.init (fun i => t.[i %/ 8] \bits8 (i %% 8)).
+
+op f32u8_t8u32 (t: t32u8): t8u32 = Array8.init (fun i => pack4_t (W4u8.Pack.init (fun j => t.[4*i + j]))).
+op f8u32_t32u8 (t: t8u32): t32u8 = Array32.init (fun i => t.[i %/ 4] \bits8 (i %% 4)).
+
+op f16u16_t4u64 (t: t16u16): t4u64 = Array4.init (fun i => pack4_t (W4u16.Pack.init (fun j => t.[4*i + j]))).
+op f4u64_t16u16 (t: t4u64): t16u16 = Array16.init (fun i => t.[i %/ 4] \bits16 (i %% 4)).
+
+op f4u64_t2u128 (t: t4u64): t2u128 = Array2.init (fun i => pack2_t (W2u64.Pack.init (fun j => t.[2*i + j]))).
+op f2u128_t4u64 (t: t2u128): t4u64 = Array4.init (fun i => t.[i %/ 2] \bits64 (i %% 2)).
+
+op f16u16_t2u128 (t: t16u16): t2u128 = Array2.init (fun i => pack8_t (W8u16.Pack.init (fun j => t.[8*i + j]))).
+op f2u128_t16u16 (t: t2u128): t16u16 = Array16.init (fun i => t.[i %/ 8] \bits16 (i %% 8)).

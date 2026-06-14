@@ -9,7 +9,7 @@ from JazzEC require import Array25 Array256 Array384 Array128 Array168  Array32.
 (*---*) import RField RealOrder IntOrder IntID.
 
 require import MLKEMLib DistrExtra.
-require import GFq Rq Parameters Symmetric Sampling VecMat  Serialization KPKE MLKEM.
+from Spec require import GFq Rq Parameters Symmetric Sampling VecMat  Serialization KPKE MLKEM.
 import Zq MLKEMParams PolyVec PolyMat.
 
 (* Signed representation: could go in coeff *)
@@ -397,7 +397,7 @@ op decompress_alt(d : int, c : int) : coeff =
     incoeff (((c * q + 2^(d-1)) %/ 2^d)).
 
 lemma decompress_alt_decompress c d : 
-   0 < d => d<=10 =>
+   0 < d => d<=11 =>
     decompress_alt d c = Decompress d c.
 proof.
 move => *.

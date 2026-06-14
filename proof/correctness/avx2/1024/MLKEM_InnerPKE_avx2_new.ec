@@ -11,7 +11,7 @@ require import NTT_avx2.
 require import MLKEM_W16_Rep.
 require import Fq_avx2.
 require import NTT_Fq.
-require import MLKEM_avx2_auxlemmas.
+require import AVX2_Ops MLKEMFCLib.
 require import MLKEM_Poly_avx2.
 require import MLKEM_PolyVec_avx2.
 require import MLKEM_Poly_avx2.

@@ -4,9 +4,9 @@ from Jasmin require import JWord.
 
 from JazzEC require import Array32 Array256 Array384.
 
-require import GFq Rq Serialization.
+from Spec require import GFq Rq Serialization.
 require import EclibExtra JWordList.
-require import Parameters.
+from Spec require import Parameters.
 import MLKEMParams.
 require import BitEncoding.
 import BitChunking BS2Int.

@@ -8,7 +8,6 @@ from JazzEC require import Jkem_avx2.
 
 require import AVX2_Ops.
 
-require import MLKEM_avx2_auxlemmas.
 require import Fq_avx2.
 
 module Mprevec = {
@@ -475,7 +474,7 @@ from JazzEC require import Array400 Array384 Array256 Array128 Array64 Array32 A
 from JazzEC require import WArray512 WArray32 WArray16.
 
 require import W16extra.
-require import AVX2_Ops NTT_avx2 NTT_avx2_poly Fq_avx2 MLKEM_avx2_auxlemmas.
+require import AVX2_Ops NTT_avx2_poly Fq_avx2.
 require import Fq NTT_Fq MLKEMFCLib.
 
 
@@ -491,7 +490,6 @@ import SignedReductions_W16.
 import Zq.
 import ZModP.
 import Fq_avx2.
-import NTT_Avx2.
 import Serialization VecMat.
 
 lemma poly_add_corr_h _a _b ab bb :
@@ -1030,7 +1028,7 @@ from JazzEC require import Array400 Array256 Array128 Array64 Array32 Array16 Ar
 from JazzEC require import WArray800 WArray512 WArray128 WArray64 WArray32 WArray16.
 require import AVX2_Ops.
 from JazzEC require import Jkem_avx2.
-require import MLKEM_avx2_auxlemmas MLKEMFCLib.
+require import MLKEMFCLib.
 
 
 module Mvec = {
@@ -1805,7 +1803,7 @@ equiv prevec_eq_shuffle1_sym:
                                     is16u16 res{2}.`2 res{1}.`2.
 symmetry. conseq prevec_eq_shuffle1 => />. qed.
 
-require import NTT_avx2 NTT_avx2_poly NTT_AVX_j.
+require import NTT_avx2_poly NTT_AVX_j.
 
 lemma list_arr16 (x:'a Array16.t):
   [x.[0];x.[1];x.[2];x.[3];x.[4];x.[5];x.[6];x.[7];x.[8];x.[9];x.[10];x.[11];x.[12];x.[13];x.[14];x.[15]] = to_list x.
@@ -1815,8 +1813,8 @@ lemma avx2_shuffle8_corr_h (_a _b : t16u16) :
       hoare[ Jkem_avx2.M.__shuffle8 :
              is16u16 _a a /\ is16u16 _b b
              ==>
-             is16u16 (NTT_Avx2.shuf8 _a _b).`1 res.`1 /\
-             is16u16 (NTT_Avx2.shuf8 _a _b).`2 res.`2].
+             is16u16 (shuf8 _a _b).`1 res.`1 /\
+             is16u16 (shuf8 _a _b).`2 res.`2].
 conseq prevec_eq_shuffle8_sym (MLKEM_PolyAVX.shuffle8_corr_h _a _b) => />.
 auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
@@ -1825,8 +1823,8 @@ lemma avx2_shuffle4_corr_h (_a _b : t16u16) :
       hoare[ Jkem_avx2.M.__shuffle4 :
              is16u16 _a a /\ is16u16 _b b
              ==>
-             is16u16 (NTT_Avx2.shuf4 _a _b).`1 res.`1 /\
-             is16u16 (NTT_Avx2.shuf4 _a _b).`2 res.`2].
+             is16u16 (shuf4 _a _b).`1 res.`1 /\
+             is16u16 (shuf4 _a _b).`2 res.`2].
 conseq prevec_eq_shuffle4_sym (MLKEM_PolyAVX.shuffle4_corr_h _a _b) => />.
 auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
@@ -1835,8 +1833,8 @@ lemma avx2_shuffle2_corr_h (_a _b : t16u16) :
       hoare[ Jkem_avx2.M.__shuffle2 :
              is16u16 _a a /\ is16u16 _b b
              ==>
-             is16u16 (NTT_Avx2.shuf2 _a _b).`1 res.`1 /\
-             is16u16 (NTT_Avx2.shuf2 _a _b).`2 res.`2].
+             is16u16 (shuf2 _a _b).`1 res.`1 /\
+             is16u16 (shuf2 _a _b).`2 res.`2].
 conseq prevec_eq_shuffle2_sym (MLKEM_PolyAVX.shuffle2_corr_h _a _b) => />.
 auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.
@@ -1845,8 +1843,8 @@ lemma avx2_shuffle1_corr_h (_a _b : t16u16) :
       hoare[ Jkem_avx2.M.__shuffle1 :
              is16u16 _a a /\ is16u16 _b b
              ==>
-             is16u16 (NTT_Avx2.shuf1 _a _b).`1 res.`1 /\
-             is16u16 (NTT_Avx2.shuf1 _a _b).`2 res.`2].
+             is16u16 (shuf1 _a _b).`1 res.`1 /\
+             is16u16 (shuf1 _a _b).`2 res.`2].
 conseq prevec_eq_shuffle1_sym (MLKEM_PolyAVX.shuffle1_corr_h _a _b) => />.
 auto => /> &1 -> ->. exists ((_a,_b)) => />.
 auto => /> &1 &2 -> -> -> ->. rewrite /is16u16 !list_arr16 //. qed.

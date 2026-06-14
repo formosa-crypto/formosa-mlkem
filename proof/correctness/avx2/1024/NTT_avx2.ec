@@ -21,49 +21,7 @@ require import NTT_avx2_poly.
 theory NTT_Avx2.
 
 
-abbrev shuffle8_idx = Array32.of_list witness
-  [0; 1; 2; 3; 4; 5; 6; 7; 16; 17; 18; 19; 20; 21; 22; 23;
-   8; 9; 10; 11; 12; 13; 14; 15; 24; 25; 26; 27; 28; 29; 30; 31].
-
-abbrev shuffle4_idx = Array32.of_list witness
-  [0; 1; 2; 3; 16; 17; 18; 19; 8; 9; 10; 11; 24; 25; 26; 27;
-   4; 5; 6; 7; 20; 21; 22; 23; 12; 13; 14; 15; 28; 29; 30; 31].
-
-abbrev shuffle2_idx = Array32.of_list witness
-  [0; 1; 16; 17; 4; 5; 20; 21; 8; 9; 24; 25; 12; 13; 28; 29;
-   2; 3; 18; 19; 6; 7; 22; 23; 10; 11; 26; 27; 14; 15; 30; 31].
-
-abbrev shuffle1_idx = Array32.of_list witness
-  [0; 16; 2; 18; 4; 20; 6; 22; 8; 24; 10; 26; 12; 28; 14; 30;
-   1; 17; 3; 19; 5; 21; 7; 23; 9; 25; 11; 27; 13; 29; 15; 31].
-
-op shuf8 (a b: 'a Array16.t) : ('a Array16.t * 'a Array16.t) =
-  let c = Array32.init (fun i => if 16 <= i then b.[i %% 16] else a.[i]) in
-  let cr = Array32.init (fun i => c.[shuffle8_idx.[i]]) in
-  let ar = Array16.init (fun i => cr.[i]) in
-  let br = Array16.init (fun i => cr.[i + 16]) in
-  (ar, br).
-
-op shuf4 (a b: 'a Array16.t) : ('a Array16.t * 'a Array16.t) =
-  let c = Array32.init (fun i => if 16 <= i then b.[i %% 16] else a.[i]) in
-  let cr = Array32.init (fun i => c.[shuffle4_idx.[i]]) in
-  let ar = Array16.init (fun i => cr.[i]) in
-  let br = Array16.init (fun i => cr.[i + 16]) in
-  (ar, br).
-
-op shuf2 (a b: 'a Array16.t) : ('a Array16.t * 'a Array16.t) =
-  let c = Array32.init (fun i => if 16 <= i then b.[i %% 16] else a.[i]) in
-  let cr = Array32.init (fun i => c.[shuffle2_idx.[i]]) in
-  let ar = Array16.init (fun i => cr.[i]) in
-  let br = Array16.init (fun i => cr.[i + 16]) in
-  (ar, br).
-
-op shuf1 (a b: 'a Array16.t) : ('a Array16.t * 'a Array16.t) =
-  let c = Array32.init (fun i => if 16 <= i then b.[i %% 16] else a.[i]) in
-  let cr = Array32.init (fun i => c.[shuffle1_idx.[i]]) in
-  let ar = Array16.init (fun i => cr.[i]) in
-  let br = Array16.init (fun i => cr.[i + 16]) in
-  (ar, br).
+(* shuffle{1,2,4,8}_idx + shuf{1,2,4,8} relocated to common NTT_avx2_poly *)
 
 op nttunpackv(v : 'a Array1024.t) = 
    Array1024.init (fun i =>
