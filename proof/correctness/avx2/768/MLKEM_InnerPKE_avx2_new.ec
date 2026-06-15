@@ -7,6 +7,7 @@ require import AVX2_Ops W16extra.
 from JazzEC require import Jkem_avx2.
 require import MLKEM_PolyVec_avx2.
 require import MLKEM_Poly_avx2.
+require import MLKEM_Poly_avx2_circuit MLKEM_Poly_avx2_circuit_768 MLKEM_PolyVec_avx2_circuit.
 require import NTT_avx2 NTT_avx2_poly.
 require import MLKEM_W16_Rep.
 require import MLKEM768_prelude.
@@ -373,38 +374,49 @@ rewrite /lift_array768 !mapiE /=; 1..3:smt(nttpack_bnd Array256.allP mem_iota).
 smt().
 qed.
 
-lemma lift_array768_unlift_ofipolyvec (vi : int Array768.t) :
+lemma lift_array768_unlift_ofipolyvec (vi : ipolyvec) :
   all (fun i => 0 <= i < 32768) vi =>
-  lift_array768 (unlift_polyvec (ofipolyvec vi)) = map incoeff vi.
+  lift_array768 (unlift_polyvec (ofipolyvec vi)) = Array768.init (fun k => incoeff vi.[k]).
 proof.
 rewrite allP => Hbnd.
+have kv := kvec_val.
 rewrite /lift_array768 /unlift_polyvec /ofipolyvec tP => k kb.
-rewrite !mapiE //= initiE 1://;beta.
-rewrite !setvE;beta;rewrite !offunvK /vclamp; beta. 
-rewrite offunvE 1:/# /kvec;beta. 
-have Hkr : k = 256 * (k %/ 256) + k %% 256 by smt().
-have Hkdiv : k %/ 256 = 0 \/ k %/ 256 = 1 \/ k %/ 256 = 2 by smt().
-case Hkdiv => [H0 | [H0 | H0]]; rewrite H0.
-+ rewrite ifF 1:/# ifT 1:/# ifF 1:/# ifT 1:/# ifT 1:/#.
-  rewrite mapiE 1:/# /subarray256 initiE 1:/#;beta.
-  rewrite of_sintK Montgomery16.smod_small.
-  + have := as_sint_range (incoeff vi.[256 * 0 + k %% 256]); smt(qE).
-    by rewrite as_sintK; have -> : 256 * 0 + k %% 256 = k by smt(). 
-+ rewrite ifF 1:/# ifT 1:/# ifT 1:/#.
-  rewrite mapiE 1:/# /subarray256 initiE 1:/#;beta.
-  rewrite of_sintK Montgomery16.smod_small.
-  + have := as_sint_range (incoeff vi.[256 * 1 + k %% 256]); smt(qE).
-  by rewrite as_sintK; have -> : 256 * 1 + k %% 256 = k by move: Hkr; smt().
-+ rewrite ifT 1:/#.
-  rewrite mapiE 1:/# /subarray256 initiE 1:/#;beta.
-  rewrite of_sintK Montgomery16.smod_small.
-  + have := as_sint_range (incoeff vi.[256 * 2 + k %% 256]); smt(qE).
-  by rewrite as_sintK; have -> : 256 * 2 + k %% 256 = k by move: Hkr; smt().
+rewrite Array768.mapiE 1:/# /= Array768.initiE 1:/# /= KVec.initiE 1:/# /= mapiE 1:/# /= /subarray256 initiE 1:/# /=.
+rewrite Array768.initiE 1:/# /=.
+have ->: 256 * (k %/ 256) + k %% 256 = k by smt().
+rewrite of_sintK Montgomery16.smod_small.
++ have := as_sint_range (incoeff vi.[k]); smt(qE).
+by rewrite as_sintK.
 qed.
 
 lemma ntt_dotp_invnttv (s u : PolyVec.polyvec) :
   ntt (dotpw (PolyVec.invnttv s) u) = ntt_dotp s (PolyVec.nttv u).
 proof. by rewrite dotpwE comm_ntt_dotp nttK. qed.
+
+(* Trivial clone bridge: the avx2 frombytes proc decodes a flat Array1152
+   of bytes, while the spec's decode12_vec consumes a BytesPKVec.  EC does
+   not unify these dependent-size PolyArray clones, so this one-shot lemma
+   bridges the two byte views (same bytes, same length). *)
+lemma frombytes12_decode_bridge (f : int -> W8.t) :
+  Array768.of_list (incoeff 0)
+    (map incoeff (ByteDecode 12 (to_list (Array1152.init f))))
+  = Array768.init (fun kk => incoeff (decode12_vec (BytesPKVec.init f)).[kk]).
+proof.
+have Hd : size (ByteDecode 12 (to_list (Array1152.init f))) = 768.
++ rewrite (size_decode 3 12 (to_list (Array1152.init f))) //; smt(Array1152.size_to_list).
+have Hbytes : to_list (Array1152.init f) = to_list (BytesPKVec.init f).
++ apply (eq_from_nth witness); 1: (rewrite Array1152.size_to_list BytesPKVec.size_to_list; smt(kvec_val)).
+  move => i; rewrite Array1152.size_to_list => Hi.
+  rewrite Array1152.get_to_list BytesPKVec.get_to_list.
+  rewrite Array1152.initiE //= BytesPKVec.initiE //=.
+  smt(kvec_val).
+apply Array768.tP => k Hk.
+rewrite get_of_list 1:/# (nth_map 0).
++ by rewrite Hd.
+rewrite Array768.initiE //= /decode12_vec get_of_list.
++ smt(kvec_val).
+by rewrite Hbytes.
+qed.
 
 (* Row extraction from unlift_matrix: the j-th poly of the i-th row of an
    unlifted matrix (viewed as a polyvec) is exactly the (i,j) coefficient
@@ -413,20 +425,19 @@ proof. by rewrite dotpwE comm_ntt_dotp nttK. qed.
    stated at the polyvec slot level so the kg proof can use it directly. *)
 lemma lift_polyvec_subarray768_unlift_matrix (a : polymat) (i j : int) :
   0 <= i < 3 => 0 <= j < 3 =>
-  (lift_polyvec (subarray768 (unlift_matrix a) i)).[j]%Vector = a.[i, j]%Matrix.
+  (lift_polyvec (subarray768 (unlift_matrix a) i)).[j] = a.[(i, j)].
 proof.
 move => Hi Hj.
-rewrite /lift_polyvec offunvE 1:/# /= /lift_array256 tP => k Hk.
+have kv := kvec_val.
+rewrite /lift_polyvec KVec.initiE 1:/# /= /lift_array256 tP => k Hk.
 rewrite /subarray256 /subarray768 mapiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
 rewrite /unlift_matrix initiE 1:/# /=.
 have ->: (768 * i + (256 * j + k)) %/ 768 = i by smt().
 have ->: (768 * i + (256 * j + k)) %% 768 = 256 * j + k by smt().
 have ->: (256 * j + k) %/ 256 = j by smt().
 have ->: (768 * i + (256 * j + k)) %% 256 = k by smt().
-rewrite /to_sint  /= modz_small; 1: by smt(rg_asint qE).
-rewrite /smod /=.
-have ->: (32768 <= asint a.[i, j]%Matrix.[k]) = false by smt(rg_asint qE).
-by rewrite /= asintK.
+rewrite W16.to_sintE W16.of_uintK /smod /=.
+by smt(asintK rg_asint qE).
 qed.
 
 
@@ -509,11 +520,12 @@ lemma kg_loop_post_to_target (pkpv : W16.t Array768.t) (mm : PolyVec.polyvec) :
   lift_polyvec (nttpackv pkpv) = mm.
 proof.
 move => Hslots.
-rewrite eq_vectorP => j jb.
-have := Hslots j; rewrite jb /= getvE => Hslotsj.
-rewrite -(nttunpackK (mm.[j])%Vector).
+apply KVec.tP => j jb.
+have Hslotsj := Hslots j _; first smt(kvec_val).
+rewrite -(nttunpackK mm.[j]).
 rewrite -Hslotsj.
-rewrite /lift_polyvec offunvE 1:/# /=.
+rewrite /lift_polyvec KVec.initiE 1:/# /=.
+have kv := kvec_val.
 have lift_subarrayE : forall (X : W16.t Array768.t) (jj : int),
   0 <= jj < 3 =>
   lift_array256 (subarray256 X jj) = subarray256 (lift_array768 X) jj.
@@ -596,15 +608,12 @@ lemma ntt_dotp_row_eq_ntt_mmul (a : polymat) (sv : W16.t Array768.t) (i : int) :
   = (ntt_mmul a (lift_polyvec (nttpackv sv))).[i]%PolyVec.
 proof.
 move => Hi.
+have kv := kvec_val.
 rewrite ntt_dotp_invnttv nttvK.
 rewrite (nttpackv_subarray768_nttunpackm (unlift_matrix a) i _) //=.
-rewrite /ntt_dotp !getvE !(lift_polyvec_subarray768_unlift_matrix a i _ _) //=.
-case (i = 0) => Hi0.
-+ by rewrite Hi0 /= !offunvE //= /ntt_mmul !setvE !offunvE //= offunvK /vclamp ifT 1:/# /= offunvK /vclamp ifT 1:/# /= !getvE /= !getmE /lift_polyvec !offunvE //=.
-case (i = 1) => Hi1.
-+ by rewrite Hi1 /= !offunvE //= /ntt_mmul !setvE !offunvE //= offunvK /vclamp ifT 1:/# /= !getvE /= !getmE /lift_polyvec !offunvE //=.
-have -> : (i = 2) by smt().
-by rewrite !offunvE //= /ntt_mmul !setvE !offunvE //= !getvE /= !getmE /lift_polyvec !offunvE //=.
+rewrite ntt_dotpE /ntt_mmul KVec.initiE 1:/# /= nttsum_big /range /=.
+apply Big.BAdd.eq_big_seq => j /mem_iota jb /=.
+by rewrite (lift_polyvec_subarray768_unlift_matrix a i j _ _); smt(kvec_val).
 qed.
 
 lemma poly_add2_avx_ll : islossless Jkem_avx2.M._poly_add2.
@@ -625,12 +634,12 @@ lemma mlkem_correct_enc_avx2_op _pkp :
   equiv [Jkem_avx2.M.__indcpa_enc ~ InnerPKE_Op.enc_derand :
     msgp{1} = m{2} /\ pk{1} = _pkp /\
     noiseseed{1} = r{2} /\
-    pk{2}.`1 = Array1152.init (fun i => pk{1}.[i]) /\
+    pk{2}.`1 = BytesPKVec.init (fun i => pk{1}.[i]) /\
     pk{2}.`2 = Array32.init (fun i => pk{1}.[i+1152])
     ==>
     let (c1,c2) = res{2} in
-    c1 = Array960.init (fun i => res{1}.[i]) /\
-    c2 = Array128.init (fun i => res{1}.[i+960])].
+    c1 = BytesCtVec.init (fun i => res{1}.[i]) /\
+    c2 = BytesPoly.init (fun i => res{1}.[i+960])].
 proof.
 proc => /=.
 
@@ -646,7 +655,7 @@ proc => /=.
      === *)
 seq 14 9 : (#pre /\
             publicseed{1} = rho{2} /\
-            lift_array768 pkpv{1} = nttunpackv (map incoeff (decode12_vec pk{2}.`1)) /\
+            lift_array768 pkpv{1} = nttunpackv (Array768.init (fun kk => incoeff (decode12_vec pk{2}.`1).[kk])) /\
             pos_bound768_cxq pkpv{1} 0 768 2 /\
             that{2} = ofipolyvec (decode12_vec pk{2}.`1) /\
             lift_array256 k{1} = decompress_poly 1 (decode1 m{2}) /\
@@ -671,9 +680,10 @@ seq 14 9 : (#pre /\
        split; 1: smt().
        move => publicseed_L w_L; split; 1: smt().
        move => Hncond Hwl Hwh Hcov result0 Hlift0 Hbnd0.
-       split; last by rewrite Hpk1.
-       apply Array32.tP => k Hk.
-       rewrite Hpk2 initiE 1:/# /=; smt().
+       split.
+       + apply Array32.tP => k Hk.
+         rewrite Hpk2 initiE 1:/# /=; smt().
+       rewrite Hlift Hpk1; congr; apply frombytes12_decode_bridge.
 
 (* === Step 2: matrix gen, transposed.
      LHS: transposed <- 1; aat <@ _gen_matrix_avx2  = 2 stmts.
@@ -688,12 +698,10 @@ seq 2 1 : (#pre /\
        ecall {1} (_gen_matrix_avx2_sem publicseed{1} true).
        auto => /> &1 &2 ??????; do split.
        + congr;congr.
-         rewrite /H; apply eq_matrixP => i j [Hi Hj].
-          rewrite /nttm /invnttm !mapmE  !offunmE 1,2:/# /= /trmx offunmK /mclamp ifT 1:/#.
-          rewrite offunmE 1:/# /= nttK /=; by smt(offunmE).
-       + rewrite /H; apply eq_matrixP => i j [Hi Hj].
-          rewrite /nttm /invnttm !mapmE  !offunmE 1,2:/# /= /trmx offunmK /mclamp ifT 1:/#.
-          rewrite offunmE 1:/# /= nttK /=; by smt(offunmE).
+         apply eq_polymatP => i j Hi Hj.
+         rewrite trmxE 1,2:/# nttmE 1,2:/# trmxE 1,2:/# /H invnttmE 1,2:/# nttK //.
+       + apply eq_polymatP => i j Hi Hj.
+         rewrite nttmE 1,2:/# trmxE 1,2:/# /H invnttmE 1,2:/# nttK trmxE 1,2:/# //.
        + rewrite /pos_bound2304_cxq /nttunpackm => k kb.
          rewrite initiE 1:/# /=.
          case (0 <= k < 768) => kbb.
@@ -722,9 +730,9 @@ seq 2 1 : (#pre /\
 seq 6 0 : (#pre /\
            (forall i, 0 <= i < 3 =>
               lift_array256 (Array256.init (fun k => sp_0{1}.[256*i + k])) =
-                cbd2sample (Symmetric.PRF noiseseed{1} (W8.of_int i))) /\
+                samplePolyCBD (Symmetric.PRF noiseseed{1} (W8.of_int i))) /\
            lift_array256 (Array256.init (fun k => ep{1}.[k])) =
-             cbd2sample (Symmetric.PRF noiseseed{1} (W8.of_int 3)) /\
+             samplePolyCBD (Symmetric.PRF noiseseed{1} (W8.of_int 3)) /\
            signed_bound768_cxq sp_0{1} 0 768 1 /\
            signed_bound768_cxq ep{1} 0 256 1).
 +  (* WIP Step 3.
@@ -762,9 +770,9 @@ seq 6 0 : (#pre /\
      Analogous to kg Step 3b (line 785). *)
 seq 6 0 : (#{/~forall i, 0 <= i < 3 =>
                 lift_array256 (Array256.init (fun k => sp_0{1}.[256*i + k])) =
-                  cbd2sample (Symmetric.PRF noiseseed{1} (W8.of_int i))}
+                  samplePolyCBD (Symmetric.PRF noiseseed{1} (W8.of_int i))}
             {/~lift_array256 (Array256.init (fun k => ep{1}.[k])) =
-                cbd2sample (Symmetric.PRF noiseseed{1} (W8.of_int 3))}
+                samplePolyCBD (Symmetric.PRF noiseseed{1} (W8.of_int 3))}
             {/~signed_bound768_cxq sp_0{1} 0 768 1}
             {/~signed_bound768_cxq ep{1} 0 256 1}pre /\
            lift_polyvec sp_0{1} = rv{2} /\
@@ -785,19 +793,22 @@ seq 6 0 : (#{/~forall i, 0 <= i < 3 =>
   ecall {1} (jkem_getnoise_4x_ph noiseseed{1} (W8.of_int 4)).
   auto => /> &1 &2 ???????Hsp He?? result Hr1 Hr2 Hr3 Hr4 Hb1 Hb2 Hb3 Hb4.
   do split.
-  + rewrite eq_vectorP => kk kkb.
-    by rewrite offunvE 1:/# /= Hsp 1:/# offunvE 1:/# /=.
-  + rewrite eq_vectorP => i0 i0b.
-    rewrite /PRF offunvE 1:/# /= offunvE 1:/# /=.
+  + apply KVec.tP => kk kkb.
+    rewrite /lift_polyvec KVec.initiE 1:/# /= KVec.initiE 1:/# /= /subarray256.
+    by rewrite Hsp; smt(kvec_val).
+  + apply KVec.tP => i0 i0b.
+    rewrite /PRF /lift_polyvec KVec.initiE 1:/# /= KVec.initiE 1:/# /=.
     case (i0 = 0) => Ci0.
-    + rewrite Ci0 /kvec /= -He /lift_array256 tP => k Hk.
+    + rewrite Ci0 kvec_val /= -He /lift_array256 tP => k Hk.
       rewrite !mapiE 1,2:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= ifF 1:/# ifF /#.
     case (i0 = 1) => Ci1.
-    + rewrite Ci1 /kvec /= -Hr1 /lift_array256 tP => k Hk.
+    + rewrite Ci1 kvec_val /= -Hr1 /lift_array256 tP => k Hk.
       rewrite !mapiE 1,2:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= ifF 1:/# ifT /#.
-    have ->: i0 = 2 by smt().
-    rewrite /kvec /= -Hr2 /lift_array256 tP => k Hk.
+    have ->: i0 = 2 by smt(kvec_val).
+    rewrite kvec_val /= -Hr2 /lift_array256 tP => k Hk.
     rewrite !mapiE 1,2:/# initiE 1:/# /= initiE 1:/# /= ifT /#.
+  + (* lift_array256 epp = e2 = samplePolyCBD (PRF r (of_int (2*kvec))) *)
+    rewrite kvec_val /=; exact Hr3.
   + (* signed_bound768_cxq skpv 0 768 1 from Hb1, Hb2, Hb3 *)
     move => k Hk1.
     rewrite initiE 1:/# /=.
@@ -873,15 +884,17 @@ seq 2 0 : (#pre /\
          + move => ???????? rr Hrb Hrv;do split;1,2,5..:smt().
            + move => j jbl jbh.
              rewrite tP => k kb.
-             rewrite mapiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
              case (j < w{hr}) => Hj.
-             + by rewrite ifF 1:/# -Hbpv 1:/#  mapiE 1:/# /= initiE 1:/# /=.
+             +  rewrite -Hbpv; 1: smt().
+                rewrite mapiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+                by rewrite ifF 1:/#  mapiE 1:/# /= initiE 1:/# /=. 
+             rewrite mapiE 1:/# /= Array256.initiE 1:/# /= Array768.initiE 1:/# /=.
              rewrite ifT 1:/#.
              have := Hrv; rewrite tP => Hrvk.
              have := Hrvk (256 * j + k - w{hr} * 256) _;1:smt().
              rewrite mapiE 1:/# /= => ->;do congr.
              have -> : j = w{hr} by smt().
-             by rewrite (ntt_dotp_row_eq_ntt_mmul (trmx (sampleA rho{m})) sp_0{hr} w{hr}) 1:/#;smt(getvE).
+             by rewrite (ntt_dotp_row_eq_ntt_mmul (trmx (sampleA rho{m})) sp_0{hr} w{hr}) 1:/#;smt().
           + smt().
           + rewrite /signed_bound768_cxq => j jb; rewrite initiE 1:/# /=.
              case (j < w{hr}*256) => Hj.
@@ -910,12 +923,12 @@ seq 1 0 : (#pre /\
             (unlift_polyvec that{2}) (nttpackv sp_0{1})).
   auto => |> &1 &2 ?? Hpkpv Hthat Hpkb Hrv Hspb Hpqeq ???H0??.
   (* Hpre carries (among others):
-       Hpkpv : lift_array768 pkpv{1} = nttunpackv (map incoeff (decode12_vec pk{2}.`1))
+       Hpkpv : lift_array768 pkpv{1} = nttunpackv (Array768.init (fun kk => incoeff (decode12_vec pk{2}.`1).[kk]))
        Hthat : that{2} = ofipolyvec (decode12_vec pk{2}.`1)
        Hpkb  : pos_bound768_cxq pkpv{1} 0 768 2
        Hrv   : PolyVec.nttv rv{2} = lift_polyvec (nttpackv sp_0{1})
        Hspb  : pos_bound768_cxq sp_0{1} 0 768 2
-       Hpkeq : pk{2}.`1 = Array1152.init (fun i => pk{1}.[i])
+       Hpkeq : pk{2}.`1 = BytesPKVec.init (fun i => pk{1}.[i])
      Extract them explicitly when filling the destructure pattern. *)
   split.
   + do split.
@@ -928,8 +941,8 @@ seq 1 0 : (#pre /\
       have := H0; rewrite  /pos_bound768_cxq /#.
     + (* lift_array768 pkpv = nttunpackv (...) = nttunpackv (lift_array768 (unlift_polyvec that)) *)
       rewrite Hpkpv; congr; rewrite lift_array768_unlift_ofipolyvec.
-      + rewrite allP => k kb /=.
-        have := decode12_vec_bnd pk{2}.`1 k _; smt().
+      + rewrite IPVec.allP => k kb /=.
+        have := decode12_vec_bnd pk{2}.`1 k _; smt(kvec_val).
       by smt().
     + by rewrite lift_array768_nttunpackv_nttpackv.
     + move: Hthat; rewrite /pos_bound768_cxq /signed_bound768_cxq /bpos16 /b16 /#.
@@ -963,23 +976,28 @@ seq 1 0 : (#{/~forall j, 0 <= j < 3 =>
        = scale (invntt (lift_polyvec (nttpackv bp{1})).[j]%Vector) (incoeff 65536) *)
   have HrsJ : lift_array256 (subarray256 result j) =
             scale (invntt (lift_polyvec (nttpackv bp{1})).[j]%Vector) (incoeff 65536).
-  + have <- : (lift_polyvec result).[j]%Vector = lift_array256 (subarray256 result j)
-       by rewrite /lift_polyvec offunvE 1:/# //.
-    rewrite -Hres /scale mapvE /= offunvE 1:/# //=;congr;1:smt().
-    rewrite /invnttv mapvE !offunvE 1:/# //= offunvK /vclamp ifT 1:/#.
-    by rewrite /lift_polyvec offunvK /vclamp ifT 1:/#.
+  + have <- : (lift_polyvec result).[j]%Vector = lift_array256 (subarray256 result j).
+       by rewrite /lift_polyvec initiE /=;1:smt(kvec_val). 
+    rewrite -Hres /scale  /=  initiE /=;1:smt(kvec_val).
+    rewrite mapiE /=;1:smt(kvec_val).
+    rewrite mapiE /=;1:smt(kvec_val). 
+    rewrite tP => k kb.
+    rewrite mapiE /= 1:/# mapiE /= 1:/#.
+    rewrite Zq.ComRing.mulrC;congr;congr;congr.
+    by rewrite /lift_polyvec KVec.initiE; smt(kvec_val).
+    
 
 (* (2) Use kg_loop_post_to_target on bp{1} to lift the per-row invariant up to a
        polyvec equality, then take .[j] to get
        (lift_polyvec (nttpackv bp{1})).[j] = scale (mmul.[j]) (incoeff 169). *)
-pose mm := offunv (fun jj =>
+pose mm := KVec.init (fun jj =>
   scale (ntt_mmul (trmx (sampleA rho{2})) (lift_polyvec (nttpackv sp_0{1}))).[jj]%Vector (incoeff 169)).
 have Hbp_polyvec : lift_polyvec (nttpackv bp{1}) = mm.
 + apply kg_loop_post_to_target => jj jjb.
-  by rewrite /mm getvE offunvE 1:/# //= Hslots 1:/#.
+  by rewrite /mm initiE;smt(kvec_val).
   
 (* (3) Chain. Substitute Hbp_polyvec into HrsJ, then algebra. *)
-rewrite HrsJ Hbp_polyvec /mm offunvE 1:/# //=.
+rewrite HrsJ Hbp_polyvec /mm initiE /=; 1:smt(kvec_val).
 rewrite invntt_scale.
 rewrite /scale /mul1x256 tP => k Hk.
 rewrite !mapiE //=.
@@ -1023,16 +1041,15 @@ seq 1 0 : (#{/~forall j, 0 <= j < 3 =>
 + have H := polyvec_add_corr_avx 1 1 _ _ => //.
   ecall{1} (H (lift_array768 bp{1}) (lift_array768 ep{1})).
   auto => |> &1 &2 ?? Hpkv Hpkb Hkv Hkb ; rewrite /prg_enc_inner => [#] Hrv Hep Hepp Hmb Hepb Heppb Hrvv Hspb  Hmk Hbpb Hvv Hvb result Hresbnd Hresk.
-  apply eq_vectorP => j Hj.
-  rewrite /lift_polyvec offunvE 1:/# /=.
-  rewrite /subarray256 /lift_array256 tP => k kb.
-  rewrite mapiE 1:/# /= initiE 1:/# /= Hresk 1:/# polyvecD /Vector.(+) offunvE 1:/# /=.
-  rewrite offunvE 1:/# /= mapiE 1:/# /= mapiE 1:/# /=.
-  rewrite /(&+) map2iE 1:/# /= mapiE 1:/# /= initiE 1:/# /=;congr.
-  have := Hmk j _; first by smt().
-  rewrite /lift_array256 tP => /(_ k _); first by smt().
-  rewrite mapiE 1:/# /= initiE 1:/# /= => ->.
-  by rewrite /invnttv mapvE offunvE;1: smt().
+  apply KVec.tP => j Hj.
+  have Hj3 : 0 <= j < 3 by smt(kvec_val).
+  rewrite polyvec_addE 1:/# invnttvE 1:/# -(Hmk j Hj3).
+  rewrite /lift_polyvec !KVec.initiE 1,2:/# /=.
+  rewrite /lift_array256 /subarray256 tP => k kb.
+  rewrite /(&+) map2iE 1:/# /= mapiE 1:/# /= mapiE 1:/# /= mapiE 1:/# /= initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=.
+  have Hjk : 0 <= 256 * j + k < 768 by smt(kvec_val).
+  rewrite Hresk 1:/#.
+  by rewrite /lift_array768 mapiE 1:/# mapiE 1:/#.
 
 
 (* === Step 11: v += epp.  Spec-side v = ... &+ e2.
@@ -1049,9 +1066,7 @@ seq 1 0 : (#{/~lift_array256 v{1} =
   rewrite /(&+) tP => k kb.
   rewrite map2iE 1:/# mapiE //=.
   rewrite /lift_array256 mapiE //= Hresk //.
-  have := Hepp;rewrite tP => Heppk.
-  have  := Heppk k kb; rewrite mapiE 1:/# /= => ->;congr.
-  by rewrite Hmk. 
+  by rewrite Hmk /lift_array256 mapiE 1:/#.
 
 (* === Step 12: v += k.  Spec-side v = ... &+ e2 &+ decompress_poly 1 mp.
      LHS: 1 stmt.  RHS: 0 stmts. *)
@@ -1069,14 +1084,11 @@ seq 1 0 : (#{/~lift_array256 v{1} =
   split;1:by  move : Hkb;rewrite /pos_bound256_cxq /signed_bound_cxq; smt(qE).
   move => ? result Hresbnd Hresk.
   rewrite /(&+) tP => k0 kb.
-  rewrite map2iE 1:/# mapiE //=.
-  rewrite /lift_array256 mapiE //=.
-  have  : lift_array256 k{1} = decompress_poly 1 (decode1 m{2}) by smt().
-  rewrite tP => Hk_eq.
-  have := Hk_eq k0 kb;rewrite /decompress_poly (Array256.mapiE (decompress 1)) 1:/# => <-.
-  rewrite map2E initiE 1:/# /= mapiE 1:/# /= Hresk 1:/#;congr.
-  rewrite Hvv /(&+) map2E initiE 1:/# /=;congr.
-  by rewrite  /lift_array256 !mapiE //=.
+  rewrite !map2iE 1,2:/# /=.
+  have ->: (lift_array256 result).[k0]
+         = (lift_array256 v{1}).[k0] + (lift_array256 k{1}).[k0].
+  + by rewrite {1}/lift_array256 mapiE 1:/# /= Hresk 1:/#.
+  by rewrite Hvv Hkv /(&+) !map2iE 1,2:/# /=.
 
 (* === Step 13: bp reduce.  Establishes pos_bound768_cxq bp 0 768 2.
      LHS: 1 stmt.  RHS: 0 stmts. *)
@@ -1084,12 +1096,24 @@ seq 1 0 : (#{/~signed_bound768_cxq bp{1} 0 768 2}pre /\
            pos_bound768_cxq bp{1} 0 768 2).
 + ecall{1} (polyvec_reduce_corr_avx (lift_array768 bp{1})).
   auto => |>  &1 &2 ?? Hpkv Hpkb Hkv Hkb ; rewrite /prg_enc_inner => [#] Hrv Hep Hepp Hmb Hepb Heppb Hrvv Hspb Hbpv Hbpb Hvv Hvb result Hresbnd Hresk.
-  rewrite /lift_polyvec eq_vectorP => i ib.
-  rewrite offunvE //= tP => k kb.
-  have := Hbpv; rewrite eq_vectorP => Hbpk.
-  have := Hbpk i ib; rewrite  offunvE 1:/# /= tP => <-;1:smt().
-  by rewrite !subliftsub 1..4:/# -Hresbnd mapiE 1:/# /=.
-
+  rewrite /lift_polyvec tP => i ib.
+  rewrite initiE 1:/# /= initiE /=;  1:smt(kvec_val).
+  rewrite tP => k kb.
+  rewrite !subliftsub; 1..2:smt(kvec_val).
+  rewrite -Hresbnd mapiE 1:/# /= mapiE /=;1:smt(kvec_val).
+  move : Hbpv; rewrite tP => Hpbv.
+  have := Hpbv i _; 1:smt(kvec_val).
+  rewrite initiE 1:/# /= initiE 1:/# /= tP => Hpbvk.
+  have := Hpbvk k _;1:smt().
+  rewrite mapiE 1:/# mapiE 1:/# /= /subarray256  Array256.initiE 1:/# /= => ->.
+  congr;congr.
+  + do congr.
+    + rewrite /lift_polyvec tP => kk kkb.
+      rewrite initiE 1:/# /= initiE 1:/# /= tP => jj jjb.
+      by rewrite !mapiE 1,2:/# /= initiE 1:/# /= initiE 1:/# /=.
+    + rewrite /lift_polyvec initiE 1:/# /= initiE 1:/# /= tP => kk jjb.
+      by rewrite !mapiE 1,2:/# /= initiE 1:/# /= initiE 1:/# /=.
+    
 (* === Step 14: v reduce.
      LHS: 1 stmt.  RHS: 0 stmts. *)
 seq 1 0 : (#{/~signed_bound_cxq v{1} 0 256 3}pre /\
@@ -1097,7 +1121,7 @@ seq 1 0 : (#{/~signed_bound_cxq v{1} 0 256 3}pre /\
 + ecall{1} (poly_reduce_corr_avx (lift_array256 v{1})).
   auto =>  |> &1 &2 ?? Hpkv Hpkb Hkv Hkb ; rewrite /prg_enc_inner => [#] Hrv Hep Hepp Hmb Hepb Heppb Hrvv Hspb Hbpv Hbpb Hvv Hvb result Hresbnd Hresk.
     rewrite  tP => k kb.
-  have := Hbpv; rewrite eq_vectorP => Hbpk.
+  have := Hbpv; rewrite tP => Hbpk.
   rewrite -Hresbnd mapiE 1:/# /=.
   by rewrite -Hbpb; rewrite  mapiE 1:/# /=.
 
@@ -1106,34 +1130,50 @@ seq 1 0 : (#{/~signed_bound_cxq v{1} 0 256 3}pre /\
      LHS: 4 stmts (2 compress + 2 ct init).  RHS: 6 stmts. *)
 wp; ecall {1} (i_poly_compress_corr v{1}).
 wp; ecall {1} (polyvec_compress_avx2_corr bp{1}).
-auto =>  |> &1 &2 ?? Hpkv Hpkb Hkv Hkb; rewrite /prg_enc_inner => [#] Hrv Hep Hepp Hmb Hepb Heppb Hrvv Hspb Hbpv Hvv Hvb Hbpb result Hresv; split.
-+ rewrite tP => k kn.
-  rewrite initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/# initiE 1:/# /=;do congr.
-  by rewrite Hbpv;do congr.
-rewrite tP => k kn.
-by rewrite initiE 1:/# /=  initiE 1:/# /=  initiE 1:/# /= ifT 1:/# Hresv Hvv initiE 1:/# /=.
+auto =>  |> &1 &2 ?? Hpkv Hpkb Hkv Hkb; rewrite /prg_enc_inner => [#] Hrv Hep Hepp Hmb Hepb Heppb Hrvv Hspb Hbpv Hvv Hvb Hbpb result Hresv.
+have Hbnd : 32 * Parameters.du * Parameters.kvec = 960 by smt(Parameters.param_sets kvec_val).
+have Hdu : Parameters.du = 10 by smt(Parameters.param_sets kvec_val).
+have Hdv : Parameters.dv = 4 by smt(Parameters.param_sets kvec_val).
+split.
++ rewrite tP => k kn. 
+  rewrite initiE 1:/# /= initiE 1:/# /= initiE /=;1:smt(kvec_val Parameters.param_sets).
+  rewrite ifF 1:/# initiE 1:/# /= ifT 1:/# /=.
+  have Hk  : 0 <= k < 960 by move: kn; rewrite Hdu kvec_val /=; smt().
+  rewrite Hdu /encode10_vec get_of_list 1:/#.
+  have ->: invnttv (ntt_mmul (trmx (sampleA rho{2})) (nttv rv{2})) + lift_polyvec ep{1}
+       = lift_polyvec bp{1} by rewrite Hrvv Hbpv.  
+  by rewrite (nth_change_dfl witness W8.zero) 1:(size_encode 3 10) // size_to_list; smt(Parameters.param_sets kvec_val).
+
+rewrite tP => kk kb.
+rewrite initiE 1:/# /= initiE 1:/# /= initiE /=; 1:smt(Parameters.param_sets kvec_val).
+rewrite ifT 1:/# Hresv.
+have Hk : 0 <= kk < 128 by move: kb; rewrite Hdv /=; smt().
+have HsL : size (ByteEncode 4 (to_list (compress_poly 4 (lift_array256 v{1})))) = 128
+  by rewrite (size_encode 1 4); smt(Array256.size_to_list).
+rewrite Hdv -Hvv /encode4 get_of_list 1:/#.
+by rewrite (nth_change_dfl witness W8.zero) 1:/#.
 qed.
 
 lemma mlkem_correct_enc_1_avx2 _pkp :
   equiv [Jkem_avx2.M.__indcpa_enc ~ KPKE.enc_derand :
     msgp{1} = m{2} /\ pk{1} = _pkp /\
     noiseseed{1} = coins{2} /\
-    pk{2}.`1 = Array1152.init (fun i => pk{1}.[i]) /\
+    pk{2}.`1 = BytesPKVec.init (fun i => pk{1}.[i]) /\
     pk{2}.`2 = Array32.init (fun i => pk{1}.[i+1152])
     ==>
     let (c1,c2) = res{2} in
-    c1 = Array960.init (fun i => res{1}.[i]) /\
-    c2 = Array128.init (fun i => res{1}.[i+960])].
+    c1 = BytesCtVec.init (fun i => res{1}.[i]) /\
+    c2 = BytesPoly.init (fun i => res{1}.[i+960])].
 proof.
 transitivity InnerPKE_Op.enc_derand
   (msgp{1} = m{2} /\ pk{1} = _pkp /\
    noiseseed{1} = r{2} /\
-   pk{2}.`1 = Array1152.init (fun i => pk{1}.[i]) /\
+   pk{2}.`1 = BytesPKVec.init (fun i => pk{1}.[i]) /\
    pk{2}.`2 = Array32.init (fun i => pk{1}.[i+1152])
    ==>
    let (c1,c2) = res{2} in
-   c1 = Array960.init (fun i => res{1}.[i]) /\
-   c2 = Array128.init (fun i => res{1}.[i+960]))
+   c1 = BytesCtVec.init (fun i => res{1}.[i]) /\
+   c2 = BytesPoly.init (fun i => res{1}.[i+960]))
   (={arg} ==> ={res}).
 + smt().
 + smt().
@@ -1259,9 +1299,9 @@ seq 2 1 : (#pre /\ aa{1} = nttunpackm (unlift_matrix a{2}) /\
 seq 6 0 : (#pre /\
   (forall i, 0 <= i < 3 =>
      lift_array256 (Array256.init (fun k => skpv{1}.[256*i + k])) =
-       cbd2sample (Symmetric.PRF noiseseed{1} (W8.of_int i))) /\
+       samplePolyCBD (Symmetric.PRF noiseseed{1} (W8.of_int i))) /\
   lift_array256 (Array256.init (fun k => e{1}.[k])) =
-    cbd2sample (Symmetric.PRF noiseseed{1} (W8.of_int 3)) /\
+    samplePolyCBD (Symmetric.PRF noiseseed{1} (W8.of_int 3)) /\
   signed_bound768_cxq skpv{1} 0 768 1 /\
   signed_bound768_cxq e{1} 0 256 1).
 + sp 1 0.
@@ -1304,7 +1344,7 @@ seq 6 0 : (#pre /\
   ecall {1} (jkem_getnoise_4x_ph noiseseed{1} (W8.of_int 4)).
   auto => /> &1 &2 _ Hs He Hbs He256 result Hr1 Hr2 Hr3 Hr4 Hb1 Hb2 Hb3 Hb4.
   do split.
-  + (* lift_array256 (init e_final[0..256]) = cbd2sample (PRF _seed 3) -- e_final[0..256] = e{1}[0..256] *)
+  + (* lift_array256 (init e_final[0..256]) = samplePolyCBD (PRF _seed 3) -- e_final[0..256] = e{1}[0..256] *)
     rewrite /PRF -He /lift_array256 tP => k Hk.
     rewrite !mapiE 1,2:/# initiE 1:/# /= initiE 1:/# /= initiE 1:/# /=  initiE 1:/# /= ifF 1:/# ifF /#.
   + (* signed_bound768_cxq e_final 0 256 1 -- from He256 *)
@@ -1347,9 +1387,9 @@ seq 2 2 : (#{/~s{2} = (prg_kg_inner coins{2}).`2}
             {/~signed_bound768_cxq e{1} 0 256 1}
             {/~forall i, 0 <= i < 3 =>
                  lift_array256 (Array256.init (fun k => skpv{1}.[256*i + k])) =
-                 cbd2sample (Symmetric.PRF noiseseed{1} (W8.of_int i))}
+                 samplePolyCBD (Symmetric.PRF noiseseed{1} (W8.of_int i))}
             {/~lift_array256 (Array256.init (fun k => e{1}.[k])) =
-                cbd2sample (Symmetric.PRF noiseseed{1} (W8.of_int 3))}pre /\
+                samplePolyCBD (Symmetric.PRF noiseseed{1} (W8.of_int 3))}pre /\
            s{2} = lift_polyvec (nttpackv skpv{1}) /\
            e{2} = lift_polyvec (nttpackv e{1}) /\
            pos_bound768_cxq skpv{1} 0 768 2 /\
@@ -1587,8 +1627,8 @@ lemma mlkem_correct_dec :
   equiv [Jkem_avx2.M.__indcpa_dec ~ KPKE.dec :
     ={sk} /\
     let (c1,c2) = cph{2} in
-      c1 = Array960.init (fun i => ct{1}.[i]) /\
-      c2 = Array128.init (fun i => ct{1}.[960+i])
+      c1 = BytesCtVec.init (fun i => ct{1}.[i]) /\
+      c2 = BytesPoly.init (fun i => ct{1}.[960+i])
     ==>
     res{1} = res{2}].
 proof.
@@ -1619,7 +1659,7 @@ swap {1} 2 -1.
 swap {1} 3 -2.
 
 (* Step 3: frombytes sk -> skpv  (avx2: __i_polyvec_frombytes; lands on nttunpackv) *)
-seq 1 3 : (#pre /\ lift_array768 skpv{1} = nttunpackv (map incoeff (decode12_vec sk{1})) /\
+seq 1 3 : (#pre /\ lift_array768 skpv{1} = nttunpackv (Array768.init (fun kk => incoeff (decode12_vec sk{1}).[kk])) /\
            s{2} = ofipolyvec (decode12_vec sk{2}) /\
            pos_bound768_cxq skpv{1} 0 768 2).
 + wp; ecall{1}(polyvec_frombytes_corr sk{1}).
