@@ -9,6 +9,7 @@ require import MLKEM_PolyVec_avx2.
 require import MLKEM_Poly_avx2.
 require import NTT_avx2 NTT_avx2_poly.
 require import MLKEM_W16_Rep.
+require import MLKEM768_prelude.
 require import Fq_avx2.
 require import NTT_Fq.
 require import AVX2_Ops MLKEMFCLib.
@@ -308,19 +309,26 @@ have H := polyvec_pointwise_acc_corr_avx_ph a_ref b_ref
 + done.
 + by move => k kb; rewrite /R /(&+) /= map2E !initiE //= map2E !initiE //=.
 conseq H.
-+ move => &hr [Hva [Habnd [Hvb [Hbbnd [Halift [Hblift [Hab Hbb]]]]]]]; do split => //;
-    rewrite /A0 /A1 /A2 /B0 /B1 /B2 ?Hva ?Hvb /lift_polyvec;
-    rewrite tP => k kb;rewrite getvE;   smt(Vector.offunvE).
+move => &hr [Hva [Habnd [Hvb [Hbbnd [Halift [Hblift [Hab Hbb]]]]]]]; do split => //.
+by rewrite /A0 Hva /lift_polyvec KVec.initiE; smt(kvec_val).
+by rewrite /A1 Hva /lift_polyvec KVec.initiE; smt(kvec_val).
+by rewrite /A2 Hva /lift_polyvec KVec.initiE; smt(kvec_val).
+by rewrite /B0 Hvb /lift_polyvec KVec.initiE; smt(kvec_val).
+by rewrite /B1 Hvb /lift_polyvec KVec.initiE; smt(kvec_val).
+by rewrite /B2 Hvb /lift_polyvec KVec.initiE; smt(kvec_val).
 move => &hr Hpre result; have ->: nttunpack (scale (ntt (dotpw va vb)) (incoeff 169)) = nttunpack R; last done.
-congr; rewrite mulvec.
+congr; rewrite dotpwE mulvec kvec_val.
+rewrite (Big.BAdd.big_int_recl 2) // (Big.BAdd.big_int_recl 1) // (Big.BAdd.big_int_recl 0) // Big.BAdd.big_geq //=.
 rewrite !add_comm_ntt !nttK.
-have HEva : forall i, 0 <= i < 3 => tofunv va i = va.[i]%Vector by smt().
-have HEvb : forall i, 0 <= i < 3 => tofunv vb i = vb.[i]%Vector by smt().
-rewrite /R /P0 /P1 /P2 /A0 /A1 /A2 /B0 /B1 /B2 /PolyVec.nttv /mapv
-        /scale /(&+) tP => k kb.
-rewrite !mapiE //= !map2iE //=.
-rewrite !mapvE !getvE !offunvE //= !mapiE //=.
-rewrite (HEva 0) // (HEva 1) // (HEva 2) // (HEvb 0) // (HEvb 1) // (HEvb 2) //.
+rewrite !poly2algE.
+smt(kvec_val). smt(kvec_val). smt(kvec_val). smt(kvec_val). smt(kvec_val). smt(kvec_val).
+rewrite /R /P0 /P1 /P2 /A0 /A1 /A2 /B0 /B1 /B2.
+rewrite nttZero !nttvE.
+smt(kvec_val). smt(kvec_val). smt(kvec_val). smt(kvec_val). smt(kvec_val). smt(kvec_val).
+rewrite /scale /(&+) tP => k kb.
+rewrite !mapiE //= !map2iE //= !mapiE //=.
+rewrite /zero Array256.createiE 1:/#.
+have ->: incoeff 0 = Zq.zero by done.
 by ring.
 qed.
 
@@ -334,21 +342,21 @@ proof. by rewrite -nttpackv_lift packvK. qed.
 lemma lift_polyvec_nttpackv_add (X Y Z : W16.t Array768.t) :
   (forall k, 0 <= k < 768 =>
      (lift_array768 Z).[k] = (lift_array768 X).[k] + (lift_array768 Y).[k]) =>
-  lift_polyvec (nttpackv Z) = (lift_polyvec (nttpackv X) + lift_polyvec (nttpackv Y))%Vector.
+  lift_polyvec (nttpackv Z) = (lift_polyvec (nttpackv X) + lift_polyvec (nttpackv Y)).
 proof.
 move => Hpw.
-apply eq_vectorP => j Hj.
-rewrite /lift_polyvec.
-rewrite !KMatrix.Vector.offunvE 1..2:/# /=.
-rewrite -!getvE.
-rewrite /(&+).
+have kv := kvec_val.
+apply KVec.tP => j Hj.
+rewrite polyvec_addE; 1: smt(kvec_val).
+rewrite /lift_polyvec !KVec.initiE; 1,2,3: smt(kvec_val).
+simplify.
 rewrite tP => k Hk.
-rewrite Array256.map2iE 1:/# /=.
-rewrite /lift_array256 /subarray256 !mapiE 1:/# /= !initiE 1:/# /=.
+rewrite /(&+) Array256.map2iE 1:/# /=.
+rewrite /lift_array256 /subarray256 !mapiE //= !initiE //=.
 have peel : forall (W : W16.t Array768.t),
             (nttpackv W).[256*j + k] = W.[256*j + nttpack_idx.[k]].
 + move => W; rewrite /nttpackv initiE 1:/# /= initiE 1:/# /=.
-  have Hjr : j = 0 \/ j = 1 \/ j = 2 by smt().
+  have Hjr : j = 0 \/ j = 1 \/ j = 2 by smt(kvec_val).
   case Hjr => [-> | [-> | ->]] /=.
   - rewrite ifT 1:/# /nttpack initiE /=;1:smt(nttpack_bnd Array256.allP mem_iota).
     rewrite /subarray256 initiE /=; 1:smt(nttpack_bnd Array256.allP mem_iota).
@@ -359,14 +367,7 @@ have peel : forall (W : W16.t Array768.t),
   - rewrite ifF 1:/# ifF 1:/# /nttpack initiE /=;1:smt().
     rewrite /subarray256 initiE /=; 1:smt(nttpack_bnd Array256.allP mem_iota).
   by rewrite  initiE /=; 1:smt(nttpack_bnd Array256.allP mem_iota).
-
-   
-rewrite peel.
-rewrite !getvE !offunvE /=;1..2:smt(nttpack_bnd Array256.allP mem_iota).
-rewrite !mapiE /=; 1..2:smt(nttpack_bnd Array256.allP mem_iota).
-pose a := NTT_AVX_j.incoeffW16 Z.[256 * j + nttpack_idx.[k]].
-rewrite !initiE /=; 1,2:smt(nttpack_bnd Array256.allP mem_iota).
-rewrite peel /a.
+rewrite !peel.
 move: (Hpw (256*j + nttpack_idx.[k]) _); first smt(nttpack_bnd Array256.allP mem_iota).
 rewrite /lift_array768 !mapiE /=; 1..3:smt(nttpack_bnd Array256.allP mem_iota).
 smt().

@@ -9,6 +9,7 @@ require import MLKEM_PolyVec_avx2.
 require import MLKEM_Poly_avx2.
 require import NTT_avx2 NTT_avx2_poly.
 require import MLKEM_W16_Rep.
+require import MLKEM1024_prelude.
 require import Fq_avx2.
 require import NTT_Fq.
 require import AVX2_Ops MLKEMFCLib.
