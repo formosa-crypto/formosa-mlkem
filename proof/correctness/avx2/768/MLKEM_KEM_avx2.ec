@@ -8,23 +8,24 @@ from Jasmin require import JModel.
 from Spec require import GFq Rq Sampling Serialization Symmetric VecMat KPKE MLKEM Correctness.
 import Serialization Symmetric VecMat.
 require import Fq MLKEM_InnerPKE_avx2_new MLKEMFCLib.
+require import MLKEM768_prelude.
 import MLKEMFCLib768.
 
 require import MLKEM_keccak_avx2.
 
 lemma pack_inj : injective W8u8.pack8_t by apply (can_inj W8u8.pack8_t W8u8.unpack8 W8u8.pack8K).
 lemma mlkem_kem_correct_kg  : 
-   equiv [Jkem_avx2.M.__crypto_kem_keypair_jazz ~ MLKEM.kg_derand : 
+   equiv [Jkem_avx2.M.__crypto_kem_keypair_jazz ~ MLKEM.keygen_internal :
         coins{2}.`1 = Array32.init(fun i => randomnessp{1}.[0 + i]) /\
         coins{2}.`2 = Array32.init(fun i => randomnessp{1}.[32 + i])
-        ==> 
+        ==>
        let (pk,sk) = res{2} in let (t,rho) = pk in
-         sk.`1 = Array1152.init (fun i => res{1}.`2.[i]) /\
-         sk.`2.`1 = Array1152.init (fun i =>  res{1}.`2.[i + 1152]) /\
+         sk.`1 = BytesPKVec.init (fun i => res{1}.`2.[i]) /\
+         sk.`2.`1 = BytesPKVec.init (fun i =>  res{1}.`2.[i + 1152]) /\
          sk.`2.`2 = Array32.init (fun i =>  res{1}.`2.[i + 1152 + 1152]) /\
          sk.`3 = Array32.init (fun i => res{1}.`2.[i + 1152 + 1152 + 32]) /\
          sk.`4 = Array32.init (fun i => res{1}.`2.[i + 1152 + 1152 + 32 + 32]) /\
-         t = Array1152.init (fun i => res{1}.`1.[i])  /\
+         t = BytesPKVec.init (fun i => res{1}.`1.[i])  /\
          rho = Array32.init (fun i => res{1}.`1.[i+1152])].
 proof.
 proc => /=.
@@ -32,14 +33,15 @@ seq 4 0 : #pre;1: by auto.
 swap {1} 1 11. sp.
 seq 3 1 : (#{/~skcpa{1}}{~sk{1}}pre /\  
    (forall k, 0 <= k < 1152 => sk{1}.[k] = sk{2}.[k]) /\
-   pk{2}.`1 = Array1152.init (fun i => pk{1}.[i])  /\
+   pk{2}.`1 = BytesPKVec.init (fun i => pk{1}.[i])  /\
    pk{2}.`2 = Array32.init (fun i => pk{1}.[i+1152])).
 + wp;call (mlkem_correct_kg_avx2);auto => /> &1 &2;rewrite !tP =>  H H0;split.
   + move =>  *; rewrite initiE 1:/# /=.
     rewrite H;smt(Array32.initiE).
-  move => ? rl [[rr11 rr12] rr2] /= [#];rewrite !tP => ?  H1 H2; do split. 
-  + move => *; rewrite initiE 1:/# /= /#. 
-  + by move => *; rewrite initiE 1:/# /=; rewrite H1;smt(Array1152.initiE).
+  move => ? rl [[rr11 rr12] rr2] /= [#];rewrite !tP => Hsk  H1 H2; do split.
+  + move => *; rewrite initiE 1:/# /= Hsk;1:smt(kvec_val).
+    by rewrite ifT 1:/# initiE /=;1:smt(kvec_val).
+  + by move => *; rewrite initiE 1:/# /=; rewrite H1 1:/#;smt(kvec_val BytesPKVec.initiE).
   + by move => *; rewrite initiE 1:/# /=; smt(Array32.initiE).
 
 seq 3 0 : (#pre /\
@@ -64,10 +66,15 @@ seq 3 0 : (#pre /\
 seq 2 1 : (#pre /\
     (forall (k : int), 0 <= k < 32 => sk{1}.[k+1152 + 1184] = hpk{2}.[k])).
 wp;ecall {1} (sha3_256A_M1184_ph pk{1}).
-+ auto => /> &1 &2 ??????; do split.
++ auto => /> &1 &2 ???HH0 HH1?; do split.
   + move => *; rewrite initiE 1:/# /= /#. 
   + by move => *; rewrite initiE 1:/# /=; smt(Array1152.initiE).
-  + by move => *; rewrite initiE 1:/# /=; smt(Array32.initiE).
+  + move => *; rewrite initiE 1:/# /= initiE 1:/# /= ifT 1:/#.
+    rewrite /H_pk get_of_list 1:/#; do congr.
+    + apply (eq_from_nth witness); 1: by rewrite size_to_list size_to_list; smt(kvec_val).
+      move => k; rewrite size_to_list => Kb.
+      rewrite get_to_list get_to_list initiE 1:/# HH0 initiE /=; smt(kvec_val).
+    + by rewrite HH1;smt().
 
 seq  5 0 : (#pre /\
     (forall (k : int), 0 <= k < 32 => sk{1}.[k+1152 + 1184 + 32] =randomnessp{1}.[k+32])).
@@ -103,10 +110,10 @@ seq  5 0 : (#pre /\
     rewrite initiE 1:/# /=  /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
 
 auto => /> &1 &2; rewrite !tP => ? hcoins2 ?Hpk1 ??? hsk pp H H0;do split.
-  + move => *; rewrite initiE 1:/# /=; smt().
+  + move => *; rewrite initiE 1:/# /=; smt(kvec_val).
   + rewrite tP => *; rewrite initiE 1:/# /=.
     have -> : pp = pk{2}.`1 by smt().
-    rewrite Hpk1;  smt(Array1152.initiE).
+    rewrite Hpk1;  smt(kvec_val BytesPKVec.initiE).
   + by move => *; rewrite tP => *; rewrite initiE 1:/# /=  ; smt(Array32.initiE).
   + move => *; rewrite initiE 1:/# /=;smt(Array32.initiE).
   + by move => j hj; rewrite hcoins2 1:// !initE hj /= hsk 1:// addzC.
@@ -116,14 +123,14 @@ qed.
 from JazzEC require import WArray32 Array4.
 
 lemma mlkem_kem_correct_enc  : 
-   equiv [Jkem_avx2.M.__crypto_kem_enc_jazz ~ MLKEM.enc_derand: 
+   equiv [Jkem_avx2.M.__crypto_kem_enc_jazz ~ MLKEM.encaps_internal:
      randomnessp{1} = coins{2} /\
-     pk{2}.`1 = Array1152.init( fun i => pk{1}.[i]) /\
+     pk{2}.`1 = BytesPKVec.init( fun i => pk{1}.[i]) /\
      pk{2}.`2 = Array32.init( fun i => pk{1}.[1152+i])
-       ==> 
+       ==>
      let (c,k) = res{2} in
-     c.`1 = Array960.init (fun i => res{1}.`1.[i]) /\
-     c.`2 = Array128.init (fun i => res{1}.`1.[i+960]) /\
+     c.`1 = BytesCtVec.init (fun i => res{1}.`1.[i]) /\
+     c.`2 = BytesPoly.init (fun i => res{1}.`1.[i+960]) /\
      k = res{1}.`2
 ].
 proc => /=. sp 0 1.
@@ -140,8 +147,17 @@ auto => /> &1 &2;rewrite !tP => pk1 pk2; do split => *.
      rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
      rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr.
-      + by congr;rewrite tP => *; rewrite pk1.
-      + by congr;rewrite tP => *; rewrite pk2.
+      + apply (eq_from_nth witness); 1: by rewrite !size_to_list; smt(kvec_val).
+        move => k; rewrite size_to_list => Kb.
+        rewrite !get_to_list.
+        rewrite pk1.
+        smt(kvec_val).
+        rewrite Array1152.initiE 1:/#.
+        by rewrite BytesPKVec.initiE; smt(kvec_val).
+      + apply (eq_from_nth witness); 1: by rewrite !size_to_list.
+        move => k; rewrite size_to_list => Kb.
+        rewrite !get_to_list.
+        by rewrite pk2; smt().
 
 
 + rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= /G_mhpk;congr;congr;
@@ -150,8 +166,17 @@ congr.
      rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
      rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1184_32 get_of_list 1:/#;congr;congr;congr.
-      + by congr;rewrite tP => *; rewrite pk1.
-      + by congr;rewrite tP => *; rewrite pk2.
+      + apply (eq_from_nth witness); 1: by rewrite !size_to_list; smt(kvec_val).
+        move => k; rewrite size_to_list => Kb.
+        rewrite !get_to_list.
+        rewrite pk1.
+        smt(kvec_val).
+        rewrite Array1152.initiE 1:/#.
+        by rewrite BytesPKVec.initiE; smt(kvec_val).
+      + apply (eq_from_nth witness); 1: by rewrite !size_to_list.
+        move => k; rewrite size_to_list => Kb.
+        rewrite !get_to_list.
+        by rewrite pk2; smt().
 
 + rewrite initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /=.
   rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
@@ -307,20 +332,26 @@ lemma cmov_correct _dst _src _cnd:
 
 from JazzEC require import Array196.
 lemma mlkem_kem_correct_dec  : 
-   equiv [Jkem_avx2.M.__crypto_kem_dec_jazz ~ MLKEM.dec: 
-     sk{2}.`1 = Array1152.init (fun i =>  sk{1}.[i]) /\
-     sk{2}.`2.`1 = Array1152.init (fun i => sk{1}.[i + 1152]) /\
+   equiv [Jkem_avx2.M.__crypto_kem_dec_jazz ~ MLKEM.decaps_internal:
+     sk{2}.`1 = BytesPKVec.init (fun i =>  sk{1}.[i]) /\
+     sk{2}.`2.`1 = BytesPKVec.init (fun i => sk{1}.[i + 1152]) /\
      sk{2}.`2.`2 = Array32.init (fun i =>  sk{1}.[i + 1152 + 1152]) /\
      sk{2}.`3 = Array32.init (fun i => sk{1}.[i + 1152 + 1152 + 32]) /\
      sk{2}.`4 = Array32.init (fun i => sk{1}.[i+ 1152 + 1152 + 32 + 32]) /\
      let (c1,c2) = cph{2} in
-       c1 = Array960.init(fun i => ct{1}.[i]) /\
-       c2 = Array128.init(fun i => ct{1}.[i + 960])
+       c1 = BytesCtVec.init(fun i => ct{1}.[i]) /\
+       c2 = BytesPoly.init(fun i => ct{1}.[i + 960])
        ==> ={res}].
 proc => /=. sp 0 1. swap {1} [4..6] 7.
 
-seq 4 1 : (#pre /\ aux{1} = m{2}); 
-  1: by call (mlkem_correct_dec); 1: by auto => /> /#.
+seq 4 1 : (#pre /\ aux{1} = m{2}).
++ call (mlkem_correct_dec).
+  auto => />.
+  move => &1 &2 Hpk1 Hpk2 Hcph; split.
+  + apply BytesPKVec.tP => i ib; rewrite !BytesPKVec.initiE;1,2: smt(kvec_val).
+    by rewrite initiE /=;1:smt(kvec_val).
+  move => x1 x2 Hx; move: Hcph; rewrite Hx /= => -[-> H2]; split; first done.
+  rewrite H2; apply BytesPoly.tP => i ib; rewrite !BytesPoly.initiE 1,2:/#; smt().
 
 seq 4 1 : (#pre /\
            (forall k, 0<=k<32 => buf{1}.[k] = m{2}.[k]) /\
@@ -349,14 +380,16 @@ seq 1 1 : (#pre /\
   auto => /> &1 &2; rewrite !tP => ??????; do split.
   + by move => i ib; rewrite initiE /= /#.
   + by move => i ib; rewrite initiE /= /#.
-  + move => i ib; rewrite initiE /= 1:/# initiE /= 1:/#;smt(Array1152.initiE).
+  + move => i ib; rewrite initiE /= 1:/# initiE /=;1: smt(kvec_val).
+    smt(BytesPKVec.initiE).
   + move => i ib; rewrite initiE /= 1:/# initiE /= 1:/#;smt(Array32.initiE).
   move => /= ?  bufv ? krv rl [rr1 rr2] /=;rewrite !tP => [#Hl Hr] i ib. 
   rewrite !initiE 1:/# /=.
   case (i < 960) =>*.
-  + rewrite Hl;by  smt(Array128.initiE Array960.initiE).
-  rewrite Hr;by  smt(Array128.initiE Array960.initiE).
-
+  + rewrite Hl;1:smt(kvec_val Parameters.param_sets).
+    rewrite initiE /=; by  smt(Parameters.param_sets Array128.initiE Array960.initiE  kvec_val).
+  rewrite Hr;1:smt(kvec_val Parameters.param_sets).
+  rewrite initiE /=; by  smt(Parameters.param_sets Array128.initiE Array960.initiE  kvec_val).
 seq 1 0 : (#pre /\ 
                   (c{2}  = cph{2} => cnd{1} = W64.of_int 0) /\
                   (c{2}  <> cph{2} => cnd{1} = W64.of_int 1)).
@@ -369,27 +402,29 @@ seq 1 0 : (#pre /\
    + move => ceq; rewrite (Heq _); last by done.
      move => i0 ib; rewrite !initiE //=. 
      case (i0 < 960).
-     + by move => ibb; rewrite ceq cphv1 1: /# initiE /= /#.
-     by move => ibb; rewrite ceq cphv2 1: /# initiE /= /#. 
+     + move => ibb; rewrite ceq cphv1;1:smt(kvec_val Parameters.param_sets).
+    rewrite initiE /=; by smt(Parameters.param_sets Array128.initiE Array960.initiE  kvec_val). 
+     move => ibb; rewrite ceq cphv2;1:smt(kvec_val Parameters.param_sets).
+    rewrite initiE /=; by  smt(Parameters.param_sets Array128.initiE Array960.initiE  kvec_val). 
    move => neq;rewrite Hdiff.
    have : exists i0, 0<= i0 < 1088 /\ 
      ct{1}.[i0] <>
      (Array1088.init (fun (i1 : int) => if i1 < 960 then c{2}.`1.[i1] else c{2}.`2.[i1 - 960])).[i0]; last by smt().
    case (c{2}.`1 <> cph{2}.`1).
    + move => neq1. rewrite tP in neq1.   
-     have [k kb] : exists k, 0<=k<960 /\ c{2}.`1.[k] <> cph{2}.`1.[k] by smt().
+     have [k kb] : exists k, 0<=k<960 /\ c{2}.`1.[k] <> cph{2}.`1.[k] by smt(kvec_val Parameters.param_sets).
      exists k; split; 1: by smt().
      rewrite initiE /= 1:/#. 
-     move : (cphv1 k _); 1: smt().
-     by rewrite initiE /= /#.
+     move : (cphv1 k _); 1: smt(kvec_val Parameters.param_sets).
+     rewrite initiE /=;smt(kvec_val Parameters.param_sets).
    + move => eq1. 
      have neq2 : c{2}.`2 <> cph{2}.`2 by move : neq eq1; smt().
      rewrite tP in neq2.   
-     have [k kb] : exists k, 0<=k<128 /\ c{2}.`2.[k] <> cph{2}.`2.[k] by smt().
-     exists (k + 960); split; 1: by smt().
+     have [k kb] : exists k, 0<=k<128 /\ c{2}.`2.[k] <> cph{2}.`2.[k] by smt(kvec_val Parameters.param_sets).
+     exists (k + 960); split; 1: by smt(kvec_val Parameters.param_sets).
      rewrite initiE /= 1:/#. 
-     move : (cphv2 k _); 1: smt().
-     by rewrite initiE /= /#.
+     move : (cphv2 k _); 1: smt(kvec_val Parameters.param_sets).
+     by rewrite initiE /=; smt(kvec_val Parameters.param_sets).
   done.
 
 
@@ -432,15 +467,29 @@ split.
   +  move : (c1 (cdif badc)).
     rewrite !tP => H k kb.
     rewrite (H k kb) !initiE 1,2:/# /=.
-    rewrite /J; congr; congr;congr;congr.
-    + congr; rewrite tP => kk kkb; rewrite !initiE 1..2:// /#.
-    + congr;rewrite tP => kk kkb; rewrite !initiE 1:// /=.
-      by rewrite (cphv1 _ kkb) initiE 1:// eq_zp_ct_ct 1:/#.
+    rewrite /J; congr; congr;congr.
+    + congr.
+      + apply (eq_from_nth witness); first by rewrite !size_to_list.
+        move => k0; rewrite size_to_list => Kb; rewrite !get_to_list !initiE 1,2:/# eq_zp_ct_sk 1:/#; smt().
+      apply (eq_from_nth witness).
+      + rewrite !size_to_list; smt(kvec_val Parameters.param_sets).
+      move => k0; rewrite size_to_list => Kb; rewrite !get_to_list.
+      rewrite Array960.initiE 1:/#.
+      rewrite /= eq_zp_ct_ct 1:/#.
+      rewrite cphv1.
+      + smt(kvec_val Parameters.param_sets).
+      rewrite BytesCtVec.initiE; smt(kvec_val Parameters.param_sets).
+    + apply (eq_from_nth witness); first by rewrite !size_to_list; smt(kvec_val Parameters.param_sets).
+      move => k0; rewrite size_to_list => Kb; rewrite !get_to_list.
+      rewrite Array128.initiE 1:/# /=.
+      have ->: 992 + k0 = 32 + (960 + k0) by ring.
+      rewrite eq_zp_ct_ct 1:/#.
+      rewrite cphv2.
+      + smt(kvec_val Parameters.param_sets).
+      rewrite BytesPoly.initiE.
+      + smt(kvec_val Parameters.param_sets).
+      by rewrite /=; smt().
 
-  rewrite tP => kk kkb; rewrite !initiE 1:// /= (cphv2 _ kkb) initiE 1:// /#.
-
-move => goodc  back c0 c1.
-  + move : (c0 (ceq goodc)).
-    rewrite !tP => H k kb.
-    by rewrite (H k kb) initiE /#.
+  move => Hgc result0 c0 c1.
+  rewrite (c0 (ceq Hgc)); apply Array32.tP => i ib; rewrite Array32.initiE 1:/#; smt().
 qed.

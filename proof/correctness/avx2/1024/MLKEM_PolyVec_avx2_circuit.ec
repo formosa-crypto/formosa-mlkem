@@ -360,8 +360,6 @@ qed.
 
 op nttunpack_16 (rp : W16.t Array256.t) : W16.t Array256.t = init_256_16 (fun (i : int) => rp.[nttunpack_idx.[i]]).
 
-op subarray256 (x: W16.t Array1024.t) (i: int) = init_256_16 (fun j => x.[256*i + j]).
-
 
 op nttunpackv_16 (v : W16.t Array1024.t) : W16.t Array1024.t =
   init_1024_16
