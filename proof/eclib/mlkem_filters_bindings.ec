@@ -116,6 +116,7 @@ realize get_setP by smt(Array2048.get_setE).
 realize eqP      by smt(Array2048.tP).
 realize get_out  by smt(Array2048.get_out).
 realize gt0_size by auto.
+realize oflistP by smt(Array2048.get_of_list).
 
 (* -------------------------------------------------------------------- *)
 bind array Array56."_.[_]" Array56."_.[_<-_]" Array56.to_list Array56.of_list Array56.t 56.
@@ -124,6 +125,7 @@ realize get_setP by smt(Array56.get_setE).
 realize eqP      by smt(Array56.tP).
 realize get_out  by smt(Array56.get_out).
 realize gt0_size by auto.
+  realize oflistP by smt(Array56.get_of_list).
 
 (* -------------------------------------------------------------------- *)
 bind array Array40."_.[_]" Array40."_.[_<-_]" Array40.to_list Array40.of_list Array40.t 40.
@@ -132,6 +134,7 @@ realize get_setP by smt(Array40.get_setE).
 realize eqP      by smt(Array40.tP).
 realize get_out  by smt(Array40.get_out).
 realize gt0_size by auto.
+realize oflistP by smt(Array40.get_of_list).
 
 
 (* -------------------------------------------------------------------- *)
@@ -141,6 +144,7 @@ realize get_setP by smt(Array64.get_setE).
 realize eqP      by smt(Array64.tP).
 realize get_out  by smt(Array64.get_out).
 realize gt0_size by auto.
+realize oflistP by smt(Array64.get_of_list).
 
 
 (* -------------------------------------------------------------------- *)
