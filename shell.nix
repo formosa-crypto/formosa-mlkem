@@ -18,21 +18,12 @@ let jasmin =
   })
 ; in
 
-let crypto-specs =
-  fetchFromGitHub {
-    owner = "formosa-crypto";
-    repo = "crypto-specs";
-    rev = "fb050598ed356c5c6604d92a1e198b2dd4543777";
-    hash = "sha256-SG2jQzBcce/aPQAbJSVold2gm7buHOrOBsK7MHNIRFs=";
-  }
-; in
-
 let formosa-keccak =
-  fetchFromGitHub {
-    owner = "formosa-crypto";
-    repo = "formosa-keccak";
-    rev = "fe5d22fa85672ffbe5cfb4845037b50cf2eaa1f7";
-    hash = "sha256-HRUj7XcMUzCrpkoxm7I9G8/2Ms9XJ3bndMrxFk+7tJg=";
+  fetchgit {
+    url = "https://github.com/formosa-crypto/formosa-keccak.git";
+    rev = "8604aff212584d08e77484c5fa4e328312d8ee56";
+    hash = "sha256-wBZLFvZigWsgJAt0d9Zwp91+Gdu9odgMDKB43I6wCG0=";
+    fetchSubmodules = true;
   }
 ; in
 
@@ -83,17 +74,13 @@ mkShell ({
 
   EC_RDIRS = mkECvar [
     { key = "Jasmin"; val = "${jasmin.lib}/lib/easycrypt/jasmin"; }
-    { key = "CryptoSpecs"; val = "${crypto-specs}/fips202"; }
-    { key = "CryptoSpecs"; val = "${crypto-specs}/ml-kem"; }
+    { key = "CryptoSpecs"; val = "${formosa-keccak}/submodules/crypto-specs/fips202"; }
   ];
   EC_IDIRS = mkECvar [
     { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/common"; }
     { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/ref"; }
     { key = "Keccak"; val = "${formosa-keccak}/proof/amd64/avx2"; }
     { key = "JazzEC"; val = "${formosa-keccak}/proof/amd64/extracted"; }
-    { key = "JazzEC"; val = "${crypto-specs}/arrays"; }
-    { key = "JazzEC"; val = "${crypto-specs}/common"; }
-    { key = "CryptoSpecs"; val = "${crypto-specs}/arrays"; }
-    { key = "CryptoSpecs"; val = "${crypto-specs}/common"; }
+    { key = "CryptoSpecs"; val = "${formosa-keccak}/submodules/crypto-specs/common"; }
   ];
 })
