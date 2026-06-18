@@ -722,7 +722,7 @@ case (P1 x) => /=.
     + move : HP1; rewrite /P1 /P2 /=.
     by rewrite /predC1 ultE /= /to_uint /#.
   rewrite HH /F1 /F2.
-   rewrite /predC1 ultE /= GFq.Zq.incoeffK /=.
+   rewrite ultE /= GFq.Zq.incoeffK /=.
    pose a :=  (sliceget_8_12_48
               (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
               (12 * x)).
@@ -735,7 +735,7 @@ case (P1 x) => /=.
            12 * x)).
     + move : HP1; rewrite /P1 /P2 /=.
     by rewrite /predC1 ultE /= /to_uint /#.
-  rewrite /= HH /F1 /F2 => />.
+  rewrite /= HH /F2 => />.
 
 (* bit flipping *)
 rewrite -map_comp.
@@ -1290,7 +1290,7 @@ case (P1 x) => /=.
     + move : HP1; rewrite /P1 /P2 /=.
     by rewrite /predC1 ultE /= /to_uint /#.
   rewrite HH /F1 /F2.
-   rewrite /predC1 ultE /= GFq.Zq.incoeffK /=.
+   rewrite ultE /= GFq.Zq.incoeffK /=.
    pose a :=  (sliceget_8_12_24
               (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
               12 * x)).
@@ -1302,7 +1302,7 @@ case (P1 x) => /=.
            (12 * x)).
     + move : HP1; rewrite /P1 /P2 /=.
     by rewrite /predC1 ultE /= /to_uint /#.
-  rewrite /= HH /F1 /F2 => />.
+  rewrite /= HH /F2 => />.
 
 (* bit flipping *)
 rewrite -map_comp.
@@ -1333,7 +1333,7 @@ size
 apply (eq_from_nth witness);1: smt(W12.size_w2bits). 
 rewrite Hs3;move => k kb.
 rewrite nth_take 1,2:/# nth_drop 1,2:/# /w2bits nth_mkseq 1:/# /=.
-rewrite /bytes_to_bits /sliceget_8_12_32 initiE 1:/# /= initiE 1:/# initiE 1:/# /=.
+rewrite /bytes_to_bits initiE 1:/# /= initiE 1:/# initiE 1:/# /=.
 have -> := BitEncoding.BitChunking.nth_flatten witness 8 (map W8.w2bits (take 24 (drop (to_uint _buf_offset) (bufl _buf)))) (12*i+k) _.
 + rewrite allP => x.
   rewrite mapP => He; elim He => vv /=;smt(W8.size_w2bits).

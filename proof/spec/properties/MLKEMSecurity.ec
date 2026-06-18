@@ -811,7 +811,7 @@ qed.
 
 realize encode_noise.
 move => /> u v.
-rewrite /c_decode /c_encode /rnd_err_u /rnd_err_v /z /= -sem_encode_vecK.
+rewrite /c_decode /c_encode /rnd_err_u /rnd_err_v /= -sem_encode_vecK.
 + move => i ib; rewrite /compress_polyvec IPVec.initiE 1:ib /Compress /=;smt(StdOrder.IntOrder.expr_gt0).
 rewrite -sem_encode_polyK /=.
   by move => i ib; rewrite /compress_poly !mapiE /= 1:ib /Compress /=;smt(StdOrder.IntOrder.expr_gt0).
@@ -821,7 +821,7 @@ apply eq_vectorP => /> i il ih.
 rewrite !offunvE /=;1,2: smt(). 
 rewrite offunvE 1:/# /= /compress_poly_err /=.
 apply Array256.tP => k kb.
-rewrite /decompress_polyvec /compress_polyvec /= /fromarray256 /= /Rq.(&+)  /= initiE 1:/# /= mapiE 1:/# mapiE 1:/# map2E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= !initiE 1,2:/# /= mapiE 1:/# /=.
+rewrite /decompress_polyvec /compress_polyvec /= /= /Rq.(&+)  /= initiE 1:/# /= mapiE 1:/# mapiE 1:/# map2E initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= !initiE 1,2:/# /= mapiE 1:/# /=.
 case (i = 2).
 + rewrite decompress_errE //; 1,3: smt(param_sets).
   by rewrite qE /=;have /= H := param_sets; elim H => /> ? -> /=.
@@ -869,7 +869,7 @@ qed.
 
 realize cv_bound_valid.
 move=> A s e r e2 m ???? t v.
-rewrite /under_noise_bound /rnd_err_v /compress_poly_err /cv_bound.
+rewrite /under_noise_bound /rnd_err_v /compress_poly_err.
 rewrite allP /compress_err => i Hi /=.
 rewrite mapiE //= /cv_bound_max /Bq.
 apply compress_err_bound; 1: smt(gt0_dv).
@@ -883,7 +883,7 @@ rewrite !allP.
 move => Hn Hnp i ib.
 move : (Hn i ib). 
 move : (Hnp i ib) => /=. 
-rewrite /as_sint /Rq.(&+) /= map2E !initiE //= !StdOrder.IntOrder.ler_norml /= => Hni Hnpi.
+rewrite /Rq.(&+) /= map2E !initiE //= !StdOrder.IntOrder.ler_norml /= => Hni Hnpi.
 by rewrite creprD; smt(to_crepr_abs).
 qed.
 

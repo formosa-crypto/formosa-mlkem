@@ -631,7 +631,7 @@ auto => /> []/= st1 -> []/= st2 out _ ->.
 rewrite /SHA3_256_1568_32 stavx2_from_st25K /= tP => i Hi.
 rewrite initiE //= get_of_list //.
 rewrite /to_list /SHA3_256 /c512_r8 /KECCAK1600; congr; congr; congr => //.
-rewrite (:1568=1536+32) 1:// /sub mkseq_add 1..2://; congr.
+rewrite (:1568=1536+32) 1:// mkseq_add 1..2://; congr.
  by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
 by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
 qed.
@@ -701,7 +701,7 @@ rewrite of_listK.
  by rewrite size_SHAKE256 /#.
 rewrite /to_list /SHAKE256 /KECCAK1600; congr; congr; 1:smt().
 congr; 1..2:smt().
-rewrite (:1600=32+1408+160) 1:// /sub !mkseq_add 1..4:/#; congr.
+rewrite (:1600=32+1408+160) 1:// !mkseq_add 1..4:/#; congr.
  congr.
   by apply eq_in_mkseq => k Hk /=; rewrite initiE.
  by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.

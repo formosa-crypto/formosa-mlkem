@@ -282,7 +282,7 @@ rewrite I256u16_ubP allP; split.
  rewrite /pos_bound256_cxq => k Hk.
  by have /=?/# := H k _; first by rewrite mem_iota /= /#.
 move=> [-> Hb] k; rewrite mem_iota /= /lift_array256 => Hk.
-by rewrite mapiE 1:/# /= /Iu16_sb /#.
+by rewrite mapiE 1:/# /= /#.
 qed.
 
 abbrev I256u16S_sb z (n:int) (y: W16.t Array256.t ) (x: coeff Array256.t) =
@@ -304,11 +304,11 @@ rewrite I256u16S_sbP allP; split.
   by rewrite !mapiE 1..2:// /= /#.
  rewrite /signed_bound_cxq => k Hk.
  by have /=?/# := H k _; first by rewrite mem_iota /= /#.
-move=> [E Hb] k; rewrite mem_iota /= /lift_array256 => Hk.
+move=> [E Hb] k; rewrite mem_iota /= => Hk.
 rewrite /Iu16_sb. 
 have ->: x.[k]*z = (scale x z).[k].
  by rewrite /scale mapiE /#.
-by rewrite E mapiE 1:/# /= /Iu16_sb sint_bnd_ltR /#.
+by rewrite E mapiE 1:/# /= sint_bnd_ltR /#.
 qed.
 
 (* precomputed multiplications between zetas and qinv *)
@@ -794,7 +794,7 @@ while (#pre).
    by auto => /> *; rewrite !P2RE /#.
  + rcondf{1} ^if; 1 : by auto. 
    rcondf{2} ^if; 1 : by auto. 
-   auto => /> *; do split;1..8: by rewrite /zetas_op !P2RE //= /#. 
+   auto => /> *; do split;1..8: by rewrite !P2RE //= /#. 
    rewrite /zetas_op /= /z2u32 /=; do congr; smt().
    rewrite /zetas_op /= /z2u32 /=; do congr; smt().
  seq 1 1: (#pre).
@@ -838,7 +838,7 @@ seq 2 2: (i{2}=0 /\ ={i,rp,qx16} /\ zetasp{2} = zetas_inv_op).
 seq 4 4: (#pre /\ ={r0,r2,r4,r6,zeta0,zeta1}).
  wp; while (0 <= i{2} /\ #[/2:]pre /\ (i{2}=0 \/ ={r0,r2,r4,r6})).
   seq 12 12: (i{2} < 2 /\ #[/:5]pre /\ ={r0,r1,r2,r3,r4,r5,r6,r7,zeta0,zeta1,zeta2,zeta3}).
-   auto => /> *; do split;1..8: by rewrite /zetas_op !P2RE //= /#. 
+   auto => /> *; do split;1..8: by rewrite !P2RE //= /#. 
    rewrite /zetas_inv_op /= /z2u256 /=;  smt().
    rewrite /zetas_inv_op /= /z2u256 /=; smt().
    rewrite /zetas_inv_op /= /z2u256 /=;  smt().
@@ -878,7 +878,7 @@ while (#[/2:]pre /\ 0 <= i{2}).
  seq 1 1: (#pre).   
   by conseq />; sim.
  seq 6 6: (#pre /\ ={flox16,fhix16}).
-  wp; skip => /> *; rewrite /C2R !PURE 1..4:/#.
+  wp; skip => /> *; rewrite !PURE 1..4:/#.
   rewrite tP => k kb.
   rewrite !initiE 1,2: /# /=.
   congr. congr. 
@@ -1172,7 +1172,7 @@ by islossless.
 lemma mulR_inv (a b : coeff) :
   (a * incoeff Montgomery16.R = b) <=> (a = b * incoeff Montgomery16.Rinv).
 proof.
-have := Montgomery16.RRinv; rewrite /R /Rinv /q => />.
+have := Montgomery16.RRinv; rewrite /Rinv /q => />.
 rewrite -!Zq.ComRing.mulrA -!incoeffM /= incoeff_mod.
 by rewrite incoeff_mod /q /= !ZqField.mulr1.
 qed.
@@ -1191,9 +1191,9 @@ have:  forall (i : int),0 <= i < 16 => (al{m} \bits16 i) = (ah{m} \bits16 i) * (
  move => i Hi; move :(Hqinv i).
  rewrite mem_iota /R2C /= !initiE /#.
 move => Hqinv' i; rewrite mem_iota => /> Hi1 Hi2.
-rewrite /Iu16_sb !initiE // /=.
+rewrite !initiE // /=.
 rewrite (_: (VPSUB_16u16 (VPMULH_16u16 ah{m} b{m}) (VPMULH_16u16 (VPMULL_16u16 al{m} b{m}) qx16{m}) \bits16 i) = Montgomery16.REDCmul16 (b{m} \bits16 i) (ah{m} \bits16 i) ).
-rewrite /VPMULH_16u16 /VPMULL_16u16 /VPSUB_16u16 /R2C /REDC16 => />.
+rewrite /VPMULH_16u16 /VPMULL_16u16 /VPSUB_16u16 /REDC16 => />.
 rewrite !bits16_W16u16 /=. 
 rewrite ifT //. 
 rewrite !Hq //. 
@@ -1384,13 +1384,13 @@ seq 8 5: (#pre /\ x16_spec q qx16{1} /\ x16_spec 62209 qinvx16{1} /\
  have ->: x16_spec q (C2R qx16_op).
   by rewrite x16_spec_C2R /q /=.
  have ->: x16_spec 62209 (C2R qinvx16_op).
-  by rewrite x16_spec_C2R /q /=.
+  by rewrite x16_spec_C2R /=.
  have -> |>: qinv16u16M (z2u256 zetas_op 136) (z2u256 zetas_op 152).
   rewrite !z2u256E 1..2:// /qinv16u16M -iotaredE /=.
-  by rewrite /= !C2RK !initiE 1..32:// /zetas_op /jzetas_exp /=.
+  by rewrite /= !C2RK !initiE 1..32:// /zetas_op /=.
  pose xx := I16u16S_ub _ _ _ _.
  have ->/=: xx.
-  by rewrite /xx -iotaredE /= /zetas_op !z2u256E 1..2:// !C2RK /jzetas_exp /= -
+  by rewrite /xx -iotaredE /= /zetas_op !z2u256E 1..2:// !C2RK /= -
 !incoeffM_mod /q /= !Iu16_ub_of_int.
  split; first apply Ha; smt(mem_iota).
  split; first apply Ha; smt(mem_iota).
@@ -1426,10 +1426,10 @@ seq 6 5: (#pre /\
  auto => &1 &2 |> /List.allP Ha /List.allP Hb *.
  have ->: qinv16u16M (z2u256 zetas_op 168) (z2u256 zetas_op 184).
   rewrite !z2u256E 1..2:// /qinv16u16M -iotaredE /=.
-  by rewrite /= !C2RK !initiE 1..32:// /zetas_op /jzetas_exp /=.
+  by rewrite /= !C2RK !initiE 1..32:// /zetas_op /=.
  pose xx := List.all _ _.
  have ->/=: xx.
-  by rewrite /xx -iotaredE /= /zetas_op !z2u256E 1..2:// !C2RK /jzetas_exp /= -!incoeffM_mod /q /= !Iu16_ub_of_int.
+  by rewrite /xx -iotaredE /= /zetas_op !z2u256E 1..2:// !C2RK /= -!incoeffM_mod /q /= !Iu16_ub_of_int.
  split; first apply Ha; smt(mem_iota).
  split; first apply Ha; smt(mem_iota).
  by split; apply Hb; smt(mem_iota).
@@ -1465,10 +1465,10 @@ seq 6 5: (#pre /\
  auto => &1 &2 |> /List.allP Ha /List.allP Hb *.
  have ->: qinv16u16M (z2u256 zetas_op 332) (z2u256 zetas_op 348).
   rewrite !z2u256E 1..2:// /qinv16u16M -iotaredE /=.
-  by rewrite /= !C2RK !initiE 1..32:// /zetas_op /jzetas_exp /=.
+  by rewrite /= !C2RK !initiE 1..32:// /zetas_op /=.
  pose xx := List.all _ _.
  have ->/=: xx.
-  by rewrite /xx -iotaredE /= /zetas_op !z2u256E 1..2:// !C2RK /jzetas_exp /= -!incoeffM_mod /q /= !Iu16_ub_of_int.
+  by rewrite /xx -iotaredE /= /zetas_op !z2u256E 1..2:// !C2RK /= -!incoeffM_mod /q /= !Iu16_ub_of_int.
  split; first apply Ha; smt(mem_iota).
  split; first apply Ha; smt(mem_iota).
  by split; apply Hb; smt(mem_iota).
@@ -1504,10 +1504,10 @@ seq 6 5: (#pre /\
  auto => &1 &2 |> /List.allP Ha /List.allP Hb *.
  have ->: qinv16u16M (z2u256 zetas_op 364) (z2u256 zetas_op 380).
   rewrite !z2u256E 1..2:// /qinv16u16M -iotaredE /=.
-  by rewrite /= !C2RK !initiE 1..32:// /zetas_op /jzetas_exp /=.
+  by rewrite /= !C2RK !initiE 1..32:// /zetas_op /=.
  pose xx := List.all _ _.
  have ->/=: xx.
-  by rewrite /xx -iotaredE /= /zetas_op !z2u256E 1..2:// !C2RK /jzetas_exp /= -!incoeffM_mod /q /= !Iu16_ub_of_int.
+  by rewrite /xx -iotaredE /= /zetas_op !z2u256E 1..2:// !C2RK /= -!incoeffM_mod /q /= !Iu16_ub_of_int.
  split; first apply Ha; smt(mem_iota).
  split; first apply Ha; smt(mem_iota).
  by split; apply Hb; smt(mem_iota).
@@ -1887,12 +1887,12 @@ seq 6 35: (x16_spec q qx16{2} /\ zetasp{2}=zetas_op  /\ i{2}=0 /\
  wp; skip => &1 &2 Hpre qx16 z0R z1R /=.
  have ->: 3 * q <= 32767 by smt().
  have ->: qinv16u16M z0R z1R.
-  by rewrite /z0R /z1R /zR !z2u32E //= /VPBROADCAST_8u32 /qinv16u16M -iotaredE /= !R2C_pack16 //=. 
+  by rewrite /z0R /z1R !z2u32E //= /VPBROADCAST_8u32 /qinv16u16M -iotaredE /= !R2C_pack16 //=. 
  have ->: x16_spec q qx16.
   by rewrite x16_spec_C2R /q /=.
  pose z1L:= Array16.init _.
  have ->: I16u16M_ub 1 z1R z1L.
-  by move: Iu16_ub_of_int; rewrite /z1L /z1R /zR /zetas_op !z2u32E //= /VPBROADCAST_8u32 /R2C -iotaredE /= -incoeffM_mod /q /= !Iu16_ub_of_int.
+  by move: Iu16_ub_of_int; rewrite /z1L /z1R /zetas_op !z2u32E //= /VPBROADCAST_8u32 /R2C -iotaredE /= -incoeffM_mod /q /= !Iu16_ub_of_int.
  move: Hpre; rewrite -{2}iotaredE /= => |> *.
  rewrite (P2RS rp{2}) /= !PUR_i //= !P2R_i //= => |> *.
  rewrite (P2RS rp{2}) /= !PUR_i //= => |> *.
@@ -1918,7 +1918,7 @@ seq 10 8: (#[/:11]pre /\
   by rewrite /z0R /z1R /zetas_op !z2u32E 1..2:/# /VPBROADCAST_8u32 /qinv16u16M -iotaredE /= !R2C_pack16 //=.
  pose z1L:= Array16.init _.
  have ->: I16u16M_ub 1 z1R z1L.
-  by move: Iu16_ub_of_int; rewrite /z1L /z1R /zR /zetas_op !z2u32E //= /VPBROADCAST_8u32 /R2C -iotaredE /= -incoeffM_mod /q /= !Iu16_ub_of_int.
+  by move: Iu16_ub_of_int; rewrite /z1L /z1R /zetas_op !z2u32E //= /VPBROADCAST_8u32 /R2C -iotaredE /= -incoeffM_mod /q /= !Iu16_ub_of_int.
  done.
 seq 6 7: (#[/:11]pre /\
   I16u16_sb 5 r0{2} r0c{1} /\
@@ -1938,10 +1938,10 @@ seq 6 7: (#[/:11]pre /\
  have ->:  5 * q <= 32767 by rewrite /q.
  have ->: qinv16u16M (z2u256 zetas_op 8) (z2u256 zetas_op 24).
   rewrite !z2u256E 1..2:// /qinv16u16M -iotaredE /=.
-  by rewrite /= !C2RK !initiE 1..32:// /jzetas_exp /=.
+  by rewrite /= !C2RK !initiE 1..32:// /=.
  pose xx := List.all _ _.
  have: xx.
-   by rewrite /xx -iotaredE /= /zetas_op !z2u256E 1..2:// !C2RK /jzetas_exp /= -!incoeffM_mod /q /= !Iu16_ub_of_int. 
+   by rewrite /xx -iotaredE /= /zetas_op !z2u256E 1..2:// !C2RK /= -!incoeffM_mod /q /= !Iu16_ub_of_int. 
  by rewrite /xx => {xx} -> |> *.
 seq 6 7: (#[/:11]pre /\
   I16u16_sb 6 r0{2} r0e{1} /\
@@ -1961,10 +1961,10 @@ seq 6 7: (#[/:11]pre /\
  have ->:  6 * q <= 32767 by rewrite /q.
  have ->: qinv16u16M (z2u256 jzetas_exp 40) (z2u256 jzetas_exp 56).
   rewrite !z2u256E 1..2:// /qinv16u16M -iotaredE.
-  by rewrite /= !C2RK !initiE 1..32:// /jzetas_exp /=.
+  by rewrite /= !C2RK !initiE 1..32:// /=.
  pose xx := List.all _ _.
  have: xx.
-  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /jzetas_exp /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
+  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
  by rewrite /xx => {xx} -> |> *.
 seq 6 7: (#[/:11]pre /\
   I16u16_sb 7 r0{2} r0g{1} /\
@@ -1984,10 +1984,10 @@ seq 6 7: (#[/:11]pre /\
  have ->:  7 * q <= 32767 by rewrite /q.
  have ->: qinv16u16M (z2u256 jzetas_exp 72) (z2u256 jzetas_exp 88).
   rewrite !z2u256E 1..2:// /qinv16u16M -iotaredE.
-  by rewrite /= !C2RK !initiE 1..32:// /jzetas_exp /=.
+  by rewrite /= !C2RK !initiE 1..32:// /=.
  pose xx := List.all _ _.
  have: xx.
-  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /jzetas_exp /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
+  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
  by rewrite /xx => {xx} -> |> *.
 seq 6 7: (#[/:11]pre /\
   I16u16_sb 8 r0{2} r0i{1} /\
@@ -2007,10 +2007,10 @@ seq 6 7: (#[/:11]pre /\
  have ->:  8 * q <= 32767 by rewrite /q.
  have ->: qinv16u16M (z2u256 jzetas_exp 104) (z2u256 jzetas_exp 120).
   rewrite !z2u256E 1..2:// /qinv16u16M -iotaredE.
-  by rewrite /= !C2RK !initiE 1..32:// /jzetas_exp /=.
+  by rewrite /= !C2RK !initiE 1..32:// /=.
  pose xx := List.all _ _.
  have: xx.
-  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /jzetas_exp /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
+  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
  by rewrite /xx => {xx} -> |> *.
 seq 11 23: (#[/:2]pre /\ i{2}=1 /\ 
   I16u16_ub 2 (P2R rp{2} 0) (P2C rp8{1} 0) /\
@@ -2034,19 +2034,19 @@ seq 11 23: (#[/:2]pre /\ i{2}=1 /\
  have ->:  9 * q <= 32767 by rewrite /q /=.
  have ->: qinv16u16M (z2u256 jzetas_exp 136) (z2u256 jzetas_exp 152).
   rewrite !z2u256E 1..2:// /qinv16u16M -iotaredE.
-  by rewrite /= !C2RK !initiE 1..32:// /jzetas_exp /=.
+  by rewrite /= !C2RK !initiE 1..32:// /=.
  have ->: qinv16u16M (z2u256 jzetas_exp 168) (z2u256 jzetas_exp 184).
   rewrite !z2u256E 1..2:// /qinv16u16M -iotaredE.
-  by rewrite /= !C2RK !initiE 1..32:// /jzetas_exp /=.
+  by rewrite /= !C2RK !initiE 1..32:// /=.
  pose xx := List.all _ _.
  have: xx.
-  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /jzetas_exp /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
+  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
  rewrite /xx => {xx} ->; pose xx := List.all _ _.
  have: xx.
-  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /jzetas_exp /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
+  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
  rewrite /xx => {xx} -> |> *.
  have ->: x16_spec 20159 (C2R vx16_op).
-  by rewrite x16_spec_C2R /q /=.
+  by rewrite x16_spec_C2R /=.
  move => |> *.
  rewrite (P2RS rp{2}) /= !PUR_i //= !P2R_i //= => |> *.
  by rewrite (P2CS rp{1}) /= !PUC_i //= !P2C_i //= => |> *.
@@ -2068,10 +2068,10 @@ seq 10 8: (#[/:11]pre /\
  pose z0R := VPBROADCAST_8u32 _.
  pose z1R := VPBROADCAST_8u32 _.
  have ->: qinv16u16M z0R z1R.
-  by rewrite /z0R /z1R /zR !z2u32E 1..2://= /VPBROADCAST_8u32 /qinv16u16M -iotaredE /R2C /zetas_op /=.
+  by rewrite /z0R /z1R !z2u32E 1..2://= /VPBROADCAST_8u32 /qinv16u16M -iotaredE /R2C /zetas_op /=.
  pose z1L:= Array16.init _.
  have ->: I16u16M_ub 1 z1R z1L.
-  by rewrite /z1L /z1R /zR !z2u32E 1..2://= /VPBROADCAST_8u32 /R2C -iotaredE /= -incoeffM_mod /q !Iu16_ub_of_int /#. 
+  by rewrite /z1L /z1R !z2u32E 1..2://= /VPBROADCAST_8u32 /R2C -iotaredE /= -incoeffM_mod /q !Iu16_ub_of_int /#. 
  done.
 seq 6 7: (#[/:11]pre /\
   I16u16_sb 5 r0{2} r0n{1} /\
@@ -2094,7 +2094,7 @@ seq 6 7: (#[/:11]pre /\
   by rewrite /= !C2RK !initiE 1..32:// /zetas_op /=.
  pose xx := List.all _ _.
  have: xx.
-  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /zetas /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
+  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
  by rewrite /xx => {xx} -> |> *.
 seq 6 7: (#[/:11]pre /\
   I16u16_sb 6 r0{2} r0p{1} /\
@@ -2191,7 +2191,7 @@ have: xx.
  by rewrite /xx -iotaredE /= !z2u256E 1..2:// !C2RK /zetas_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q /=.
 rewrite /xx => {xx} -> |> *.
 have Hvx16: x16_spec 20159 (C2R vx16_op).
- by rewrite x16_spec_C2R /q /=.
+ by rewrite x16_spec_C2R /=.
 move => |> *.
 by rewrite (P2RS rp{2}) (P2CS rp8{1}) /= !PUR_i //= !PUC_i //= -{2}iotaredE /= !P2R_i //= !P2C_i //=.
 qed.
@@ -2252,7 +2252,7 @@ lemma invntt_butterfly16xE (n1 n2:int) xl xr z rxl rxr rzM rzMqinv rq16x:
 proof.
 rewrite -3!allP_range.
 move=> Hbnd Hl Hr /qinv16u16M_bits16 Hqinv Hz /x16_spec_bits16 Hq.
-rewrite /VPSUB_16u16 /VPADD_16u16 /VPMULH_16u16 /VPMULL_16u16 /= -iotaredE /R2C /=.
+rewrite /VPSUB_16u16 /VPMULH_16u16 /VPMULL_16u16 /= -iotaredE /R2C /=.
 do 15! (split; first by apply (invbutterfly_r n1 n2); [assumption|by apply Hq|by apply Hl|
  by apply Hr| by apply Hz| by rewrite Hqinv]).
 by apply (invbutterfly_r n1 n2); [assumption|by apply Hq|by apply Hl|
@@ -2503,7 +2503,7 @@ seq 2 8: (#[/:11]pre /\ x16_spec 20159 vx16{2} /\
   by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
  move => |> *.
  have ->: x16_spec 20159 (C2R vx16_op).
-  by rewrite x16_spec_C2R /q /=.
+  by rewrite x16_spec_C2R /=.
  done.
 seq 6 7: (#[/:12]pre /\
   I16u16_sb 8 r0{2} r0d{1} /\
@@ -2558,7 +2558,7 @@ seq 6 8: (#[/:12]pre /\
   by rewrite /= !C2RK /zetas_inv_op !initiE //=.
  pose xx := List.all _ _.
  have ->: xx.
-  by rewrite /xx /z0R /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
+  by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
  by move => |> *.
 seq 6 8: (#[/:12]pre /\
   I16u16_sb 8 r0{2} r0h{1} /\
@@ -2585,7 +2585,7 @@ seq 6 8: (#[/:12]pre /\
   by rewrite /= !C2RK /zetas_inv_op !initiE //=.
  pose xx := List.all _ _.
  have ->: xx.
-  by rewrite /xx /z0R /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
+  by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
  by move => |> *.
 seq 6 8: (#[/:12]pre /\
   I16u16_sb 8 r0{2} r0j{1} /\
@@ -2683,7 +2683,7 @@ seq 2 8: (#[/:11]pre /\ x16_spec 20159 vx16{2} /\
   by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
  move => |> *.
  have ->: x16_spec 20159 (C2R vx16_op).
-  by rewrite x16_spec_C2R /q /=.
+  by rewrite x16_spec_C2R /=.
  done.
 seq 6 7: (#[/:12]pre /\
    I16u16_sb 8 r0{2} r0o{1} /\
@@ -2765,7 +2765,7 @@ seq 6 8: (#[/:12]pre /\
   by rewrite /= !C2RK /zetas_inv_op !initiE //=.
  pose xx := List.all _ _.
  have ->: xx.
-  by rewrite /xx /z0R /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
+  by rewrite /xx /z1R /z1L -iotaredE /= !z2u256E // !C2RK /zetas_inv_op /= -!incoeffM_mod /q /= !Iu16_ub_of_int /q.
  by move => |> *.
 seq 6 8: (#[/:12]pre /\
   I16u16_sb 8 r0{2} r0u{1} /\

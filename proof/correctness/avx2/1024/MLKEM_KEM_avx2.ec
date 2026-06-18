@@ -53,13 +53,13 @@ seq 3 0 : (#pre /\
   move => &2 ?; auto => /> &1 ?????????;do split;2..3,5..:smt().
   + move => k kbl kbh;rewrite initiE 1:/# /= get8_set64_directE 1,2:/#.
     case ((192 + i{1}) * 8 <= k < (192 + i{1}) * 8 + 8 ) => *.
-    +  rewrite /get64 /init8 /(\bits8) wordP => *.
+    +  rewrite /init8 /(\bits8) wordP => *.
        by rewrite initiE 1:/# /=  /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /#. 
     rewrite /get8 /init8 /(\bits8) wordP => *.
     rewrite initiE 1:/# /= /#.
   + move => k kbl kbh;rewrite initiE 1:/# /= get8_set64_directE 1,2:/#.
     case ((192 + i{1}) * 8 <= k + 1536 < (192 + i{1}) * 8 + 8 ) => *.
-    +  rewrite /get64 /init8 /(\bits8) wordP => *.
+    +  rewrite /init8 /(\bits8) wordP => *.
        by rewrite initiE 1:/# /=  /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /#. 
     rewrite /get8 /init8 /(\bits8) wordP => *.
     rewrite initiE 1:/# /= /#.
@@ -85,19 +85,19 @@ seq  5 0 : (#pre /\
 +  move => &2 ?; auto => /> &1 ???????????;do split;4,5,7..:smt().
   + move => k kbl kbh;rewrite initiE 1:/# /= get8_set64_directE 1,2:/#.
     case ((392 + i{1}) * 8 <= k < (392 + i{1}) * 8 + 8 ) => *.
-    +  rewrite /get64 /init8 /(\bits8) wordP => *.
+    +  rewrite /init8 /(\bits8) wordP => *.
        by rewrite initiE 1:/# /=  /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= /#.
     rewrite /get8 /init8 /(\bits8) wordP => *.
     rewrite initiE 1:/# /= /#.
   + move => k kbl kbh;rewrite initiE 1:/# /= get8_set64_directE 1,2:/#.
     case ((392 + i{1}) * 8 <= k + 1536 < (392 + i{1}) * 8 + 8 ) => *.
-    +  rewrite /get64 /init8 /(\bits8) wordP => *.
+    +  rewrite /init8 /(\bits8) wordP => *.
        by rewrite initiE 1:/# /=  /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= /#. 
     rewrite /get8 /init8 /(\bits8) wordP => *.
     rewrite initiE 1:/# /= /#.
   + move => k kbl kbh;rewrite initiE 1:/# /= get8_set64_directE 1,2:/#.
     case ((392 + i{1}) * 8 <= k + 3104 < (392 + i{1}) * 8 + 8) => *.
-    +  rewrite /get64 /init8 /(\bits8) wordP => *.
+    +  rewrite /init8 /(\bits8) wordP => *.
        by rewrite initiE 1:/# /=  /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= /#. 
     rewrite /get8 /init8 /(\bits8) wordP => *.
     rewrite initiE 1:/# /= /#.
@@ -107,7 +107,7 @@ seq  5 0 : (#pre /\
       rewrite /get8 /init8 /(\bits8) wordP => kk kkb.
       rewrite initiE 1:/# /= /#.
     rewrite ifT 1:/#.
-    rewrite /get64 /init8 /(\bits8) wordP => kk kkb.
+    rewrite /init8 /(\bits8) wordP => kk kkb.
     rewrite initiE 1:/# /=  /get64_direct /pack8_t initiE 1:/# /= initiE 1:/# /= initiE 1:/# /= /#.
 
 auto => /> &1 &2; rewrite !tP => ? hcoins2 ?Hpk1 ??? hsk pp H H0;do split.
@@ -146,7 +146,7 @@ auto => /> &1 &2;rewrite !tP => pk1 pk2; do split => *.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /=.
      rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
      rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
-   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1568_32 get_of_list 1:/#;congr;congr;congr.
+   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk get_of_list 1:/#;congr;congr;congr.
       + apply (eq_from_nth witness); 1: by rewrite !size_to_list; smt(kvec_val).
         move => k; rewrite size_to_list => Kb.
         rewrite !get_to_list.
@@ -165,7 +165,7 @@ congr.
    + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifF 1:/# /= initiE 1:/# /= ifT 1:/# /=.
      rewrite /(\bits8) /get256_direct /pack32_t wordP => j hj.
      rewrite initiE 1:// /= initiE 1:/# /= initiE 1:/# initiE /#.
-   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk /SHA3_256_1568_32 get_of_list 1:/#;congr;congr;congr.
+   + rewrite tP => *; rewrite  initiE 1:/# /= initiE 1:/# /= ifT 1:/# /= initiE 1:/# /= /H_pk get_of_list 1:/#;congr;congr;congr.
       + apply (eq_from_nth witness); 1: by rewrite !size_to_list; smt(kvec_val).
         move => k; rewrite size_to_list => Kb.
         rewrite !get_to_list.
@@ -237,7 +237,7 @@ do split; 1..2: by smt().
  
   move => kv.
   move : H2; rewrite /x W256.WRing.addr_eq0 /oppw /=. 
-  rewrite /init8 /loadW256 /loadW8 /get256_direct wordP => H2.
+  rewrite /init8 /get256_direct wordP => H2.
   apply W8.wordP => j jb.
   move : (H2 ((k - i{hr} * 32) * 8 + j) _). smt().
   rewrite !pack32wE /=; 1,2: smt().
@@ -248,7 +248,7 @@ move => H0.
 have -> : h{hr} = W256.zero by rewrite to_uint_eq /= /#.
 rewrite or0w;have -> : x = W256.zero; last by auto.
 rewrite wordP => k kb; rewrite zerowE /x.
-move : H0;rewrite /init8 /loadW256 /loadW8 /get256_direct => H0. 
+move : H0;rewrite /init8 /get256_direct => H0. 
 pose xx := pack32_t _.
 pose yy := pack32_t _.
 have -> : xx = yy; last by rewrite xorwK_s //.
@@ -305,17 +305,17 @@ have HH : forall ii, 0<=ii <32 => BLENDV_32u8 ((WArray32.get256_direct ((WArray3
           (get256_direct (WArray32.init8 ("_.[_]" _dst)) 0) (VPBROADCAST_4u64 W64.zero) \bits8
         ii = _src.[ii]; last by rewrite HH. 
 move => ii iib.
-rewrite /get256_direct /init8 /loadW256 /loadW8 /= wordP => i ib.
+rewrite /get256_direct /init8 /= wordP => i ib.
 rewrite /BLENDV_32u8 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /BLENDV_16u8 /= !msb0 //=  initiE //=.
 rewrite pack32E initiE /= 1:/# /of_list initiE /= /#.
  
 + move =>cone; move : (H0 cone) => -> /=;rewrite tP => k kb.
-rewrite initiE //= /storeW256 kb /=.
+rewrite initiE //= kb /=.
 have HH : forall ii, 0<=ii <32 => BLENDV_32u8 ((WArray32.get256_direct ((WArray32.init8 ("_.[_]" _src))) 0))
         (get256_direct (WArray32.init8 ("_.[_]" _dst)) 0) (VPBROADCAST_4u64 W64.onew) \bits8
               ii = _dst.[ii]; last by rewrite HH. 
 move => ii iib.
-rewrite /get256_direct /init8 /loadW256 /loadW8 /= wordP => i ib.
+rewrite /get256_direct /init8 /= wordP => i ib.
 rewrite /BLENDV_32u8 /VPBROADCAST_4u64 /(\bits8) -iotaredE /= /BLENDV_16u8 /= !msb1 //=  initiE //=.
 by rewrite pack32E initiE /= 1:/# /of_list !initiE /= /#.
 qed.

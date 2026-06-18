@@ -966,7 +966,7 @@ seq 2 0 : (#pre /\
        rewrite nttpackv_subarray768_nttunpackm 1:/#.
        rewrite /signed_bound768_cxq => k Hk; rewrite /subarray768 initiE 1:/# /=.
        have := matrix_unlift (trmx (sampleA rho{2})).
-       rewrite /pos_bound2304_cxq /bpos16 /b16; smt().
+       rewrite /pos_bound2304_cxq /bpos16; smt().
 
 (* === Step 7: pointwise_acc for v = pkpv · sp_0.
      LHS: 1 stmt (v <@ __polyvec_pointwise_acc(v, pkpv, sp_0)).  RHS: 0 stmts.
@@ -1056,7 +1056,7 @@ have Hbp_polyvec : lift_polyvec (nttpackv bp{1}) = mm.
 (* (3) Chain. Substitute Hbp_polyvec into HrsJ, then algebra. *)
 rewrite HrsJ Hbp_polyvec /mm initiE /=; 1:smt(kvec_val).
 rewrite invntt_scale.
-rewrite /scale /mul1x256 tP => k Hk.
+rewrite /scale tP => k Hk.
 rewrite !mapiE //=.
 pose x := invntt _.
 rewrite -ComRing.mulrA -(ComRing.mulrC _ (incoeff 169)).
@@ -1078,7 +1078,7 @@ seq 1 0 : (#{/~lift_array256 v{1} =
   split. move : Hvb; rewrite /signed_bound_cxq;  smt(qE).
   move => ? result Hresv Hresb. 
   rewrite -Hresv lift_nttpack Hrvv Hvv nttunpackK invntt_scale.
-  rewrite /scale /mul1x256 tP => k kb.
+  rewrite /scale tP => k kb.
   rewrite !mapiE //=.
   rewrite ZqField.mulrCA.
   have ->: incoeff 65536 * incoeff 169 = Zq.one by rewrite -rrinvcoeff.
@@ -1196,7 +1196,7 @@ split.
   rewrite initiE 1:/# /= initiE 1:/# /= initiE /=;1:smt(kvec_val Parameters.param_sets).
   rewrite ifF 1:/# initiE 1:/# /= ifT 1:/# /=.
   have Hk  : 0 <= k < 960 by move: kn; rewrite Hdu kvec_val /=; smt().
-  rewrite Hdu /encode10_vec get_of_list 1:/#.
+  rewrite Hdu get_of_list 1:/#.
   have ->: invnttv (ntt_mmul (trmx (sampleA rho{2})) (nttv rv{2})) + lift_polyvec ep{1}
        = lift_polyvec bp{1} by rewrite Hrvv Hbpv.  
   by rewrite (nth_change_dfl witness W8.zero) 1:(size_encode 3 10) // size_to_list; smt(Parameters.param_sets kvec_val).
@@ -1207,7 +1207,7 @@ rewrite ifT 1:/# Hresv.
 have Hk : 0 <= kk < 128 by move: kb; rewrite Hdv /=; smt().
 have HsL : size (ByteEncode 4 (to_list (compress_poly 4 (lift_array256 v{1})))) = 128
   by rewrite (size_encode 1 4); smt(Array256.size_to_list).
-rewrite Hdv -Hvv /encode4 get_of_list 1:/#.
+rewrite Hdv -Hvv get_of_list 1:/#.
 by rewrite (nth_change_dfl witness W8.zero) 1:/#.
 qed.
 
@@ -1273,7 +1273,7 @@ seq 16 5 : (#pre /\ publicseed{1} = rho{2} /\
     + move => &m z; auto => /> &hr Hi0 Hi1 Hbnd Hgi; do split; 1..2,4:smt().
       move => k kbl kbh; rewrite initiE 1:/# /= get8_set64E 1,2:/#.
       case (i{hr}*8 <= k < i{hr}*8+8) => Hk.
-      + rewrite ifT 1:/# /get64 /get64_direct pack8bE 1:/# initiE 1:/# /=.
+      + rewrite ifT 1:/# /get64_direct pack8bE 1:/# initiE 1:/# /=.
         rewrite /init8 initiE 1:/# /=; congr; smt().
       rewrite ifF 1:/# /get8 /init8 initiE 1:/# /=; smt().
     auto => /> /#.
@@ -1483,7 +1483,7 @@ seq 6 3 : (
     (* pk[1152..1152+(i+1)*8] coverage *)
     move => k kbl kbh; rewrite initiE 1:/# /= get8_set64_directE 1,2:/#.
     case (i{hr}*8 <= k < i{hr}*8+8) => Hk.
-    + rewrite ifT 1:/# /get64 /get64_direct pack8bE 1:/# initiE 1:/# /=.
+    + rewrite ifT 1:/# /get64_direct pack8bE 1:/# initiE 1:/# /=.
       rewrite /init8 initiE 1:/# /=; congr; smt().
     rewrite ifF 1:/# /get8 /init8 initiE 1:/# /=; smt().
   auto => |> &1 &2 pk1.
@@ -1627,7 +1627,7 @@ while {1} (
     + by rewrite /SignedReductions_W16.R; smt(qE).
     + have := Hrr0v (k - i{hr} * 256) _; 1: smt().
       by rewrite /SignedReductions_W16.R; smt(qE @SignedReductions_W16).
-    move => Hl Hh _; rewrite /b16 Hrr1k.
+    move => Hl Hh _; rewrite Hrr1k.
     have := SignedReductions_W16.SREDCp_corr
               (to_sint rr0.[k - i{hr} * 256] * (SignedReductions_W16.R ^ 2 %% q)) _ _.
     + by rewrite /SignedReductions_W16.R; smt(qE).
@@ -1790,7 +1790,7 @@ seq 1 0 : (#{/~lift_array256 t{1} = nttunpack (scale (ntt_dotp s{2} (PolyVec.ntt
   move => _ result [Hres Hresbnd]; split; first by smt().
   split; last by smt().
   rewrite -Hres lift_nttpack Htsh nttunpackK invntt_scale.
-  rewrite /scale /mul1x256 tP => k kb.
+  rewrite /scale tP => k kb.
   rewrite !mapiE //=.
   rewrite ZqField.mulrCA.
   have ->: incoeff 65536 * incoeff 169 = Zq.one by rewrite -rrinvcoeff.
@@ -1810,7 +1810,7 @@ seq 2 0 : (#pre /\
   split; last by smt().
   rewrite /(&+) /(&-) tP => k kb.
   rewrite map2iE 1:/# mapiE //=.
-  rewrite /lift_array256 mapiE //=.
+  rewrite mapiE //=.
   have Hveq : v{2} = lift_array256 v{1} by smt().
   have := Hresk k kb.
   by rewrite Hveq Htlift /lift_array256 !mapiE //=.

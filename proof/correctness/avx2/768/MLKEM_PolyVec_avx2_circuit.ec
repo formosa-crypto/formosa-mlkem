@@ -669,13 +669,13 @@ conseq (:
       let bidx = idx %% 12 in
       W12."_.[_]" (ret.[aidx]) bidx))); last by circuit.
       
-+ move => &hr />; rewrite allP /= /pos_bound768_cxq /(\sle) /(\slt) /= /qE !of_sintK /smod /= .
++ move => &hr />; rewrite allP /= /pos_bound768_cxq /(\sle) /(\slt) /= !of_sintK /smod /= .
   by rewrite qE /= => H k ?; move : (H k _) => //=.
 
 move => &hr [#]/=; rewrite /pos_bound768_cxq /bpos16 => H0 <- rr ->.
-rewrite /init_1152_8 /encode12 tP => i ib.
+rewrite /init_1152_8 tP => i ib.
 rewrite initiE 1:/# /= get_of_list 1:/# /= wordP => k kb.
-rewrite initiE //= /init_256_12 initiE 1:/# /=.
+rewrite initiE //= initiE 1:/# /=.
 have := nttpackv_pred a{hr} (fun c => bpos16 c (2 * q)).
 rewrite !allP  /= iffE qE /= => [#_ H].
 by rewrite nttpackv_16E  to_bytes_circuit_sem_polyvec;1..3:

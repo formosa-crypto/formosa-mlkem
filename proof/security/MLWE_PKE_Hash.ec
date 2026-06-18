@@ -736,7 +736,7 @@ op noise_exp_part2 _A s e r e2 m =
 lemma parts_work _A s e r e1 e2 m :
   noise_exp _A s e r e1 e2 m =
   noise_exp_part1 _A s e r e1 e2 &+ noise_exp_part2 _A s e r e2 m 
-  by rewrite noise_exp_val /noise_exp_simpl /noise_exp_part1 /noise_exp_part2 /=; ring. 
+  by rewrite noise_exp_val /noise_exp_part1 /noise_exp_part2 /=; ring. 
 
 module CB(A : CORR_ADV) = {
   var s : vector

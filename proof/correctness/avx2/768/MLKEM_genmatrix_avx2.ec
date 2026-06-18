@@ -482,7 +482,7 @@ while ( buf=_buf /\ 24 %| to_uint saved_buf_offset /\ 3 %| to_uint _buf_offset /
  split;1: by rewrite !modz_small 1:// /= /#.
  pose R:= rejection16 _.
  have ?: 0 <= size R <= 32.
-  rewrite /rejection16 size_map; split; first smt(size_ge0).
+  rewrite size_map; split; first smt(size_ge0).
   move=> _; apply (size_rejection_le' 48); 1:done => /=.
   by rewrite /buf_subl !size_take 1:/# !size_drop /#.
  rewrite !modz_small 1..2:/#.
@@ -844,14 +844,14 @@ pose B2:= Array536.init _.
 have ->: B2 = buf4x_buf buf{1} 2.
  apply Array536.ext_eq => i Hi /=.
  rewrite initiE /= 1:/# initiE 1:/# initiE 1:/# /= ifF 1:/#.
- by rewrite /buf4x_buf /= initiE /#.
+ by rewrite /= initiE /#.
 split; first done.
 move=> _ _ {B2} [p2 buf2] p2R /= Hp2.
 pose B3:= Array536.init _.
 have ->: B3 = buf4x_buf buf{1} 3.
  apply Array536.ext_eq => i Hi /=.
  rewrite initiE /= 1:/# initiE 1:/# initiE 1:/# /= ifF 1:/#.
- by rewrite /buf4x_buf initiE 1:/# /= ifF 1:/# initiE /#.
+ by rewrite initiE 1:/# /= ifF 1:/# initiE /#.
 split; first done.
 move=> _ _ {B3} [p3 buf3] p3R /= Hp3.
 rewrite /pack4poly /=.
@@ -913,7 +913,7 @@ wp; call (sampleFilter_sem _rho (pos2ji (_pos+2) _t).`1 (pos2ji (_pos+2) _t).`2)
 wp; call (sampleFilter_sem _rho (pos2ji (_pos+1) _t).`1 (pos2ji (_pos+1) _t).`2).
 wp; call (sampleFilter_sem _rho (pos2ji _pos _t).`1 (pos2ji _pos _t).`2).
 auto => />.
-rewrite /mat4atPos /pos2ji /idx_from_pos /=.
+rewrite /mat4atPos /pos2ji /=.
 case: _t => _.
 + do 4! (rewrite trmxE; 1,2: smt(kvec_val)).
   do 4! (rewrite sampleAE; 1,2: smt(kvec_val)).

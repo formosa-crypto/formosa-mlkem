@@ -176,7 +176,7 @@ proof.
   apply Array16.ext_eq => x x_i.
   do (rewrite initiE 1:x_i //=).
   rewrite qx16_def 1:x_i vx16_def 1:x_i.
-  rewrite /wmulls /wmulhs //=.
+  rewrite /wmulhs //=.
   rewrite SAR_sem10 /=.
   rewrite SAR_sem26 /=.
   rewrite /(W16.smod 20159) //=.
@@ -483,7 +483,7 @@ proof.
   rewrite SAR_sem16 SAR_sem16 /=.
   rewrite /(`<<`) /sigextu32 /truncateu16 /=.
   rewrite shlMP; first by smt().
-  rewrite W32.to_sintE W32.of_uintK W32.of_uintK W32.of_sintK /= /R /=.
+  rewrite W32.to_sintE W32.of_uintK W32.of_uintK W32.of_sintK /= /=.
 
   apply W16.to_uint_eq; rewrite !of_uintK /=.
   rewrite  /(W16.smod 3329) /= /(W16.smod 62209) /=.

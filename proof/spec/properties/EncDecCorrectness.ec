@@ -86,7 +86,7 @@ qed.
 lemma encodeK n l :
     1 <= n <= 12 => 8 %| n*size l => all (fun i => 0 <= i < 2^n) l => l  = (ByteDecode n) (ByteEncode n l).
 move => Hn Hsize Hrng.
-rewrite /ByteEncode /ByteDecode /cancel.
+rewrite /ByteEncode /ByteDecode.
 have Hsize' : size l = size (map bs2int (chunk n (BytesToBits (BitsToBytes (flatten (map (int2bs n) l)))))).
 + rewrite size_map BitsToBytesK.
   + rewrite (EclibExtra.size_flatten' n);1:by smt(mapP size_int2bs).
@@ -141,7 +141,7 @@ lemma size_encode k n l :
  1 <= k <= 4  =>
  1 <= n <= 12 => size l = k*256 =>  size (ByteEncode n l) = k*32*n.
 move => Hn Hsize.
-rewrite /ByteEncode size_map size_chunk 1:/# /BytesToBits (EclibExtra.size_flatten' n); 1:smt(mapP size_int2bs).
+rewrite /ByteEncode size_map size_chunk 1:/# (EclibExtra.size_flatten' n); 1:smt(mapP size_int2bs).
 by rewrite size_map /#.
 qed.
 
@@ -156,7 +156,7 @@ qed.
 lemma decodeK n l :
   1 <= n <= 12 => n %| 8*size l => l = (ByteEncode n) (ByteDecode n l).
 move => Hn Hsize.
-rewrite /ByteEncode /ByteDecode /cancel.
+rewrite /ByteEncode /ByteDecode.
 have Hsize' : size l = size (BitsToBytes (flatten (map (int2bs n) (map bs2int (chunk n (BytesToBits l)))))).
 + rewrite /BitsToBytes size_map size_chunk 1:/# (EclibExtra.size_flatten' n).
   + move => x; rewrite mapP => He;elim He.

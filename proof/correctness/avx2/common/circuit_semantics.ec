@@ -101,7 +101,7 @@ proof.
 move => Hi Hk /=; rewrite /compress1_circuit  /pos_bound256_cxq qE /= => H00.
 rewrite ultE /= get_to_uint. 
 case (to_uint p.[i*8+k] < 3329) => /= *.
-+ rewrite -compress_impl_small //=;1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).  
++ rewrite -compress_impl_small //=;1: by rewrite qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).  
   congr;congr;rewrite modz_mod;congr;congr.
   by rewrite /srl_32 /sll_32 /(`<<`) /(`>>`) /= /#.
 

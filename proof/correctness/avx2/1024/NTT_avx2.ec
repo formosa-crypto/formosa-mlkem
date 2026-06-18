@@ -144,7 +144,7 @@ case (0 <= k && k < 256).
   pose b := nttpack_idx.[a].
   rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
   move : nttpack_idxK; rewrite allP /= => H.
-  rewrite /a /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
+  rewrite /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
 
 case (256 <= k && k < 512).
 + move =>*.
@@ -158,7 +158,7 @@ case (256 <= k && k < 512).
   pose b := nttpack_idx.[a].
   move : nttpack_idxK; rewrite allP /= => H.
   rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
-  rewrite /a /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
+  rewrite /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
 
 case (512 <= k && k < 768).
 + move =>*.
@@ -173,7 +173,7 @@ case (512 <= k && k < 768).
   pose b := nttpack_idx.[a].
   move : nttpack_idxK; rewrite allP /= => H.
   rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
-  rewrite /a /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
+  rewrite /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
 
 move =>*.
 rewrite /subarray256 /nttunpack initiE //=. smt(nttunpack_bnd Array256.allP).
@@ -187,7 +187,7 @@ rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
 pose b := nttpack_idx.[a].
 move : nttpack_idxK; rewrite allP /= => H.
 rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
-rewrite /a /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
+rewrite /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
 qed.
 
 lemma unpackvK : cancel nttunpackv<:'a> nttpackv.
@@ -205,7 +205,7 @@ case (0 <= k && k < 256).
   pose b := nttunpack_idx.[a].
   rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
   move : nttunpack_idxK; rewrite allP /= => H.
-  rewrite /a /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
+  rewrite /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
 
 case (256 <= k && k < 512).
 + move =>*.
@@ -219,7 +219,7 @@ case (256 <= k && k < 512).
   pose b := nttunpack_idx.[a].
   move : nttunpack_idxK; rewrite allP /= => H.
   rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
-  rewrite /a /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
+  rewrite /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
 
 case (512 <= k && k < 768).
 + move =>*.
@@ -234,7 +234,7 @@ case (512 <= k && k < 768).
   pose b := nttunpack_idx.[a].
   move : nttunpack_idxK; rewrite allP /= => H.
   rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
-  rewrite /a /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
+  rewrite /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
 
 move =>*.
 rewrite /subarray256 /nttpack initiE //=. smt(nttpack_bnd Array256.allP).
@@ -248,7 +248,7 @@ rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
 pose b := nttunpack_idx.[a].
 move : nttunpack_idxK; rewrite allP /= => H.
 rewrite initiE //=.  smt(nttunpack_bnd nttpack_bnd Array256.allP).
-rewrite /a /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
+rewrite /b H; smt(mem_iota nttunpack_bnd nttpack_bnd Array256.allP).
 qed.
 
 lemma nttpackv_lift (v  :W16.t Array1024.t) :
@@ -520,7 +520,7 @@ skip =>  &m [#] /= H_r Hb.
 
 rewrite !andaE.
 do split. 
-+ move :Hb; rewrite /signed_bound_cxq /signed_bound1024_cxq => Hb; rewrite lift_nttpack /= lift_array_256_1024 /= nttpack_subarray1024 H_r tP => k kb.
++ move :Hb; rewrite /signed_bound1024_cxq => Hb; rewrite lift_nttpack /= lift_array_256_1024 /= nttpack_subarray1024 H_r tP => k kb.
   rewrite initiE 1:/# !mapiE 1,2:/# /= initiE /#. 
 + move  => k Hk; move :(Hb k); rewrite !initiE //= /#. 
 
@@ -550,7 +550,7 @@ do split.
 move => r2 [#] Hr2 H10.  
 split.
  + apply KVec.tP => k Hk.
-   rewrite /mul1x256v /mapv KVec.mapiE 1:/# invnttvE 1:/# /lift_polyvec !KVec.initiE 1,2:/#.
+   rewrite /mapv KVec.mapiE 1:/# invnttvE 1:/# /lift_polyvec !KVec.initiE 1,2:/#.
    simplify.
    case (k=0) => [->|hkn0].
    + have e1: subarray256 _r 0 = init (fun (i0:int) => _r.[i0]).

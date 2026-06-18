@@ -124,7 +124,7 @@ conseq (: a = _aw /\
 (* BDEP post conseq *)
 
 (* We start with some boilerplate *)
-move => &hr [#]/= H0 <- rr ->; rewrite /= /init_128_8 tP => i ib.
+move => &hr [#]/= H0 <- rr ->; rewrite /= tP => i ib.
 rewrite wordP => k kb; rewrite !initiE 1..3:/# /=.
 rewrite encode_compress_bits //=.
 by apply compress5_circuit_sem.

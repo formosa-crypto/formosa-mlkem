@@ -773,7 +773,7 @@ proof.
       rewrite red16x_bred 1:/#.
       rewrite eq_incoeff in bred_cgr.
       rewrite bred_cgr.
-      rewrite /lift_array16 /= mapiE 1:/# /= lift2poly_iso //.
+      rewrite /= mapiE 1:/# /= lift2poly_iso //.
       rewrite (rp_sbred k _) //.
     + rewrite (rp_sbred k _) //.
   rewrite mulzDr mulz1 => k k_lb k_ub.
@@ -993,7 +993,7 @@ proof.
   split.
     + rewrite /shuf2 => />.
       rewrite -ext_eq_all /all_eq //=.
-    + rewrite /shuf2 /f16u16_t4u64 /f4u64_t16u16 /lift_array16 => />.
+    + rewrite /shuf2 /f16u16_t4u64 /f4u64_t16u16 => />.
       rewrite -ext_eq_all /all_eq => />.
       rewrite /W8.int_bit => />.
       rewrite shr_shrw 1:/#.
@@ -1010,7 +1010,7 @@ lemma shuffle1_corr_h _a _b:
 proof.
   proc.
   wp; inline *; auto => />.
-  rewrite /shuf1 /f8u32_t16u16 /f16u16_t8u32 /lift_array16 => />.
+  rewrite /shuf1 /f8u32_t16u16 /f16u16_t8u32 => />.
   do (rewrite -ext_eq_all /all_eq /=).
   rewrite /W8.int_bit => />.
   do (rewrite shl_shlw 1:/#; rewrite wlslE => />).
