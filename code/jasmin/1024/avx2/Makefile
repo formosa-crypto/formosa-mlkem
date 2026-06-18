@@ -27,10 +27,10 @@ pqcp: $(JINC)  jkem.s
 .PHONY: ct clean
 
 ct:
-	$(JASMINCT) --infer jkem.jazz
+	$(JASMINCT) jkem.jazz
 
 sct:
-	$(JASMINCT) --sct --infer jkem.jazz
+	$(JASMINCT) --sct jkem.jazz
 
 clean:
 	-rm -f *.s
