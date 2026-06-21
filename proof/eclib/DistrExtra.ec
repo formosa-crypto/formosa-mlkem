@@ -967,24 +967,15 @@ transitivity {2}
  async while
   [ (fun x => i < _N*x), i{2}+1 ]
   [ (fun x => i < x), i{2}+1 ]
-  ( j{1}<n{1} /\ j{2}<n{2}) ( ! j{2}<n{2} )
-  : (={k,max,n,j,l} /\ (n{1}<=j{1} \/ i{1}=_N*i{2}) /\ 0<=i{1} /\ _N=nchunk{2} /\ 0 < _N).
- + by move=> /> &2 /#.
- + by move=> /> &2 /#.
- + by move=> /> &2 *. 
- + by move=> &2; wp; rnd; auto.
- + move=> /> &1; exfalso; smt().
- + move=> v1 v2.
-   rcondt{2} 1; 1: by auto => /> /#.
-   rcondf{2} 4.
-    by move=> &m; wp; while true; auto.
-   exlim i{1} => i0.
-   wp; while (={k,max,n,k,j,l} /\ _N = nchunk{2} /\ 0<_N /\ (n{2}<=j{2} \/ i{1}=i{2}*_N+xn{2}) /\ xn{2}<=_N /\ 0<=i{1} /\ v1=i{2}+1 /\ v2=i{2}+1).
-    by wp; auto => /> &1 &2 /#. 
-   by wp; auto => /> /#. 
- + by rcondf 1; auto; smt().
- + by rcondf 1; auto; smt().
- by wp; auto.
+  (false) (false)
+  : (={k,max,n,j,l} /\ (n{1}<=j{1} \/ i{1}=_N*i{2}) /\ i{1} <= _N*i{2} /\ 0<=i{1} /\ _N=nchunk{2} /\ 0 < _N) => //=.
+ by move=> /> &1 &2 /#.
+ move=> v1 v2; rcondt{2} 1; 1: by auto => /> /#.
+ rcondf{2} 4; first by move=> &m; wp; while true; auto.
+ exlim i{1} => i0; wp; while (={k,max,n,k,j,l} /\ _N = nchunk{2} /\ 0<_N /\ (n{2}<=j{2} \/ i{1}=i{2}*_N+xn{2}) /\ i{1} <= i{2}*_N+xn{2} /\ xn{2}<=_N /\ 0<=i{1} /\ v1=i{2}+1 /\ v2=i{2}+1).
+  by wp; auto => /> &1 &2 /#.
+ by wp; auto => /> /#.
+ by auto => /> /#.
 (* hop 2: rearrange inner-loop *)
 transitivity {2}
  { i <- 0;

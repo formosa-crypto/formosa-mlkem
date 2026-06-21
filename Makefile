@@ -4,6 +4,7 @@
 ECCONF := config/tests.config 
 ECJOBS ?= 3
 CHECKS ?= \
+	mlkem_eclib                 \
 	mlkem_correctness_768_avx2  \
 	mlkem_correctness_1024_avx2 \
 	mlkem_safety_768_avx2       \

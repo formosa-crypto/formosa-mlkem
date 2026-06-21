@@ -764,13 +764,13 @@ proc; conseq (_ : _buf = buf ==> _); first done.
 
 (* ==================================================================== *)
 (* First part: extracting all the 12-bit words from the input buffer    *)
-seq ^g0<-{2} & -1 : (#pre /\ 
+seq ^g0<-{2} : (#pre /\
           init_array16_w16 (fun i => extract_256_16 f0 (16 * i)) =
           init_array16_w16 (fun i => zextend_12_16 (sliceget_8_12_24 (init_array24_w8 (fun (i : int) => buf.[i])) (12 * i)))); 1: by circuit.
   
 (* ==================================================================== *)
 (* Second part: parallel comparison                                     *)
-seq ^good<- : (#pre /\ 
+seq ^good<- & +1 : (#pre /\
   W16.init (fun i =>  good.[perm i]) = W16.init (fun i => extract_256_16 f0 (16 * i) \slt W16.of_int 3329)
 ).
 - by conseq />; circuit.
@@ -799,7 +799,7 @@ cfold ^t0_1<-; swap ^shuffle_0_1<- @^shuffle_0<- & +1.
 proc change circuit [
   (shf0_0_16 shf0_1_16 : W128.t)
   (f0_0 f0_1 : W128.t)
-] ^shuffle_0<- +5
+] ^shuffle_0<- +6
 {
   f0_0 <- extract_256_128 f0 0;
   f0_1 <- extract_256_128 f0 128;
@@ -816,7 +816,6 @@ swap [^shf0_0_16<- .. ^shf0_0_16<- & +1] @^good0_0<- & +2.
 cfold ^f0_0<- 4; proc rewrite ^shf0_0<- zextend_8_64P.
 
 swap ^f0_1<- @^good0_1<-.
-swap [^shf0_1_16<- .. ^shf0_1_16<- & +1] @^good0_1<- & +2.
 cfold ^f0_1<- 4; proc rewrite ^shf0_1<- zextend_8_64P.
 
 pose P (o : int) (g : W8.t) (f : W256.t) (f_0 : W128.t) :=
@@ -826,12 +825,12 @@ pose P (o : int) (g : W8.t) (f : W256.t) (f_0 : W128.t) :=
       (iotared 0 8) in
   all (fun i => w.[i] = extract_128_16 f_0 (16 * i)) (iotared 0 (size w)).
 
-sp 1; seq ^f0_0<- : (#pre /\ P 0 good0_0 f0 f0_0). 
+sp 1; seq ^f0_0<- & +1 : (#pre /\ P 0 good0_0 f0 f0_0).
 move => |>.
 conseq (: true ==> P 0 good0_0 f0 f0_0); 1:by smt().
 extens [good0_0] : by circuit simplify.
 
-sp 1; seq ^f0_1<- : (#pre /\ P 128 good0_1 f0 f0_1).
+sp 1; seq ^f0_1<- & +1 : (#pre /\ P 128 good0_1 f0 f0_1).
 move => |>.
 conseq (: true ==> P 128 good0_1 f0 f0_1); 1: by smt().
 extens [good0_1] : by circuit simplify.
@@ -1029,15 +1028,15 @@ proc; conseq (_ : _buf = buf ==> _); first done.
 
 (* ==================================================================== *)
 (* First part: extracting all the 12-bit words from the input buffer    *)
-seq ^g0<-{2} & -1 : (#pre /\
-  BSWA_32u16.init (fun i => extract_512_16 (concat_2u256 f0 f1) (16 * i))
-    = BSWA_32u16.init (fun i => (zextend_12_16 (sliceget_8_12_48 (BSWA_48u8.init (fun j => buf.[j])) (12 * i)))
+seq ^g0<-{2} : (#pre /\
+  init_array32_w16 (fun i => extract_512_16 (concat_2u256 f0 f1) (16 * i))
+    = init_array32_w16 (fun i => (zextend_12_16 (sliceget_8_12_48 (init_array48_w8 (fun j => buf.[j])) (12 * i)))
   )). move => |>. circuit.
 
 (* ==================================================================== *)
 (* Second part: parallel comparison                                     *)
-seq ^good<- : (#pre /\
-  W32.init (fun i => good.[perm i]) = 
+seq ^good<- & +1 : (#pre /\
+  W32.init (fun i => good.[perm i]) =
   W32.init (fun i => extract_512_16 (concat_2u256 f0 f1) (16 * i) \slt W16.of_int 3329)
 ). 
   - by conseq />; circuit.
@@ -1118,7 +1117,6 @@ swap [^shf1_0_16<- .. ^shf1_0_16<- & +1] @^good1_0<- & +2.
 cfold ^f1_0<- 4; proc rewrite ^shf1_0<- zextend_8_64P.
 
 swap ^f1_1<- @^good1_1<-.
-swap [^shf1_1_16<- .. ^shf1_1_16<- & +1] @^good1_1<- & +2.
 cfold ^f1_1<- 4; proc rewrite ^shf1_1<- zextend_8_64P.
 
 pose P (o : int) (g : W8.t) (f : W256.t) (f_0 : W128.t) :=
@@ -1128,24 +1126,24 @@ pose P (o : int) (g : W8.t) (f : W256.t) (f_0 : W128.t) :=
       (iotared 0 8) in
   all (fun i => w.[i] = extract_128_16 f_0 (16 * i)) (iotared 0 (size w)).
 
-sp 1; seq ^f0_0<- : (#pre /\ P 0 good0_0 f0 f0_0).
+sp 1; seq ^f0_0<- & +1 : (#pre /\ P 0 good0_0 f0 f0_0).
 move => |>.
 (* conseq (: good0_0 = extract_64_8 good 0 ==> P 0 good0_0 f0 f0_0); 1,2: by smt(). *)
 conseq (: true ==> P 0 good0_0 f0 f0_0); 1: by smt().
 - by extens [good0_0] : by circuit simplify.
 
-sp 1; seq ^f0_1<- : (#pre /\ P 128 good0_1 f0 f0_1).
+sp 1; seq ^f0_1<- & +1 : (#pre /\ P 128 good0_1 f0 f0_1).
 move => |>.
 (* conseq (: good0_1 = extract_64_8 good 16 => P 128 good0_1 f0 f0_1). *)
 conseq (: true ==> P 128 good0_1 f0 f0_1); 1: by smt().
 - by extens [good0_1] : by circuit simplify.
 
-sp 1; seq ^f1_0<- : (#pre /\ P 0 good1_0 f1 f1_0).
+sp 1; seq ^f1_0<- & +1 : (#pre /\ P 0 good1_0 f1 f1_0).
 move => |>.
 conseq (: true ==> P 0 good1_0 f1 f1_0); 1: by smt().
 - by extens [good1_0] : by circuit simplify.
 
-sp 1; seq ^f1_1<- : (#pre /\ P 128 good1_1 f1 f1_1).
+sp 1; seq ^f1_1<- & +1 : (#pre /\ P 128 good1_1 f1 f1_1).
 move => |>.
 conseq (: true ==> P 128 good1_1 f1 f1_1); 1: by smt().
 - by extens [good1_1] : by circuit simplify.
