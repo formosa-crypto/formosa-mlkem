@@ -6,13 +6,22 @@ from JazzEC require import Array768 Array960 Array1152 Array1024 Array1408 Array
 
 require import AVX2_Ops W16extra.
 require import Fq MLKEMFCLib.
-require import Mlkem_bindings BitEncoding.
+require import CircuitBindings XWord12 BitEncoding.
 import BitChunking BS2Int.
 import Fq.
 
 from Spec require import GFq Rq Serialization Sampling EncDecCorrectness Correctness.
 import GFq Rq Serialization.
 import Zq ZModP.
+
+(* Bridge lemma for the W16->W12 truncation clone op (cf. mldsa truncateu_32_20E). *)
+lemma truncateu_16_12E (w : W16.t) :
+  BS_W16_W12_U.truncateu12 w = W12.bits2w (take 12 (W16.w2bits w)).
+proof.
+rewrite /truncateu12 W12.of_intE W16.to_uintE BS2Int.bs2int_mod //; congr.
+have {1}-> : 12 = size (take 12 (w2bits w)) by rewrite size_take //.
+by rewrite BS2Int.bs2intK.
+qed.
 
 
 lemma compress_rng a d :
@@ -44,8 +53,9 @@ rewrite get_to_list /= /compress_poly (nth_map 0) /=;1:smt(size_iota).
 by rewrite nth_iota 1:/# //= /lift_array256 !mapiE 1,2:/# /=.
 qed.
 
-op tobytes_circuit(a : W16.t) : W12.t = 
-   if (a \ult W16.of_int 3329) then truncateu12 a else truncateu12 (W16_sub a (W16.of_int 3329)).
+op tobytes_circuit(a : W16.t) : W12.t =
+   if (a \ult W16.of_int 3329) then BS_W16_W12_U.truncateu12 a
+   else BS_W16_W12_U.truncateu12 (a + (- W16.of_int 3329)).
 
 import W12.
 
@@ -71,24 +81,25 @@ rewrite /tobytes_circuit /(\ult) /=.
 case (to_uint p.[(i * 8 + k) %/ 12] < 3329) => ?.
 + rewrite /truncateu12 /of_int get_bits2w 1:/# /= modz_small;1:smt(W16.to_uint_cmp).
   rewrite qE (modz_small _ 3329); 1,2: by rewrite /to_sint /smod /=;smt(W16.to_uint_cmp pow2_16).
-have -> : (W16_sub p.[(i * 8 + k) %/ 12] (W16.of_int 3329))=
+have -> : (p.[(i * 8 + k) %/ 12] + (- W16.of_int 3329))=
           W16.of_int (to_sint p.[(8 * i + k) %/ 12] %% q); last first.
 + rewrite /truncateu12 of_uintK  /= modz_small;1:smt(W16.to_uint_cmp).
   rewrite /of_int get_bits2w 1:/# /= /#.
-rewrite /W16_sub /= to_uint_eq of_uintK modz_small;1:smt(W16.to_uint_cmp).
+have ->: p.[(i * 8 + k) %/ 12] + (- W16.of_int 3329) = p.[(i * 8 + k) %/ 12] - W16.of_int 3329 by ring.
+rewrite /= to_uint_eq of_uintK modz_small;1:smt(W16.to_uint_cmp).
 rewrite to_uintB /=;1: rewrite /(\ule) /= /#.
 rewrite /to_sint /smod /= /#.
 qed.
 
-op frombytes_circuit(a : W12.t) : W16.t = 
-   zeroextu16 a.
+op frombytes_circuit(a : W12.t) : W16.t =
+   BS_W16_W12_U.zeroextu16 a.
    
 
-op compress1_circuit(a : W16.t) : bool = 
-   if (a \ult W16.of_int 3329) then  
-   (srl_32 ((sll_32 (zeroextu32 a) (W32.of_int 1) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).[0]
-   else 
-   (srl_32 ((sll_32 (zeroextu32 (W16_sub a (W16.of_int 3329))) (W32.of_int 1) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).[0].  
+op compress1_circuit(a : W16.t) : bool =
+   if (a \ult W16.of_int 3329) then
+   (BSW32.shr ((BSW32.shl (zeroextu32 a) (W32.of_int 1) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).[0]
+   else
+   (BSW32.shr ((BSW32.shl (zeroextu32 (a + (- W16.of_int 3329))) (W32.of_int 1) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).[0].
 
 
 lemma compress1_circuit_sem (p : W16.t Array256.t) (i k : int) :
@@ -103,15 +114,15 @@ rewrite ultE /= get_to_uint.
 case (to_uint p.[i*8+k] < 3329) => /= *.
 + rewrite -compress_impl_small //=;1: by rewrite qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).  
   congr;congr;rewrite modz_mod;congr;congr.
-  by rewrite /srl_32 /sll_32 /(`<<`) /(`>>`) /= /#.
+  by rewrite /BSW32.shr /BSW32.shl /(`<<`) /(`>>`) /= /#.
 
-have -> : (incoeff (to_sint p.[8*i+ k])) = (incoeff (to_sint (W16_sub p.[i*8+k] (W16.of_int 3329)))); last first.
+have -> : (incoeff (to_sint p.[8*i+ k])) = (incoeff (to_sint (p.[i*8+k] - W16.of_int 3329))); last first.
 + rewrite -compress_impl_small //=.
   rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  /= /smod /=;smt(size_map size_iota).
   rewrite  /smod /= qE; have := H00 (i*8+k) _; 1:smt().
   move => Hb; have E: to_sint (W16.of_int 3329) = 3329 by rewrite /to_sint /smod /=.
   by rewrite E; smt(W16.to_uint_cmp pow2_16 W16.to_sintE).
-+ by rewrite get_to_uint /= modz_mod /srl_32 /sll_32 /(`<<`) /(`>>`) /=. 
++ by rewrite get_to_uint /= modz_mod /BSW32.shr /BSW32.shl /(`<<`) /(`>>`) /=. 
 
 rewrite -eq_incoeff.
 rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  /smod /=;smt(size_map size_iota).
@@ -119,7 +130,7 @@ rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))  /smod /=;
 qed.
 
 op decompress1_circuit(c : bool) : W16.t =
-  truncateu16 (srl_32 (((if c then W32.one else W32.zero) * W32.of_int 3329) + W32.one) (W32.of_int 1)).
+  truncateu16 (BSW32.shr (((if c then W32.one else W32.zero) * W32.of_int 3329) + W32.one) (W32.of_int 1)).
 
 
 lemma decompress1_circuit_sem (a : W8.t Array32.t) (i : int) :
@@ -131,7 +142,7 @@ move => ib.
 rewrite -decompress_alt_decompress // /decompress_alt;congr.
 rewrite /decode1 /= get_of_list // /ByteDecode (nth_map []);
  1: by rewrite size_chunk // size_BytesToBits size_to_list /#.
-rewrite /decompress1_circuit /to_sint to_uint_truncateu16 /srl_32 to_uint_shr //=.
+rewrite /decompress1_circuit /to_sint to_uint_truncateu16 /BSW32.shr to_uint_shr //=.
 have -> : (if a.[i %/ 8].[i %% 8] then W32.one else W32.zero) =
   W32.of_int (b2i a.[i %/ 8].[i %% 8])
    by case (a.[i %/ 8].[i %% 8]) => /=;rewrite /b2i /=. 
@@ -155,7 +166,7 @@ lemma decompress1_circuit_rng  (a : W8.t Array32.t) (i : int) :
      0 <= to_sint (decompress1_circuit a.[i %/ 8].[i %% 8]) < 3329.
 proof.
 rewrite /decompress1_circuit.
-rewrite /decompress1_circuit /to_sint to_uint_truncateu16 /srl_32 to_uint_shr //=.
+rewrite /decompress1_circuit /to_sint to_uint_truncateu16 /BSW32.shr to_uint_shr //=.
 have -> : (if a.[i %/ 8].[i %% 8] then W32.one else W32.zero) =
   W32.of_int (b2i a.[i %/ 8].[i %% 8])
    by case (a.[i %/ 8].[i %% 8]) => /=;rewrite /b2i /=. 
@@ -163,9 +174,9 @@ rewrite to_uintD_small /= of_uintK /= /b2i /= modz_small /= 1..3:/#.
 rewrite /smod /= modz_small;smt().
 qed.
 
-op csubq_circuit(a : W16.t) : W16.t = 
+op csubq_circuit(a : W16.t) : W16.t =
    if (a \ult W16.of_int 3329) then  a
-   else (W16_sub a (W16.of_int 3329)).
+   else (a + (- W16.of_int 3329)).
 
 lemma to_sintInj : injective W16.to_sint. 
 rewrite /injective /to_sint /smod /=. 

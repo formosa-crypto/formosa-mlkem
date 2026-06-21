@@ -2,14 +2,16 @@ require import AllCore List Int IntDiv CoreMap Real Number Ring StdOrder BitEnco
 
 from Jasmin require import JModel.
 from JazzEC require import Array400 Array384 Array256 Array160 Array128 Array64 Array32 Array16 Array8 Array4 Array2.
-from JazzEC require import WArray512 WArray128 WArray384 WArray32 WArray16.
+from JazzEC require import WArray512 WArray128 WArray384 WArray32 WArray16 WArray160.
 from JazzEC require import Jkem_avx2.
 
 require import AVX2_Ops W16extra.
 require import Fq NTT_Fq MLKEMFCLib MLKEM_W16_Rep MLKEM1024_prelude.
 require import Fq_avx2 NTT_avx2 NTT_avx2_poly AVX2_Ops MLKEMFCLib.
 require import MLKEM_Poly_avx2.
-require import Mlkem_bindings.
+require import Mlkem_bindings CircuitBindings.
+require import XWord5 XWord12.
+require import XArray16 XArray32 XArray160 XArray256.
 require import Circuit_semantics Circuit_sem_1024.
 from Spec require import GFq Rq Serialization VecMat Sampling EncDecCorrectness Correctness.
 
@@ -36,20 +38,23 @@ lemma poly_decompress_corr_h (_a : W8.t Array160.t):
              lift_array256 res = decompress_poly 5 (decode5 _a) /\
              pos_bound256_cxq res 0 256 1 ].
 proc; inline *.
-proc change 1: { q <- sliceget16_16_256 jqx16 0;} ; 1: by auto.
-proc change 2: { shufbidx <- sliceget32_8_256 pd_jshufbidx 0; }; 1: by auto.
-proc change 3: { mask <- sliceget16_16_256 pd_mask_s 0;} ; 1: by auto.
-proc change 4: { shift <- sliceget16_16_256 pd_shift_s 0; } ; 1: by auto.
-proc change ^while.1 : { t <- zeroextu128 (sliceget160_8_64 a ((10*i)*8)); };1: by auto => /#.
-proc change ^while.10 : { rp <- sliceset256_16_256 rp (i*256) f; };1: by auto => /#.
-proc change ^while.2: { ti <- sliceget160_8_16 a ((10*i+8)*8); };1: by auto => /#.
+proc change 1: { q <- BSWAS_16u16_256.sliceget jqx16 0;} ; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change 2: { shufbidx <- BSWAS_32u8_256.sliceget pd_jshufbidx 0; }; 1: by auto; move => &1 &2 ?; rewrite BSWAS_32u8_256_slicegetE /#.
+proc change 3: { mask <- BSWAS_16u16_256.sliceget pd_mask_s 0;} ; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change 4: { shift <- BSWAS_16u16_256.sliceget pd_shift_s 0; } ; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change ^while.1 : { t <- zeroextu128 (if (0 <= (10*i)*8 <= 160*8-64) then BSWAS_160u8_64.sliceget a ((10*i)*8) else get64_direct (WArray160.init8 (fun (i_0 : int) => a.[i_0])) (10*i)); };
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (10 * i{2}) * 8 <= 160*8-64); [ move => ?; rewrite BSWAS_160u8_64_slicegetE /# | by auto ].
+proc change ^while.10 : { rp <- if (0 <= (32*i)*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp ((32*i)*8) f else Array256.init (fun (i0:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) i f) i0) ; };
+1: by auto; move => &1 &2 [#] _ -> -> ->; case (0 <= (32*i{2})*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.2: { ti <- if (0 <= (10*i+8)*8 <= 160*8-16) then BSWAS_160u8_16.sliceget a ((10*i+8)*8) else get16_direct (WArray160.init8 (fun (i_0 : int) => a.[i_0])) (10*i+8) ; };
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (10*i{2}+8)*8 <= 160*8-16); [ move => ?; rewrite BSWAS_160u8_16_slicegetE /# | by auto ].
 
 cfold 5.
 unroll for ^while.
 cfold ^i<-.
 wp -2.
 
-conseq (: _ ==> rp = init_256_16 (fun i =>
+conseq (: _ ==> rp = BSWA_256u16.init (fun i =>
      decompress5_circuit (W5.init (fun (j : int) => _a.[(i*5 + j) %/ 8].[(i*5 + j) %% 8])))); last  by circuit.
 
       
@@ -58,11 +63,11 @@ move => &hr [#]/= <- rr /= ->.
 
 split.
 + rewrite tP => i ib.
-  rewrite /init_256_16 !mapiE 1,2:/# /= -get_to_list /= initiE 1:/# /=.
+  rewrite /BSWA_256u16.init !mapiE 1,2:/# /= -get_to_list /= initiE 1:/# /=.
   rewrite /decompress5_circuit decompress5_circuit_sem //.
 
 rewrite /pos_bound256_cxq qE /= => k kb. 
-rewrite /init_256_16 initiE 1:/# /=.
+rewrite /BSWA_256u16.init initiE 1:/# /=.
 by apply decompress5_circuit_rng.
 qed.
 
@@ -93,16 +98,21 @@ lemma i_poly_compress_corr_h _aw  :
              ].
 proof.
 proc; inline *.
-proc change 2: { qx16 <- sliceget16_16_256 jqx16 0;} ; 1: by auto.
-proc change ^while.1: { r <- sliceget256_16_256 rp0 (i0*256);} ;1: by auto => /#.
-proc change ^while.9: { rp0 <- sliceset256_16_256 rp0 (i0*256) r; } ;1: by auto => /#.
-proc change 6: { v <- sliceget16_16_256 jvx16 0; }; 1: by auto.
-proc change 12: { shufbidx <- sliceget32_8_256 pc_shufbidx_s 0; }; 1: by auto.
-proc change ^while{2}.1: { f0 <- sliceget256_16_256 a (2*i*256);} ;1: by auto => /#.
-proc change ^while{2}.2: { f1 <- sliceget256_16_256 a ((2*i+1)*256); };1: by auto => /#.
-proc change ^while{2}.18 : { rp <- sliceset160_8_128 rp  (20*i*8) t0;};1: by auto => /#.
-proc change ^while{2}.19 : { rp <- sliceset160_8_32 rp  ((20*i+16)*8) (truncateu32 t1);}.
-+ by auto => /> &m; move: (truncateu32 t1{m}) => ? /#.
+proc change 2: { qx16 <- BSWAS_16u16_256.sliceget jqx16 0;} ; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change ^while.1: { r <- if (0 <= (32*i0)*8 <= 256*16-256) then BSWAS_256u16_256.sliceget rp0 ((32*i0)*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => rp0.[i_0])) (32*i0) ; };
+1: by auto; move => &1 &2 [#] _ _ -> ->; case (0 <= (32*i0{2})*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.9: { rp0 <- if (0 <= (32*i0)*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp0 ((32*i0)*8) r else Array256.init (fun (i1:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp0.[i_0])) i0 r) i1) ; };
+1: by auto; move => &1 &2 [#] _ _ -> -> ->; case (0 <= (32*i0{2})*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change 6: { v <- BSWAS_16u16_256.sliceget jvx16 0; }; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change 12: { shufbidx <- BSWAS_32u8_256.sliceget pc_shufbidx_s 0; }; 1: by auto; move => &1 &2 ?; rewrite BSWAS_32u8_256_slicegetE /#.
+proc change ^while{2}.1: { f0 <- if (0 <= (32*(2*i))*8 <= 256*16-256) then BSWAS_256u16_256.sliceget a ((32*(2*i))*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => a.[i_0])) (32*(2*i)) ; };
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*(2*i{2}))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while{2}.2: { f1 <- if (0 <= (32*(2*i+1))*8 <= 256*16-256) then BSWAS_256u16_256.sliceget a ((32*(2*i+1))*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => a.[i_0])) (32*(2*i+1)) ; };
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*(2*i{2}+1))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while{2}.18 : { rp <- if (0 <= 20*i*8 <= 8*160-128) then BSWAS_160u8_128.sliceset rp (20*i*8) t0 else Array160.init (WArray160.get8 (WArray160.set128_direct (WArray160.init8 (fun (i_0 : int) => rp.[i_0])) (20*i) t0)) ; };
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= 20*i{2}*8 <= 8*160-128); [ move => ?; rewrite BSWAS_160u8_128_slicesetE // | by auto ].
+proc change ^while{2}.19 : { rp <- if (0 <= (20*i+16)*8 <= 8*160-32) then BSWAS_160u8_32.sliceset rp ((20*i+16)*8) (truncateu32 t1) else Array160.init (WArray160.get8 (WArray160.set32_direct (WArray160.init8 (fun (i_0 : int) => rp.[i_0])) (20*i+16) (truncateu32 t1))) ; };
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (20*i{2}+16)*8 <= 8*160-32); [ move => ?; rewrite BSWAS_160u8_32_slicesetE // | by auto ].
 
 cfold 13.
 do 2!(unroll for ^while).
@@ -111,7 +121,7 @@ wp -3.
 
 conseq (: a = _aw /\
    Array256.all (fun bv => W16.zero \sle bv /\ bv \slt (of_int (2 * 3329))) a
-   ==> rp = init_160_8 (fun i =>
+   ==> rp = BSWA_160u8.init (fun i =>
      W8.init (fun j =>
        (compress5_circuit _aw.[(i*8+j) %/ 5]).[(i*8+j) %% 5]))); last by circuit.
         

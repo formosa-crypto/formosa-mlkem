@@ -31,6 +31,12 @@ idirs = Spec:proof/spec/properties
 
 idirs = JazzEC:proof/arrays
 
+# Clone-based circuit bindings (mldsa-style): per-size XWord*/XArray* theories
+# that clone CircuitBindings. Variant-independent, so safe on the root path.
+# Non-namespaced so consumers/cross-requires use bare `require import XWordN`.
+idirs = proof/xwords
+idirs = proof/xarrays
+
 # The mlkem extraction (jkem_avx2.ec, same filename per variant) is NOT on the
 # root path — each variant is injected via `args = -I JazzEC:.../<v>/.../extraction`
 # in config/tests.config, so the two same-named files never clash.

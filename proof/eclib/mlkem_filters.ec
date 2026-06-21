@@ -1,10 +1,13 @@
 (* ----- *) require import AllCore IntDiv List StdBigop.
 from Jasmin require import JModel.
 require import Mlkem_bindings.
-(* ----- *) require import Genbindings Mlkem_filters_bindings.
+require import CircuitBindingsExtra XWord512 XWord12 XArray16 XArray24 XArray32 XArray48 Mlkem_filter_clones.
 (* ----- *) (* - *) import W8 W12 W512 BitEncoding BS2Int BitChunking.
 
 from JazzEC require import Array2048 Array256 Array64 Array56 Array48 Array40 Array32 Array24 Array16.
+
+(* generic list-indexing abbrev (was in the dropped mlkem_filters_bindings.ec) *)
+abbrev "_.[_]" ['a] = nth<:'a> witness.
 
 (* -------------------------------------------------------------------- *)
 abbrev filter_permq = W8.of_int (
@@ -805,7 +808,7 @@ proc change circuit [
 
   shf0_1_16 <- VPUNPCKL_16u8 shf0_1 (VPINC_8u8 shf0_1);
   f0_1      <- VPSHUFB_128 f0_1 shf0_1_16;
-  f0 <- Mlkem_filters_bindings.concat_2u128 f0_0 f0_1;
+  f0 <- concat_2u128 f0_0 f0_1;
 }.
 
 swap ^f0_0<- @^good0_0<-.
@@ -894,7 +897,7 @@ have sliceset_outE: forall o b i w,
 
 have extractE: forall f_0 f_1 i k, 0 <= i <= 128 - 16 => 0 <= k < 2 =>
   extract_128_16
-    (extract_256_128 (Mlkem_filters_bindings.concat_2u128 f_0 f_1) (128 * k)) i
+    (extract_256_128 (concat_2u128 f_0 f_1) (128 * k)) i
   = extract_128_16 [f_0; f_1].[k] i.
 - move=> f_0 f_1 i k rgi rgk; apply/W16.ext_eq => l rgl.
   rewrite !extract_128_16E ~-1:// extract_256_128E 1:/#.
@@ -1027,8 +1030,8 @@ proc; conseq (_ : _buf = buf ==> _); first done.
 (* ==================================================================== *)
 (* First part: extracting all the 12-bit words from the input buffer    *)
 seq ^g0<-{2} & -1 : (#pre /\
-  init_array32_w16 (fun i => extract_512_16 (concat_2u256 f0 f1) (16 * i))
-    = init_array32_w16 (fun i => (zextend_12_16 (sliceget_8_12_48 (init_array48_w8 (fun j => buf.[j])) (12 * i)))
+  BSWA_32u16.init (fun i => extract_512_16 (concat_2u256 f0 f1) (16 * i))
+    = BSWA_32u16.init (fun i => (zextend_12_16 (sliceget_8_12_48 (BSWA_48u8.init (fun j => buf.[j])) (12 * i)))
   )). move => |>. circuit.
 
 (* ==================================================================== *)
@@ -1098,8 +1101,8 @@ proc change circuit [
   shf1_1_16 <- VPUNPCKL_16u8 shf1_1 (VPINC_8u8 shf1_1);
   f1_1      <- VPSHUFB_128 f1_1 shf1_1_16;
 
-  f0 <- Mlkem_filters_bindings.concat_2u128 f0_0 f0_1;
-  f1 <- Mlkem_filters_bindings.concat_2u128 f1_0 f1_1;
+  f0 <- concat_2u128 f0_0 f0_1;
+  f1 <- concat_2u128 f1_0 f1_1;
 }.
 
 swap ^f0_0<- @^good0_0<-.
@@ -1204,7 +1207,7 @@ have sliceset_outE: forall o b i w,
 
 have extractE: forall f_0 f_1 i k, 0 <= i <= 128 - 16 => 0 <= k < 2 =>
   extract_128_16
-    (extract_256_128 (Mlkem_filters_bindings.concat_2u128 f_0 f_1) (128 * k)) i
+    (extract_256_128 (concat_2u128 f_0 f_1) (128 * k)) i
   = extract_128_16 [f_0; f_1].[k] i.
 - move=> f_0 f_1 i k rgi rgk; apply/W16.ext_eq => l rgl.
   rewrite !extract_128_16E ~-1:// extract_256_128E 1:/#.
@@ -1231,9 +1234,9 @@ seq 0 : ((forall i, 0 <= i < 4 =>
     = extract_256_16 [f0{hr}; f1{hr}].[j %/ 16] (16 * (j - 16 * (j %/ 16))).
   - move=> j rgj; move : hgood; rewrite wordP => hgood.
     move : hext.
-    rewrite tP /init_array32_w16 => hext.
+    rewrite tP /BSWA_32u16.init => hext.
     have := hext j _; 1: by smt().
-    rewrite !Array32.initE /= ifT 1:/# ifT 1:/# /init_array48_w8.
+    rewrite !Array32.initE /= ifT 1:/# ifT 1:/# /BSWA_48u8.init.
     rewrite W16.wordP => hext_conc.
     apply W16.ext_eq => l rgl. 
     have := hext_conc l _; 1: by smt(). move => <-.
