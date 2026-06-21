@@ -1,14 +1,7 @@
-[submodule "crypto-specs"]
-	path = crypto-specs
-	url = https://github.com/formosa-crypto/crypto-specs.git
-	branch = main
 [submodule "formosa-keccak"]
 	path = formosa-keccak
 	url = https://github.com/formosa-crypto/formosa-keccak.git
 	branch = main
-[submodule "code/kyber"]
-	path = code/kyber
-	url = https://github.com/pq-crystals/kyber.git
 [submodule "bench/third_party/mlkem-native"]
 	path = bench/third_party/mlkem-native
 	url = https://github.com/pq-code-package/mlkem-native.git
@@ -18,3 +11,6 @@
 [submodule "bench/third_party/mlkem-libjade"]
 	path = bench/third_party/mlkem-libjade
 	url = https://github.com/pq-code-package/mlkem-libjade.git
+[submodule "tests/third_party/kyber"]
+	path = tests/third_party/kyber
+	url = https://github.com/pq-crystals/kyber.git

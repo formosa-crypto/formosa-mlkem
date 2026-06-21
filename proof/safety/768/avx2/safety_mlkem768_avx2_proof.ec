@@ -67,7 +67,7 @@ ecall (__shuffle8_proof param_2 param_1).
 auto .
 ecall (__shuffle8_proof param_0 param).
 auto .
-rewrite /is_init /valid /= .
+rewrite /valid /= .
 smt (List.all_cat).
 qed. 
 
@@ -1383,7 +1383,7 @@ rewrite /_poly_add2_spec .
 proc; auto .
 while ((valid trace__poly_add2) /\ 0<=i).
 auto .
-rewrite /is_init /valid /=.
+rewrite /valid /=.
 smt (List.all_cat).
 auto .
 rewrite /is_init /valid /= .
@@ -1398,7 +1398,7 @@ while ((valid trace__poly_csubq) /\ 0<=i).
 auto .
 ecall (__csubq_proof param_0 param).
 auto .
-rewrite /is_init /valid /=.
+rewrite /valid /=.
 smt (List.all_cat).
 auto .
 rewrite /is_init /valid /= .
@@ -1458,7 +1458,7 @@ ecall (__wmul_16u16_proof param_10 param_9).
   auto .
   ecall (__fqmulprecomp16x_proof param_2 param_1 param_0 param).
   auto .
-  rewrite /is_init /valid /= .
+  rewrite /valid /= .
   smt (List.all_cat).
 smt(List.all_cat).
 qed .
@@ -1626,7 +1626,7 @@ ecall (__invntt___butterfly64x_proof param_145 param_144 param_143 param_142
        param_141 param_140 param_139 param_138 param_137 param_136 param_135 
        param_134 param_133).
 auto .  have h: forall k, (0<=k < 2 /\ k<>0) =>  k = 1. smt().
-rewrite /is_init /valid /= => &m /> ? . move => i0 _ _ _ _ i2. split; move => *;rewrite !List.all_cat /=. smt(). rewrite( h (i{m})); by auto. 
+rewrite /valid /= => &m /> ? . move => i0 _ _ _ _ i2. split; move => *;rewrite !List.all_cat /=. smt(). rewrite( h (i{m})); by auto. 
 auto .
 while ((valid trace__poly_invntt) /\ 0<= i /\ ((2<=i) ? ((b_r6 /\ b_r4) /\ b_r2 /\ b_r0) : true)).
 auto .
@@ -1792,7 +1792,7 @@ ecall (__butterfly64x_proof param_37 param_36 param_35 param_34 param_33
        param_32 param_31 param_30 param_29 param_28 param_27 param_26 
        param_25).
 auto .
-rewrite /is_init /valid /= => &m /> *. split. move => *.  rewrite !List.all_cat /=. smt().
+rewrite /valid /= => &m /> *. split. move => *.  rewrite !List.all_cat /=. smt().
 move => *. rewrite !List.all_cat /=. have -> :i{m} = 1. smt(). rewrite /=. smt().
 auto .
 ecall (__butterfly64x_proof param_24 param_23 param_22 param_21 param_20 
@@ -1814,7 +1814,7 @@ while ((valid trace___poly_reduce) /\ 0<=i).
 auto .
 ecall (__red16x_proof param_1 param_0 param).
 auto .
-rewrite /is_init /valid /=.
+rewrite /valid /=.
 smt (List.all_cat).
 auto .
 rewrite /is_init /valid /= .
@@ -2149,7 +2149,7 @@ proof.
   rewrite /__write_u128_boundchk_spec .
   proc. sp 3.
   if. auto.  move => &m /> ?. rewrite  W64.uleE /=. rewrite /is_init /= => *. smt(W64.to_uint_cmp). 
-  auto. move => &m /> ?. rewrite !uleE /is_init /valid /= => /> *. 
+  auto. move => &m /> ?. rewrite !uleE /is_init /= => /> *. 
   split. move => *. rewrite !to_uintD_small /=; smt().
   move => *. split. move => *. rewrite !to_uintD_small /=; smt().
   move => *. smt().
@@ -2247,7 +2247,7 @@ lemma gen_matrix_get_indexes_proof _b __t :
 proof.
 rewrite /gen_matrix_get_indexes_spec .
 proc; auto .
-rewrite /is_init /valid /= => &m /> . rewrite !JWord.W64.uleE /= => *. smt().
+rewrite /valid /= => &m /> . rewrite !JWord.W64.uleE /= => *. smt().
 qed .
 
 lemma __gen_matrix_fill_polynomial_proof _pol _b_pol _buf _b_buf :
@@ -2558,7 +2558,7 @@ rewrite /__verify_spec .
 proc; auto .
 while ((valid trace___verify) /\ 0<=i).
 auto .
-rewrite /is_init /valid /=.
+rewrite /valid /=.
 smt (List.all_cat).
 by auto  .
 qed .

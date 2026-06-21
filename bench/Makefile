@@ -4,9 +4,7 @@ CPU ?= ""
 
 ALL := \
  bin/formosa-mlkem-768-avx2 \
- bin/formosa-mlkem-1024-avx2 \
- bin/formosa-mlkem-768-ref \
- bin/formosa-mlkem-1024-ref
+ bin/formosa-mlkem-1024-avx2
 
 ALL_EXTENDED := $(ALL) \
  bin/pqcp-mlkem-768-avx2 \
@@ -22,8 +20,6 @@ compile-extended: $(ALL_EXTENDED)
 run: compile
 	@./bin/formosa-mlkem-768-avx2 "$(CPU)" "f.mlkem768 avx2" 1
 	@./bin/formosa-mlkem-1024-avx2 "$(CPU)" "f.mlkem1024 avx2" 0
-	@./bin/formosa-mlkem-768-ref "$(CPU)" "f.mlkem768 ref" 0
-	@./bin/formosa-mlkem-1024-ref "$(CPU)" "f.mlkem1024 ref" 0
 
 run-extended: compile-extended
 	@./bin/formosa-mlkem-768-avx2 "$(CPU)" "f.mlkem768 avx2" 1
@@ -51,25 +47,6 @@ bin/formosa-mlkem-1024-avx2: randombytes/librandombytes1.a
 		-Irandombytes/ \
 		-I../code/jasmin/1024/avx2/include/ \
     ../code/jasmin/1024/avx2/jkem.s \
-    randombytes/librandombytes1.a
-
-#--ref
-bin/formosa-mlkem-768-ref: randombytes/librandombytes1.a
-	$(CC) $(CFLAGS) -o $@ src/crypto_kem.c \
-		-DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem768_amd64_ref \
-		-DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_ref \
-		-Irandombytes/ \
-		-I../code/jasmin/768/ref/include/ \
-    ../code/jasmin/768/ref/jkem.s \
-    randombytes/librandombytes1.a
-
-bin/formosa-mlkem-1024-ref: randombytes/librandombytes1.a
-	$(CC) $(CFLAGS) -o $@ src/crypto_kem.c \
-		-DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem1024_amd64_ref \
-		-DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_ref \
-		-Irandombytes/ \
-		-I../code/jasmin/1024/ref/include/ \
-    ../code/jasmin/1024/ref/jkem.s \
     randombytes/librandombytes1.a
 
 #-- mlkem-libjade (from pq-code-package) ----------------------------

@@ -647,7 +647,7 @@ end Montgomery16.
 (* Barret reduction *)
 
 require import Fq.
-import Fq.SignedReductions.
+import SignedReductions_W16.
 
 op sbred16 (x: W16.t): W16.t =
   x - (wmulhs x (W16.of_int 20159) `|>>` (W8.of_int 10)) * (W16.of_int 3329).
@@ -678,10 +678,10 @@ move: (W16.to_uint_cmp a); smt().
 qed.
 
 lemma sbred16_eq x:
- Fq.SignedReductions.BREDC (W16.to_sint x) 26
+ SignedReductions_W16.BREDC (W16.to_sint x) 26
  = W16.to_sint (sbred16 x).
 proof.
-rewrite /Fq.SignedReductions.BREDC /Fq.SignedReductions.R /sbred16 /q /=.
+rewrite /SignedReductions_W16.BREDC /SignedReductions_W16.R /sbred16 /q /=.
 rewrite /= (_:67108864=2^10*65536) 1:// divzMl //.
 rewrite (_:4294967296=65536*65536) 1://.
 have E20159: 20159 = to_sint (W16.of_int 20159)

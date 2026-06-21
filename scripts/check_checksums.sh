@@ -22,13 +22,11 @@ fi
 BIN_DIR="./tests/checksums/bin"
 
 TARGETS_768=(
-    "formosa-mlkem-768-ref"
     "formosa-mlkem-768-avx2"
     "native-mlkem-768"
 )
 
 TARGETS_1024=(
-    "formosa-mlkem-1024-ref"
     "formosa-mlkem-1024-avx2"
     "native-mlkem-1024"
 )

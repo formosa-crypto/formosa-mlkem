@@ -2,11 +2,9 @@
 
 -include ../../../Makefile.conf
 
-CKP    := ../../../kyber/ref
 CC     ?= /usr/bin/gcc
 CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer -Wno-implicit-function-declaration
 JFLAGS := ${JADDFLAGS}
-OS     := $(shell uname -s)
 
 .SECONDARY: jkem.s
 
@@ -36,7 +34,3 @@ sct:
 clean:
 	-rm -f *.s
 	-rm -f jkem.o
-	-rm -f test/speed_kem
-ifeq ($(OS),Darwin)
-	-rm -rf test/*.dSYM
-endif

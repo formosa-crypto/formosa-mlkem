@@ -6,7 +6,7 @@ from JazzEC require import WArray16 WArray32 WArray128 WArray160 WArray512 WArra
 
 import BitEncoding BS2Int BitChunking.
 
-from CryptoSpecs require import JWord_extra.
+require import JWord_extra.
 
 require import Abs_bindings.
 
@@ -1055,6 +1055,7 @@ realize get_setP by smt(Array256.get_setE).
 realize eqP by smt(Array256.tP).
 realize get_out by smt(Array256.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array256.get_of_list).
 
 bind array Array384."_.[_]" Array384."_.[_<-_]" Array384.to_list Array384.of_list Array384.t 384.
 realize tolistP by done.
@@ -1062,6 +1063,7 @@ realize get_setP by smt(Array384.get_setE).
 realize eqP by smt(Array384.tP).
 realize get_out by smt(Array384.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array384.get_of_list).
 
 bind array Array768."_.[_]" Array768."_.[_<-_]" Array768.to_list Array768.of_list Array768.t 768.
 realize tolistP by done.
@@ -1069,6 +1071,7 @@ realize get_setP by smt(Array768.get_setE).
 realize eqP by smt(Array768.tP).
 realize get_out by smt(Array768.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array768.get_of_list).
 
 bind array Array1024."_.[_]" Array1024."_.[_<-_]" Array1024.to_list Array1024.of_list Array1024.t 1024.
 realize tolistP by done.
@@ -1076,6 +1079,7 @@ realize get_setP by smt(Array1024.get_setE).
 realize eqP by smt(Array1024.tP).
 realize get_out by smt(Array1024.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array1024.get_of_list).
 
 bind array Array1088."_.[_]" Array1088."_.[_<-_]" Array1088.to_list Array1088.of_list Array1088.t 1088.
 realize tolistP by done.
@@ -1083,6 +1087,7 @@ realize get_setP by smt(Array1088.get_setE).
 realize eqP by smt(Array1088.tP).
 realize get_out by smt(Array1088.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array1088.get_of_list).
 
 bind array Array1152."_.[_]" Array1152."_.[_<-_]" Array1152.to_list Array1152.of_list Array1152.t 1152.
 realize tolistP by done.
@@ -1090,6 +1095,7 @@ realize get_setP by smt(Array1152.get_setE).
 realize eqP by smt(Array1152.tP).
 realize get_out by smt(Array1152.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array1152.get_of_list).
 
 bind array Array1408."_.[_]" Array1408."_.[_<-_]" Array1408.to_list Array1408.of_list Array1408.t 1408.
 realize tolistP by done.
@@ -1097,6 +1103,7 @@ realize get_setP by smt(Array1408.get_setE).
 realize eqP by smt(Array1408.tP).
 realize get_out by smt(Array1408.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array1408.get_of_list).
 
 bind array Array1536."_.[_]" Array1536."_.[_<-_]" Array1536.to_list Array1536.of_list Array1536.t 1536.
 realize tolistP by done.
@@ -1104,6 +1111,7 @@ realize get_setP by smt(Array1536.get_setE).
 realize eqP by smt(Array1536.tP).
 realize get_out by smt(Array1536.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array1536.get_of_list).
 
 bind array Array1568."_.[_]" Array1568."_.[_<-_]" Array1568.to_list Array1568.of_list Array1568.t 1568.
 realize tolistP by done.
@@ -1111,6 +1119,7 @@ realize get_setP by smt(Array1568.get_setE).
 realize eqP by smt(Array1568.tP).
 realize get_out by smt(Array1568.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array1568.get_of_list).
 
 bind array Array32."_.[_]" Array32."_.[_<-_]" Array32.to_list Array32.of_list Array32.t 32.
 realize tolistP by done.
@@ -1118,6 +1127,7 @@ realize get_setP by smt(Array32.get_setE).
 realize eqP by smt(Array32.tP).
 realize get_out by smt(Array32.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array32.get_of_list).
 
 bind array Array16."_.[_]" Array16."_.[_<-_]" Array16.to_list Array16.of_list Array16.t 16.
 realize tolistP by done.
@@ -1125,6 +1135,7 @@ realize get_setP by smt(Array16.get_setE).
 realize eqP by smt(Array16.tP).
 realize get_out by smt(Array16.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array16.get_of_list).
 
 bind array Array48."_.[_]" Array48."_.[_<-_]" Array48.to_list Array48.of_list Array48.t 48.
 realize tolistP by done.
@@ -1132,6 +1143,7 @@ realize get_setP by smt(Array48.get_setE).
 realize eqP by smt(Array48.tP).
 realize get_out by smt(Array48.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array48.get_of_list).
 
 bind array Array128."_.[_]" Array128."_.[_<-_]" Array128.to_list Array128.of_list Array128.t 128.
 realize tolistP by done.
@@ -1139,6 +1151,7 @@ realize get_setP by smt(Array128.get_setE).
 realize eqP by smt(Array128.tP).
 realize get_out by smt(Array128.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array128.get_of_list).
 
 bind array Array160."_.[_]" Array160."_.[_<-_]" Array160.to_list Array160.of_list Array160.t 160.
 realize tolistP by done.
@@ -1146,6 +1159,7 @@ realize get_setP by smt(Array160.get_setE).
 realize eqP by smt(Array160.tP).
 realize get_out by smt(Array160.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array160.get_of_list).
 
 bind array Array960."_.[_]" Array960."_.[_<-_]" Array960.to_list Array960.of_list Array960.t 960.
 realize tolistP by done.
@@ -1153,6 +1167,7 @@ realize get_setP by smt(Array960.get_setE).
 realize eqP by smt(Array960.tP).
 realize get_out by smt(Array960.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array960.get_of_list).
 
 bind array Array1410."_.[_]" Array1410."_.[_<-_]" Array1410.to_list Array1410.of_list Array1410.t 1410.
 realize tolistP by done.
@@ -1160,6 +1175,7 @@ realize get_setP by smt(Array1410.get_setE).
 realize eqP by smt(Array1410.tP).
 realize get_out by smt(Array1410.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array1410.get_of_list).
 
 bind array Array4."_.[_]" Array4."_.[_<-_]" Array4.to_list Array4.of_list Array4.t 4.
 realize tolistP by done.
@@ -1167,6 +1183,7 @@ realize get_setP by smt(Array4.get_setE).
 realize eqP by smt(Array4.tP).
 realize get_out by smt(Array4.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array4.get_of_list).
 
 bind array Array1."_.[_]" Array1."_.[_<-_]" Array1.to_list Array1.of_list Array1.t 1.
 realize tolistP by done.
@@ -1174,6 +1191,7 @@ realize get_setP by smt(Array1.get_setE).
 realize eqP by smt(Array1.tP).
 realize get_out by smt(Array1.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array1.get_of_list).
 
 bind array Array2."_.[_]" Array2."_.[_<-_]" Array2.to_list Array2.of_list Array2.t 2.
 realize tolistP by done.
@@ -1181,6 +1199,7 @@ realize get_setP by smt(Array2.get_setE).
 realize eqP by smt(Array2.tP).
 realize get_out by smt(Array2.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array2.get_of_list).
 
 bind array Array5."_.[_]" Array5."_.[_<-_]" Array5.to_list Array5.of_list Array5.t 5.
 realize tolistP by done.
@@ -1188,6 +1207,7 @@ realize get_setP by smt(Array5.get_setE).
 realize eqP by smt(Array5.tP).
 realize get_out by smt(Array5.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array5.get_of_list).
 
 bind array Array6."_.[_]" Array6."_.[_<-_]" Array6.to_list Array6.of_list Array6.t 6.
 realize tolistP by done.
@@ -1195,6 +1215,7 @@ realize get_setP by smt(Array6.get_setE).
 realize eqP by smt(Array6.tP).
 realize get_out by smt(Array6.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array6.get_of_list).
 
 bind array Array7."_.[_]" Array7."_.[_<-_]" Array7.to_list Array7.of_list Array7.t 7.
 realize tolistP by done.
@@ -1202,6 +1223,7 @@ realize get_setP by smt(Array7.get_setE).
 realize eqP by smt(Array7.tP).
 realize get_out by smt(Array7.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array7.get_of_list).
 
 bind array Array8."_.[_]" Array8."_.[_<-_]" Array8.to_list Array8.of_list Array8.t 8.
 realize tolistP by done.
@@ -1209,6 +1231,7 @@ realize get_setP by smt(Array8.get_setE).
 realize eqP by smt(Array8.tP).
 realize get_out by smt(Array8.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array8.get_of_list).
 
 bind array Array24."_.[_]" Array24."_.[_<-_]" Array24.to_list Array24.of_list Array24.t 24.
 realize tolistP by done.
@@ -1216,6 +1239,7 @@ realize get_setP by smt(Array24.get_setE).
 realize eqP by smt(Array24.tP).
 realize get_out by smt(Array24.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array24.get_of_list).
 
 bind array Array25."_.[_]" Array25."_.[_<-_]" Array25.to_list Array25.of_list Array25.t 25.
 realize tolistP by done.
@@ -1223,6 +1247,7 @@ realize get_setP by smt(Array25.get_setE).
 realize eqP by smt(Array25.tP).
 realize get_out by smt(Array25.get_out).
 realize gt0_size by done.
+realize oflistP by smt(Array25.get_of_list).
 
 op init_array16_w16(f : int -> W16.t) = Array16.init f.
 bind op [W16.t & Array16.t] init_array16_w16 "ainit".

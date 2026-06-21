@@ -4,10 +4,11 @@
 TOPLEVEL  = ../../
 JASMINDIR = $(TOPLEVEL)/jasmin
 CODEDIR   = $(TOPLEVEL)/code
+KYBERDIR  = $(TOPLEVEL)/tests/third_party/kyber
 SYSCALL   = jasmin_syscall.c
 
 # ------------------------------------------------------------------------
-CFLAGS  ?= -Wall -W -I ../../code -I ../../code/jasmin
+CFLAGS  ?= -Wall -W -I ../third_party -I ../../code/jasmin
 
 # ------------------------------------------------------------------------
 .PHONY: clean __force__
@@ -31,9 +32,9 @@ test_kem_$(2)_$(3): test_kem.c $$(CODEDIR)/jasmin/$(3)/$(2)/jkem.s
 		-DMLKEM_NAMESPACE=jade_kem_mlkem_mlkem$(3)_$(1)_$(2) \
 		-I $(CODEDIR)/jasmin/$(3)/$(2)/include \
 		$$(SYSCALL) runtime.c test_kem.c $$(CODEDIR)/jasmin/$(3)/$(2)/jkem.s \
-		$$(CODEDIR)/kyber/ref/randombytes.c \
-		$$(PQCRYSTAL_FIPS202:%=$$(CODEDIR)/kyber/ref/%) \
-		$$(PQCRYSTAL_KYBER:%=$$(CODEDIR)/kyber/ref/%)
+		$$(KYBERDIR)/ref/randombytes.c \
+		$$(PQCRYSTAL_FIPS202:%=$$(KYBERDIR)/ref/%) \
+		$$(PQCRYSTAL_KYBER:%=$$(KYBERDIR)/ref/%)
 
 run_test_kem_$(2)_$(3): test_kem_$(2)_$(3) __force__
 	./test_kem_$(2)_$(3)
@@ -43,8 +44,6 @@ endef
 
 $(eval $(call test_kem,amd64,avx2,768,3))
 $(eval $(call test_kem,amd64,avx2,1024,4))
-$(eval $(call test_kem,amd64,ref,768,3))
-$(eval $(call test_kem,amd64,ref,1024,4))
 
 all_test_kem: $(TEST_KEM)
 
@@ -61,9 +60,9 @@ speed_kem_$(2)_$(3): speed_kem.c $$(CODEDIR)/jasmin/$(3)/$(2)/jkem.s
 		-DMLKEM_NAMESPACE=jade_kem_mlkem_mlkem$(3)_$(1)_$(2) \
 		-I $(CODEDIR)/jasmin/$(3)/$(2)/include \
 		$$(SYSCALL) runtime.c speed_kem.c $$(CODEDIR)/jasmin/$(3)/$(2)/jkem.s \
-		$$(CODEDIR)/kyber/ref/randombytes.c \
-		$$(PQCRYSTAL_FIPS202:%=$$(CODEDIR)/kyber/ref/%) \
-		$$(PQCRYSTAL_KYBER:%=$$(CODEDIR)/kyber/ref/%)
+		$$(KYBERDIR)/ref/randombytes.c \
+		$$(PQCRYSTAL_FIPS202:%=$$(KYBERDIR)/ref/%) \
+		$$(PQCRYSTAL_KYBER:%=$$(KYBERDIR)/ref/%)
 
 run_speed_kem_$(2)_$(3): speed_kem_$(2)_$(3)
 	./speed_kem_$(2)_$(3)
@@ -73,8 +72,6 @@ endef
 
 $(eval $(call speed_kem,amd64,avx2,768,3))
 $(eval $(call speed_kem,amd64,avx2,1024,4))
-$(eval $(call speed_kem,amd64,ref,768,3))
-$(eval $(call speed_kem,amd64,ref,1024,4))
 
 all_speed_kem: $(SPEED_KEM)
 

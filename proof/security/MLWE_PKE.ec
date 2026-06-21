@@ -638,7 +638,7 @@ op noise_exp_part3 _A s e r e2 m =
 
 lemma parts_work _A s e r e1 e2 m :
   noise_exp _A s e r e1 e2 m =
-  noise_exp_part1 s e r e1 e2 &+ (ZR.([-]) (noise_exp_part2 _A s r e1)) &+ noise_exp_part3 _A s e r e2 m by rewrite noise_exp_val /noise_exp_simpl /noise_exp_part1 /noise_exp_part2 /noise_exp_part3 /=; ring. 
+  noise_exp_part1 s e r e1 e2 &+ (ZR.([-]) (noise_exp_part2 _A s r e1)) &+ noise_exp_part3 _A s e r e2 m by rewrite noise_exp_val /noise_exp_part1 /noise_exp_part2 /noise_exp_part3 /=; ring. 
 
 module CB(Sim : Simulator_t,A : CORR_ADV, O : RO_H.RO) = {
   var s : vector

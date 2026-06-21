@@ -6,7 +6,14 @@ provers = Z3@4.8
 
 spec = proof/eclib/specs/avx2.spec
 
-rdirs = proof
+# Explicit per-folder includes (NOT recursive `rdirs = proof`): the recursive form
+# pulled BOTH variant dirs (768/ and 1024/) onto one path, clashing on `kvec_val`
+# (MLKEM768_prelude: kvec=3 vs MLKEM1024_prelude: kvec=4). The variant dirs are built
+# via their own per-variant easycrypt.project; the root path carries only common code.
+idirs = proof/eclib
+idirs = proof/correctness/avx2/common
+idirs = proof/safety
+idirs = proof/security
 
 rdirs = Jasmin:jasmin/eclib
 
@@ -16,14 +23,14 @@ idirs = Keccak:formosa-keccak/proof/amd64/avx2
 idirs = JazzEC:formosa-keccak/proof/amd64/extracted
 
 
-idirs = CryptoSpecs:crypto-specs/arrays
-idirs = CryptoSpecs:crypto-specs/common
-rdirs = CryptoSpecs:crypto-specs/fips202
-rdirs = CryptoSpecs:crypto-specs/ml-kem
+idirs = CryptoSpecs:formosa-keccak/submodules/crypto-specs/common
+rdirs = CryptoSpecs:formosa-keccak/submodules/crypto-specs/fips202
 
-idirs = JazzEC:crypto-specs/arrays
-idirs = JazzEC:crypto-specs/common
-idirs = JazzEC:code/jasmin/768/ref/extraction
-idirs = JazzEC:code/jasmin/1024/ref/extraction
-idirs = JazzEC:code/jasmin/768/avx2/extraction
-idirs = JazzEC:code/jasmin/1024/avx2/extraction
+idirs = Spec:proof/spec
+idirs = Spec:proof/spec/properties
+
+idirs = JazzEC:proof/arrays
+
+# The mlkem extraction (jkem_avx2.ec, same filename per variant) is NOT on the
+# root path — each variant is injected via `args = -I JazzEC:.../<v>/.../extraction`
+# in config/tests.config, so the two same-named files never clash.

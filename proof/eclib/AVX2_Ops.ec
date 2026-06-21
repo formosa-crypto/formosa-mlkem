@@ -1901,37 +1901,58 @@ proof. by proc; wp; skip; rewrite /is16u8 /is4u8 /VPEXTR_32 => /> &1 &2 [] -> /=
 
 equiv eq_iVPSLL_8u32: Ops.iVPSLL_8u32 ~ OpsV.iVPSLL_8u32: is8u32 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is8u32 res{1} res{2}.
 proof.
-by proc; wp; skip; rewrite /is8u32 /VPSLL_8u32 /(`<<`) => /> /#.
+proc; wp; skip => &1 &2 /= [H1 H2].
+have Hsh: to_uint (W64.of_int (to_uint y{2})) = to_uint y{1} by rewrite W64.of_uintK -H2 modz_small; smt(W8.to_uint_cmp pow2_8).
+rewrite /is8u32 /VPSLL_8u32 Hsh; rewrite /is8u32 in H1; rewrite H1.
+by rewrite !Array8.initiE //= /(`<<`).
 qed.
 
 equiv eq_iVPSLL_16u16: Ops.iVPSLL_16u16 ~ OpsV.iVPSLL_16u16: is16u16 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is16u16 res{1} res{2}.
 proof.
-by proc; wp; skip; rewrite /is16u16 /VPSLL_16u16 /(`<<`) => /> /#.
+proc; wp; skip => &1 &2 /= [H1 H2].
+have Hsh: to_uint (W64.of_int (to_uint y{2})) = to_uint y{1} by rewrite W64.of_uintK -H2 modz_small; smt(W8.to_uint_cmp pow2_8).
+rewrite /is16u16 /VPSLL_16u16 Hsh; rewrite /is16u16 in H1; rewrite H1.
+by rewrite !Array16.initiE //= /(`<<`).
 qed.
 
 equiv eq_iVPSRL_16u16: Ops.iVPSRL_16u16 ~ OpsV.iVPSRL_16u16: is16u16 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is16u16 res{1} res{2}.
 proof.
-by proc; wp; skip; rewrite /is16u16 /VPSRL_16u16 /(`>>`) => /> /#.
+proc; wp; skip => &1 &2 /= [H1 H2].
+have Hsh: to_uint (W64.of_int (to_uint y{2})) = to_uint y{1} by rewrite W64.of_uintK -H2 modz_small; smt(W8.to_uint_cmp pow2_8).
+rewrite /is16u16 /VPSRL_16u16 Hsh; rewrite /is16u16 in H1; rewrite H1.
+by rewrite !Array16.initiE //= /(`>>`).
 qed.
 
 equiv eq_iVPSRL_8u32: Ops.iVPSRL_8u32 ~ OpsV.iVPSRL_8u32: is8u32 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is8u32 res{1} res{2}.
 proof.
-by proc; wp; skip; rewrite /is8u32 /VPSRL_8u32 /(`>>`) => /> /#.
+proc; wp; skip => &1 &2 /= [H1 H2].
+have Hsh: to_uint (W64.of_int (to_uint y{2})) = to_uint y{1} by rewrite W64.of_uintK -H2 modz_small; smt(W8.to_uint_cmp pow2_8).
+rewrite /is8u32 /VPSRL_8u32 Hsh; rewrite /is8u32 in H1; rewrite H1.
+by rewrite !Array8.initiE //= /(`>>`).
 qed.
 
 equiv eq_iVPSRA_16u16: Ops.iVPSRA_16u16 ~ OpsV.iVPSRA_16u16: is16u16 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is16u16 res{1} res{2}.
 proof.
-by proc; wp; skip; rewrite /is16u16 /VPSRA_16u16 /(`>>`) => /> /#.
+proc; wp; skip => &1 &2 /= [H1 H2].
+have Hsh: to_uint (W64.of_int (to_uint y{2})) = to_uint y{1} by rewrite W64.of_uintK -H2 modz_small; smt(W8.to_uint_cmp pow2_8).
+rewrite /is16u16 /VPSRA_16u16 Hsh; rewrite /is16u16 in H1; rewrite H1.
+by rewrite !Array16.initiE //= /(`|>>`).
 qed.
 
 equiv eq_iVPSRL_4u64: Ops.iVPSRL_4u64 ~ OpsV.iVPSRL_4u64 : is4u64 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is4u64 res{1} res{2}.
 proof.
-by proc; wp; skip; rewrite /is4u64 /VPSRL_4u64 /(`>>`) => /> /#.
+proc; wp; skip => &1 &2 /= [H1 H2].
+have Hsh: to_uint (W64.of_int (to_uint y{2})) = to_uint y{1} by rewrite W64.of_uintK -H2 modz_small; smt(W8.to_uint_cmp pow2_8).
+rewrite /is4u64 /VPSRL_4u64 Hsh; rewrite /is4u64 in H1; rewrite H1.
+by rewrite !Array4.initiE //= /(`>>`).
 qed.
 
 equiv eq_iVPSLL_4u64: Ops.iVPSLL_4u64 ~ OpsV.iVPSLL_4u64 : is4u64 x{1} x{2} /\ to_uint y{1} = to_uint y{2} ==> is4u64 res{1} res{2}.
 proof.
-by proc; wp; skip; rewrite /is4u64 /VPSLL_4u64 /(`>>`) => /> /#.
+proc; wp; skip => &1 &2 /= [H1 H2].
+have Hsh: to_uint (W64.of_int (to_uint y{2})) = to_uint y{1} by rewrite W64.of_uintK -H2 modz_small; smt(W8.to_uint_cmp pow2_8).
+rewrite /is4u64 /VPSLL_4u64 Hsh; rewrite /is4u64 in H1; rewrite H1.
+by rewrite !Array4.initiE //= /(`<<`).
 qed.
 
 equiv eq_iVPAND_16u16: Ops.iVPAND_16u16 ~ OpsV.iVPAND_16u16 : is16u16 x{1} x{2} /\ is16u16 y{1} y{2} ==> is16u16 res{1} res{2}.
@@ -2256,3 +2277,33 @@ do rewrite map_cons.
 smt().
 qed.
 
+
+
+(* lane-layout conversions (relocated from MLKEM_avx2_auxlemmas) *)
+
+op lift2poly (p: W256.t): W16.t Array16.t =
+  Array16.init (fun (n : int) => p \bits16 n).
+
+op f16u16_t8u32 (t: t16u16): t8u32 = Array8.init (fun i => pack2_t (W2u16.Pack.init (fun j => t.[2*i + j]))).
+op f8u32_t16u16 (t: t8u32): t16u16 = Array16.init (fun i => t.[i %/ 2] \bits16 (i %% 2)).
+
+op f32u8_t16u16 (t: t32u8): t16u16 = Array16.init (fun i => pack2_t (W2u8.Pack.init (fun j => t.[2*i + j]))).
+op f16u16_t32u8 (t: t16u16): t32u8 = Array32.init (fun i => t.[i %/ 2] \bits8 (i %% 2)).
+
+op f8u32_t4u64 (t: t8u32): t4u64 = Array4.init (fun i => pack2_t (W2u32.Pack.init (fun j => t.[2*i + j]))).
+op f4u64_t8u32 (t: t4u64): t8u32 = Array8.init (fun i => t.[i %/ 2] \bits32 (i %% 2)).
+
+op f32u8_t4u64 (t: t32u8): t4u64 = Array4.init (fun i => pack8_t (W8u8.Pack.init (fun j => t.[8*i + j]))).
+op f4u64_t32u8 (t: t4u64): t32u8 = Array32.init (fun i => t.[i %/ 8] \bits8 (i %% 8)).
+
+op f32u8_t8u32 (t: t32u8): t8u32 = Array8.init (fun i => pack4_t (W4u8.Pack.init (fun j => t.[4*i + j]))).
+op f8u32_t32u8 (t: t8u32): t32u8 = Array32.init (fun i => t.[i %/ 4] \bits8 (i %% 4)).
+
+op f16u16_t4u64 (t: t16u16): t4u64 = Array4.init (fun i => pack4_t (W4u16.Pack.init (fun j => t.[4*i + j]))).
+op f4u64_t16u16 (t: t4u64): t16u16 = Array16.init (fun i => t.[i %/ 4] \bits16 (i %% 4)).
+
+op f4u64_t2u128 (t: t4u64): t2u128 = Array2.init (fun i => pack2_t (W2u64.Pack.init (fun j => t.[2*i + j]))).
+op f2u128_t4u64 (t: t2u128): t4u64 = Array4.init (fun i => t.[i %/ 2] \bits64 (i %% 2)).
+
+op f16u16_t2u128 (t: t16u16): t2u128 = Array2.init (fun i => pack8_t (W8u16.Pack.init (fun j => t.[8*i + j]))).
+op f2u128_t16u16 (t: t2u128): t16u16 = Array16.init (fun i => t.[i %/ 8] \bits16 (i %% 8)).
