@@ -1,5 +1,5 @@
 (* -------------------------------------------------------------------- *)
-require import AllCore List IntDiv JWordExtra CircuitBindings.
+require import AllCore List IntDiv JWordExtra CircuitBindings CircuitBindingsExtra.
 from JazzEC require import Array16.
 
 from Jasmin require import JWord.
@@ -42,6 +42,23 @@ clone BSWAS as BSWAS_16u16_256 with
   theory WS      <- W256  { rename "_XX" as "_256" },
   theory WES     <- WE256,
   theory BSWS    <- BSW256,
+  theory BSWA    <- BSWA_16u16
+
+  proof le_size by done.
+
+(* -------------------------------------------------------------------- *)
+clone BSWAS as BSWAS_16u16_128 with
+      op asize   <- 16,
+      op bsize   <- 16,
+      op ssize   <- 128,
+  theory A       <- Array16,
+  theory BSA     <- BSA16,
+  theory WB      <- W16  { rename "_XX" as "_16" },
+  theory WEB     <- WE16,
+  theory BSWB    <- BSW16,
+  theory WS      <- W128  { rename "_XX" as "_128" },
+  theory WES     <- WE128,
+  theory BSWS    <- BSW128,
   theory BSWA    <- BSWA_16u16
 
   proof le_size by done.
@@ -105,3 +122,9 @@ lemma BSWAS_16u8_128_slicegetE o (p : W8.t Array16.t):
   rewrite (nth_map witness); 1: by rewrite size_to_list; smt().
   by rewrite get_to_list get_w2bits /#.
  qed.
+
+clone export SliceSet as SliceSet_16_128_16
+  with op isize <- 16, op osize <- 128, op asize <- 16,
+  theory IW <- W16, theory OW <- W128, theory A <- Array16
+  rename "XX" as "16_128_16"
+  proof gt0_isize by done, gt0_osize by done, ge0_asize by done.

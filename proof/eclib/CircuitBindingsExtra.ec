@@ -219,41 +219,6 @@ abstract theory ZExtend.
 end ZExtend.
 
 (* -------------------------------------------------------------------- *)
-abstract theory SliceGet.
-  op isize : { int | 0 <  isize } as gt0_isize.
-  op osize : { int | 0 <  osize } as gt0_osize.
-  op asize : { int | 0 <= asize } as ge0_asize.
-
-  clone import WBits as IW with op size <- isize proof gt0_size by apply/gt0_isize.
-  clone import WBits as OW with op size <- osize proof gt0_size by apply/gt0_osize.
-
-  clone import PolyArray as A with op size <- asize proof ge0_size by apply/ge0_asize.
-
-  op sliceget_XX (a : IW.t A.t) (i : int) : OW.t =
-    OW.init (fun j => a.[(i + j) %/ isize].[(i + j) %% isize]).
-
-  lemma sliceget_XXE (a : IW.t A.t) (i : int) (j : int) :
-    0 <= j < osize => (sliceget_XX a i).[j] = a.[(i + j) %/ isize].[(i + j) %% isize].
-  proof. by move=> rgj; rewrite initE rgj. qed.
-
-  lemma sliceget_XXP (a : IW.t A.t) :
-    forall (i : int), 0 <= i <= isize * asize - osize =>
-      let base = flatten (map IW.w2bits (to_list a)) in
-      let ret  = sliceget_XX a i in
-      forall (j : int),
-        0 <= j && j < osize =>
-          nth false (w2bits ret) j = nth false (take osize (drop i base)) j.
-  proof.
-  move=> i rgi /= j rgj; rewrite get_w2bits sliceget_XXE 1://.
-  rewrite nth_take ~-1:/# nth_drop ~-1:/# (nth_flatten _ isize).
-  - by apply/List.allP => s /mapP[/= sisz] [_ ->]; rewrite size_w2bits.
-  rewrite (nth_map witness) 1:size_to_list; last first.
-  - by rewrite get_w2bits get_to_list.
-  - smt(gt0_isize gt0_osize ge0_asize).
-  qed.
-end SliceGet.
-
-(* -------------------------------------------------------------------- *)
 abstract theory SliceSet.
   op isize : { int | 0 <  isize } as gt0_isize.
   op osize : { int | 0 <  osize } as gt0_osize.

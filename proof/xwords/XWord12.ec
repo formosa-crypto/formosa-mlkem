@@ -4,7 +4,7 @@ require import AllCore.
 (* -------------------------------------------------------------------- *)
 from Jasmin require import JWord.
 
-require import JWordExtra CircuitBindings.
+require import JWordExtra CircuitBindings CircuitBindingsExtra.
 
 (* -------------------------------------------------------------------- *)
 clone export BitWordSH as W12 with
@@ -37,7 +37,10 @@ clone BS_WB_WS_U as BS_W16_W12_U with
 
     proof le_size by done, *.
 
-(* compat lemma: filters use zextend_12_16P (to_uint preservation). *)
-lemma zextend_12_16P (w : W12.t) :
-  W16.to_uint (BS_W16_W12_U.zeroextu16 w) = W12.to_uint w.
-proof. rewrite /BS_W16_W12_U.zeroextu16 W16.of_uintK; have := W12.to_uint_cmp w; smt(). qed.
+clone export ZExtend as ZExtend_12_16
+  with op isize <- 12, op osize <- 16, theory IW <- W12, theory OW <- W16
+  rename "XX" as "12_16"
+  proof gt0_isize by done, gt0_osize by done, le_iosize by done.
+bind op [W12.t & W16.t] zextend_12_16 "zextend".
+realize bvzextendP by move=> ?; apply/eq_sym/ZExtend_12_16.zextend_12_16P.
+realize le_size by auto.

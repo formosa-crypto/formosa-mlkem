@@ -1,7 +1,7 @@
 (* ----- *) require import AllCore IntDiv List StdBigop.
 from Jasmin require import JModel.
 require import Mlkem_bindings.
-require import CircuitBindingsExtra XWord512 XWord12 XArray16 XArray24 XArray32 XArray48 Mlkem_filter_clones.
+require import CircuitBindingsExtra XWord512 XWord12 XWord64 XWord128 XWord256 XArray16 XArray24 XArray32 XArray40 XArray48 XArray56 XArray2048.
 (* ----- *) (* - *) import W8 W12 W512 BitEncoding BS2Int BitChunking.
 
 from JazzEC require import Array2048 Array256 Array64 Array56 Array48 Array40 Array32 Array24 Array16.
@@ -556,6 +556,21 @@ op sample_shuffle_table = Array2048.of_list witness [
   W8.of_int ( 8); W8.of_int (10); W8.of_int (12); W8.of_int (14)
 ].
 
+(* -------------------------------------------------------------------- *)
+op shiftr64 (w1 w2 : W64.t) = w1 `>>>` W64.to_uint w2.
+
+bind op [W64.t] shiftr64 "shr".
+
+realize bvshrP.
+proof. by move=> w1 w2 @/shiftr64; rewrite to_uint_shr 1:#smt:(W64.to_uint_cmp). qed.
+
+op shift64R (w : W64.t) (i : W8.t) =
+  shiftr64 w (zextend_8_64 i).
+
+lemma shift64RE (w : W64.t) (i : W8.t) : w `>>` i = shift64R w i.
+proof.
+by rewrite /shift64R /shiftr64 zextend_8_64P /(`>>`).
+qed.
 
 (* -------------------------------------------------------------------- *)
 module Filters = {
@@ -577,7 +592,7 @@ module Filters = {
     var  _1:bool;
     var t128:W128.t;
 
-    f0 <- (VPERMQ (sliceget_8_256_32 buf 0) filter_permq);
+    f0 <- (VPERMQ (BSWAS_32u8_256.sliceget buf 0) filter_permq);
     f0 <- (VPSHUFB_256 f0 load_shuffle);
     g0 <- (VPSRL_16u16 f0 (W128.of_int 4));
     f0 <- (VPBLEND_16u16 f0 g0 (W8.of_int 170));
@@ -589,14 +604,14 @@ module Filters = {
 
     t0_0 <- good;
     t0_0 <- (t0_0 `&` (W64.of_int 255));
-    shuffle_0 <- zextend_64_256 (sliceget_8_64_2048 sample_shuffle_table (64 * W64.to_uint t0_0));
+    shuffle_0 <- zextend_64_256 (BSWAS_2048u8_64.sliceget sample_shuffle_table (64 * W64.to_uint t0_0));
     (_of_, _cf_, _sf_,  _0, _zf_, t0_0) <- (POPCNT_64 t0_0);
     t0_0 <- (t0_0 + W64.of_int 0);
 
     t0_1 <- good;
     t0_1 <- (t0_1 `>>` (W8.of_int 16));
     t0_1 <- (t0_1 `&` (W64.of_int 255));
-    shuffle_0_1 <- zextend_64_128 (sliceget_8_64_2048 sample_shuffle_table (64 * W64.to_uint t0_1));
+    shuffle_0_1 <- zextend_64_128 (BSWAS_2048u8_64.sliceget sample_shuffle_table (64 * W64.to_uint t0_1));
     (_of_, _cf_, _sf_,  _1, _zf_, t0_1) <- (POPCNT_64 t0_1);
     t0_1 <- (t0_1 + t0_0);
 
@@ -635,8 +650,8 @@ module Filters = {
     var  _2:bool;
     var  _3:bool;
 
-    f0 <- (VPERMQ (sliceget_8_256_56 buf 0) filter_permq);
-    f1 <- (VPERMQ (sliceget_8_256_56 buf (24 * 8)) filter_permq);
+    f0 <- (VPERMQ (BSWAS_56u8_256.sliceget buf 0) filter_permq);
+    f1 <- (VPERMQ (BSWAS_56u8_256.sliceget buf (24 * 8)) filter_permq);
     f0 <- (VPSHUFB_256 f0 load_shuffle);
     f1 <- (VPSHUFB_256 f1 load_shuffle);
     g0 <- (VPSRL_16u16 f0 (W128.of_int 4));
@@ -652,28 +667,28 @@ module Filters = {
 
     t0_0 <- good;
     t0_0 <- (t0_0 `&` (W64.of_int 255));
-    shuffle_0 <- zextend_64_256 (sliceget_8_64_2048 sample_shuffle_table (64 * W64.to_uint t0_0));
+    shuffle_0 <- zextend_64_256 (BSWAS_2048u8_64.sliceget sample_shuffle_table (64 * W64.to_uint t0_0));
     (_of_, _cf_, _sf_,  _0, _zf_, t0_0) <- (POPCNT_64 t0_0);
     t0_0 <- (t0_0 + W64.of_int 0);
 
     t0_1 <- good;
     t0_1 <- (t0_1 `>>` (W8.of_int 16));
     t0_1 <- (t0_1 `&` (W64.of_int 255));
-    shuffle_0_1 <- zextend_64_128 (sliceget_8_64_2048 sample_shuffle_table (64 * W64.to_uint t0_1));
+    shuffle_0_1 <- zextend_64_128 (BSWAS_2048u8_64.sliceget sample_shuffle_table (64 * W64.to_uint t0_1));
     (_of_, _cf_, _sf_,  _3, _zf_, t0_1) <- (POPCNT_64 t0_1);
     t0_1 <- (t0_1 + t0_0);
 
     t1_0 <- good;
     t1_0 <- (t1_0 `>>` (W8.of_int 8));
     t1_0 <- (t1_0 `&` (W64.of_int 255));
-    shuffle_1 <- zextend_64_256 (sliceget_8_64_2048 sample_shuffle_table (64 * W64.to_uint t1_0));
+    shuffle_1 <- zextend_64_256 (BSWAS_2048u8_64.sliceget sample_shuffle_table (64 * W64.to_uint t1_0));
     (_of_, _cf_, _sf_,  _2, _zf_, t1_0) <- (POPCNT_64 t1_0);
     t1_0 <- (t1_0 + t0_1);
 
     t1_1 <- good;
     t1_1 <- (t1_1 `>>` (W8.of_int 24));
     t1_1 <- (t1_1 `&` (W64.of_int 255));
-    shuffle_1_1 <- zextend_64_128 (sliceget_8_64_2048 sample_shuffle_table (64 * W64.to_uint t1_1));
+    shuffle_1_1 <- zextend_64_128 (BSWAS_2048u8_64.sliceget sample_shuffle_table (64 * W64.to_uint t1_1));
     (_of_, _cf_, _sf_,  _3, _zf_, t1_1) <- (POPCNT_64 t1_1);
     t1_1 <- (t1_1 + t1_0);
 
@@ -752,7 +767,7 @@ lemma filter24P _buf : hoare[Filters.filter24 : buf = _buf ==>
   let ws =
     pmap
       (fun i =>
-        let w = sliceget_8_12_24 (Array24.init(fun i => _buf.[i])) (12 * i) in
+        let w = BSWAS_24u8_12.sliceget (Array24.init(fun i => _buf.[i])) (12 * i) in
         if w \ult (W12.of_int 3329) then Some w else None)
       (iota_ 0 16) in
 
@@ -765,8 +780,8 @@ proc; conseq (_ : _buf = buf ==> _); first done.
 (* ==================================================================== *)
 (* First part: extracting all the 12-bit words from the input buffer    *)
 seq ^g0<-{2} : (#pre /\
-          init_array16_w16 (fun i => extract_256_16 f0 (16 * i)) =
-          init_array16_w16 (fun i => zextend_12_16 (sliceget_8_12_24 (init_array24_w8 (fun (i : int) => buf.[i])) (12 * i)))); 1: by circuit.
+          BSWA_16u16.init (fun i => extract_256_16 f0 (16 * i)) =
+          BSWA_16u16.init (fun i => zextend_12_16 (BSWAS_24u8_12.sliceget (BSWA_24u8.init (fun (i : int) => buf.[i])) (12 * i)))); 1: by circuit.
   
 (* ==================================================================== *)
 (* Second part: parallel comparison                                     *)
@@ -777,8 +792,8 @@ seq ^good<- & +1 : (#pre /\
 
 (* ==================================================================== *)
 (* Third part: extracting values                                        *)
-alias shf0_0 := (sliceget_8_64_2048 _ _) @ ^shuffle_0<-.
-alias shf0_1 := (sliceget_8_64_2048 _ _) @ ^shuffle_0_1<-.
+alias shf0_0 := (BSWAS_2048u8_64.sliceget _ _) @ ^shuffle_0<-.
+alias shf0_1 := (BSWAS_2048u8_64.sliceget _ _) @ ^shuffle_0_1<-.
 
 proc change circuit ^t0_0<- +2 { t0_0 <- zextend_8_64 (extract_64_8 good 0); }.
 alias good0_0 := (extract_64_8 good 0) @ ^t0_0<-.
@@ -808,7 +823,7 @@ proc change circuit [
 
   shf0_1_16 <- VPUNPCKL_16u8 shf0_1 (VPINC_8u8 shf0_1);
   f0_1      <- VPSHUFB_128 f0_1 shf0_1_16;
-  f0 <- concat_2u128 f0_0 f0_1;
+  f0 <- CircuitBindingsExtra.concat_2u128 f0_0 f0_1;
 }.
 
 swap ^f0_0<- @^good0_0<-.
@@ -847,7 +862,7 @@ cfold ^f0<-; wp -2.
 pose ws (b : int) (m : int) :=
   pmap
     (fun i =>
-       let w = sliceget_8_12_24 (Array24.init (fun i => _buf.[i])) (12 * i) in
+       let w = BSWAS_24u8_12.sliceget (Array24.init (fun i => _buf.[i])) (12 * i) in
        if w \ult (W12.of_int 3329) then Some w else None)
     (iota_ b m).
 
@@ -896,11 +911,11 @@ have sliceset_outE: forall o b i w,
 
 have extractE: forall f_0 f_1 i k, 0 <= i <= 128 - 16 => 0 <= k < 2 =>
   extract_128_16
-    (extract_256_128 (concat_2u128 f_0 f_1) (128 * k)) i
+    (extract_256_128 (CircuitBindingsExtra.concat_2u128 f_0 f_1) (128 * k)) i
   = extract_128_16 [f_0; f_1].[k] i.
 - move=> f_0 f_1 i k rgi rgk; apply/W16.ext_eq => l rgl.
   rewrite !extract_128_16E ~-1:// extract_256_128E 1:/#.
-  rewrite /concat_2u128 /pack2 /pack2_t initE iftrue 1:/# /=.
+  rewrite /CircuitBindingsExtra.concat_2u128 /pack2 /pack2_t initE iftrue 1:/# /=.
   rewrite of_listE /= initE /= iftrue 1:/#; smt().
 
 have popcnt_64E: forall w, popcount_64 w = W64.of_int (count idfun (W64.w2bits w)).
@@ -919,7 +934,7 @@ seq 0 : ((forall i, 0 <= i < 2 =>
   w' good f0 i = map zextend_12_16 (ws (8 * i) 8)
 ) /\ #pre); first skip=> |> &hr hext hgood 2? i ge0_i lti.
 - have hext': forall j, 0 <= j < 16 =>
-    zextend_12_16 (sliceget_8_12_24 (Array24.init (fun i => _buf.[i])) (12 * j))
+    zextend_12_16 (BSWAS_24u8_12.sliceget (Array24.init (fun i => _buf.[i])) (12 * j))
     = extract_256_16 [f0{hr}].[j %/ 16] (16 * (j - 16 * (j %/ 16))).
   - move=> j rgj;move : hgood; rewrite wordP => hgood.
     move : hext; rewrite tP => hext.
@@ -1016,7 +1031,7 @@ lemma filter48P _buf : hoare[Filters.filter48 : buf = _buf ==>
   let ws =
     pmap
       (fun i =>
-        let w = sliceget_8_12_48 (Array48.init (fun i => _buf.[i])) (12 * i) in
+        let w = BSWAS_48u8_12.sliceget (Array48.init (fun i => _buf.[i])) (12 * i) in
         if w \ult (W12.of_int 3329) then Some w else None)
       (iota_ 0 32) in
 
@@ -1029,8 +1044,8 @@ proc; conseq (_ : _buf = buf ==> _); first done.
 (* ==================================================================== *)
 (* First part: extracting all the 12-bit words from the input buffer    *)
 seq ^g0<-{2} : (#pre /\
-  init_array32_w16 (fun i => extract_512_16 (concat_2u256 f0 f1) (16 * i))
-    = init_array32_w16 (fun i => (zextend_12_16 (sliceget_8_12_48 (init_array48_w8 (fun j => buf.[j])) (12 * i)))
+  BSWA_32u16.init (fun i => extract_512_16 (concat_2u256 f0 f1) (16 * i))
+    = BSWA_32u16.init (fun i => (zextend_12_16 (BSWAS_48u8_12.sliceget (BSWA_48u8.init (fun j => buf.[j])) (12 * i)))
   )). move => |>. circuit.
 
 (* ==================================================================== *)
@@ -1043,10 +1058,10 @@ seq ^good<- & +1 : (#pre /\
 
 (* ==================================================================== *)
 (* Third part: extracting values                                        *)
-alias shf0_0 := (sliceget_8_64_2048 _ _) @ ^shuffle_0<-.
-alias shf0_1 := (sliceget_8_64_2048 _ _) @ ^shuffle_0_1<-.
-alias shf1_0 := (sliceget_8_64_2048 _ _) @ ^shuffle_1<-.
-alias shf1_1 := (sliceget_8_64_2048 _ _) @ ^shuffle_1_1<-.
+alias shf0_0 := (BSWAS_2048u8_64.sliceget _ _) @ ^shuffle_0<-.
+alias shf0_1 := (BSWAS_2048u8_64.sliceget _ _) @ ^shuffle_0_1<-.
+alias shf1_0 := (BSWAS_2048u8_64.sliceget _ _) @ ^shuffle_1<-.
+alias shf1_1 := (BSWAS_2048u8_64.sliceget _ _) @ ^shuffle_1_1<-.
 
 proc change circuit ^t0_0<- +2 { t0_0 <- zextend_8_64 (extract_64_8 good 0); }.
 alias good0_0 := (extract_64_8 good 0) @ ^t0_0<-.
@@ -1100,8 +1115,8 @@ proc change circuit [
   shf1_1_16 <- VPUNPCKL_16u8 shf1_1 (VPINC_8u8 shf1_1);
   f1_1      <- VPSHUFB_128 f1_1 shf1_1_16;
 
-  f0 <- concat_2u128 f0_0 f0_1;
-  f1 <- concat_2u128 f1_0 f1_1;
+  f0 <- CircuitBindingsExtra.concat_2u128 f0_0 f0_1;
+  f1 <- CircuitBindingsExtra.concat_2u128 f1_0 f1_1;
 }.
 
 swap ^f0_0<- @^good0_0<-.
@@ -1156,7 +1171,7 @@ cfold ^f0<-; cfold ^f1<-; wp -2.
 pose ws (b : int) (m : int) :=
   pmap
     (fun i =>
-       let w = sliceget_8_12_48 (Array48.init (fun i => _buf.[i])) (12 * i) in
+       let w = BSWAS_48u8_12.sliceget (Array48.init (fun i => _buf.[i])) (12 * i) in
        if w \ult (W12.of_int 3329) then Some w else None)
     (iota_ b m).
 
@@ -1205,11 +1220,11 @@ have sliceset_outE: forall o b i w,
 
 have extractE: forall f_0 f_1 i k, 0 <= i <= 128 - 16 => 0 <= k < 2 =>
   extract_128_16
-    (extract_256_128 (concat_2u128 f_0 f_1) (128 * k)) i
+    (extract_256_128 (CircuitBindingsExtra.concat_2u128 f_0 f_1) (128 * k)) i
   = extract_128_16 [f_0; f_1].[k] i.
 - move=> f_0 f_1 i k rgi rgk; apply/W16.ext_eq => l rgl.
   rewrite !extract_128_16E ~-1:// extract_256_128E 1:/#.
-  rewrite /concat_2u128 /pack2 /pack2_t initE iftrue 1:/# /=.
+  rewrite /CircuitBindingsExtra.concat_2u128 /pack2 /pack2_t initE iftrue 1:/# /=.
   rewrite of_listE /= initE /= iftrue 1:/#; smt().
 
 have popcnt_64E: forall w, popcount_64 w = W64.of_int (count idfun (W64.w2bits w)).
@@ -1228,7 +1243,7 @@ seq 0 : ((forall i, 0 <= i < 4 =>
   w' good f0 f1 i = map zextend_12_16 (ws (8 * i) 8)
 ) /\ #pre); first skip=> |> &hr hext hgood 4? i ge0_i lti.
 - have hext': forall j, 0 <= j < 32 =>
-    zextend_12_16 (sliceget_8_12_48 (Array48.init (fun i => _buf.[i])) (12 * j))
+    zextend_12_16 (BSWAS_48u8_12.sliceget (Array48.init (fun i => _buf.[i])) (12 * j))
     = extract_256_16 [f0{hr}; f1{hr}].[j %/ 16] (16 * (j - 16 * (j %/ 16))).
   - move=> j rgj; move : hgood; rewrite wordP => hgood.
     move : hext.

@@ -124,7 +124,7 @@ case: (0 <= x) => [le0x|/ltrNge ltx0].
   rewrite modz_small // le0x /= gtr0_norm; [by apply/(ler_lt_trans _ _ _ _ lt1y)|].
   apply/(ltr_le_trans _ _ _ ltx_)/leq_div => //.
   by apply/ltzW/(ler_lt_trans _ _ _ _ lt1y).
-by smt(). 
+by case (y %/ 2 <= x %% y) => *;smt(). 
 qed.
 
 lemma smod_div x : smod (x * R) (R ^ 2) %/ R = smod x  R.
@@ -148,7 +148,11 @@ by move => *; exists (- x %/ y); smt(modzE gt0_R).
 qed.
 
 lemma inrange a :  0 <= a < R %/ 2 => a %% R = a by smt().
-lemma outrange a :  - R%/2 <= a < 0 => a %% R = R + a by smt(@IntDiv).
+lemma outrange a :  - R%/2 <= a < 0 => a %% R = R + a.
+rewrite /R => H.
+have {1}-> : a = -(-a) by ring.
+rewrite modNz;smt().
+qed.
 
 lemma sign_comp a b: smod (a %%R + b %% R) R = smod (a + b) R
    by move => *; rewrite !smodE modzDm.
@@ -186,7 +190,7 @@ case (0 <= a).
   have -> /= : !(2 ^ k ^ 2 %/ 2 <= a * (2 ^ bits %/ SignedReductions.q + 1)).
   + rewrite ltr_geF; last by done.
     rewrite expr2 mulrC div_mulr; 1: by rewrite -{1}(expr1 2); apply dvdz_exp2l; smt(gt2_k).
-    by smt(expr2 gtr0_norm ltr_pmul).  
+    by apply ltr_pmul; smt().
   rewrite !(modz_small ((a - a * (2 ^ bits %/ SignedReductions.q + 1) %/ 2 ^ bits * SignedReductions.q))); 
     1: by smt(). 
   split; 1: by smt(). 
@@ -198,7 +202,10 @@ pose d := -a;have -> : (a = -d); 1: by auto.
 rewrite !mulNr !modNz; 1..4: smt(gt2_k expr_gt0). 
 rewrite !(modz_small (-a * (2 ^ bits %/ SignedReductions.q + 1) - 1)).
 +  rewrite gtr0_norm; 1: by  smt(gt2_k expr_gt0).
-   by split; rewrite -Ring.IntID.mulNr;  smt(ler_pmul expr2). 
+   split; rewrite -Ring.IntID.mulNr; 1: smt(ler_pmul expr2).
+   move => ?;rewrite expr2.
+   suff: (-a) * (2 ^ bits %/ q + 1) <= 2 ^ k * 2 ^ k by smt().
+   apply ler_pmul;smt().
 have -> /=: 2 ^ k ^ 2 %/ 2 <= 2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1).
 + have -> : 2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1) = 
         2^k^2 - d * (2 ^ bits %/ SignedReductions.q + 1); 1: by rewrite /d;ring. 
@@ -212,7 +219,10 @@ have -> /=: 2 ^ k ^ 2 %/ 2 <= 2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReducti
   move => *. 
   rewrite !(modz_small _ (2^k)) => //; 1: smt(). 
   case (2 ^ k %/ 2 <=  (-d) - (2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1) - 2 ^ k ^ 2) %/ 2 ^ bits * SignedReductions.q); 1: by smt().
-  by move : (modzMDr (-((2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1) - 2 ^ k ^ 2) %/ 2 ^ bits)) (-d) q) => /=; smt(modNz). 
+   move : (modzMDr (-((2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ SignedReductions.q + 1)) - 1) - 2 ^ k ^ 2) %/ 2 ^ bits)) (-d) q) => /=.
+   have -> : ((-d) + (- (2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ q + 1)) - 1) - 2 ^ k ^ 2) %/ 2 ^ bits) * q) %% q =
+   ((-d) - (2 ^ k ^ 2 - 1 - ((- a * (2 ^ bits %/ q + 1)) - 1) - 2 ^ k ^ 2) %/ 2 ^ bits * q) %% q  by smt().
+  move => ->;smt(modNz). 
 qed. 
 
 (* Signed Montgomery reduction as used in MLKEM v2.0 *)
