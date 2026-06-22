@@ -368,7 +368,7 @@ rewrite to_uint_shr; first smt(to_uint_cmp).
 rewrite W32_shl_onew; first smt(to_uint_cmp).
 rewrite lez_maxr 1:/# to_uint_invw.
 rewrite of_uintK modz_small.
- apply bound_abs; split; first smt(@IntDiv).
+ apply bound_abs; split;1:smt(expr_gt0). 
  move => ?.
  have /=?: 2 ^ (W32.size - k) <= W32.modulus.
   by apply ler_weexpn2l => // /#.
