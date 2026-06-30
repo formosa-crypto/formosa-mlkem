@@ -14,8 +14,8 @@ fn _gen_matrix_avx2
 {
   // local variables
   inline int i j;
-  stack u8[BUF_SIZE * 4] buf_s;
-  reg ptr u8[BUF_SIZE * 4] buf;
+  stack u8[BUF_size * 4] buf_s;
+  reg ptr u8[BUF_size * 4] buf;
   reg ptr u16[4*MLKEM_N] polx4;
   reg u64 pos_entry;
 

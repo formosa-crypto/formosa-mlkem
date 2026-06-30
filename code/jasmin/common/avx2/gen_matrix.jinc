@@ -1,12 +1,12 @@
 require "mlkem_keccak_avx2.jinc"
 
-// BUF_SIZE per entry: 21(rate) + 21(rate) + 25(keccak_state) + 1(pad)
-param int BUF_SIZE = 536; // 168*2+200      (was in u64s: 3*21 + 4 + 1; //544 bytes;
+// BUF_size per entry: 21(rate) + 21(rate) + 25(keccak_state) + 1(pad)
+param int BUF_size = 536; // 168*2+200      (was in u64s: 3*21 + 4 + 1; //544 bytes;
 
 #[safety =
-   { requires = is_arr_init(buf,0,BUF_SIZE) && is_arr_init(sst,0,2048) && 
+   { requires = is_arr_init(buf,0,BUF_size) && is_arr_init(sst,0,2048) && 
                 0<= (uint) counter && (uint) counter + 32 <= MLKEM_N && is_arr_init(pol,0,((uint) counter * 2)) &&
-                0 <= (uint) buf_offset && (uint) buf_offset + 24 + 32 <= BUF_SIZE
+                0 <= (uint) buf_offset && (uint) buf_offset + 24 + 32 <= BUF_size
    , res = { final_pol, final_counter }
    , ensures = is_arr_init(final_pol,0,2* (uint) final_counter) && (uint) counter <=(uint) final_counter && (uint) final_counter <= MLKEM_N
    }
@@ -14,7 +14,7 @@ param int BUF_SIZE = 536; // 168*2+200      (was in u64s: 3*21 + 4 + 1; //544 by
 inline fn __gen_matrix_buf_rejection_filter48
 ( reg mut ptr u16[MLKEM_N] pol
 , reg u64 counter
-, reg const ptr u8[BUF_SIZE] buf
+, reg const ptr u8[BUF_size] buf
 , reg u64 buf_offset // bytes
 
 , reg u256 load_shuffle
@@ -230,9 +230,9 @@ inline fn __write_u128_boundchk
 }
 
 #[safety =
-   { requires = is_arr_init(buf,0,BUF_SIZE) && is_arr_init(sst,0,2048) &&
+   { requires = is_arr_init(buf,0,BUF_size) && is_arr_init(sst,0,2048) &&
                 0<= (uint) counter &&  (uint) counter < MLKEM_N &&
-                0 <= (uint) buf_offset && (uint) buf_offset + 32 < BUF_SIZE && is_arr_init(pol,0,((uint) counter * 2))
+                0 <= (uint) buf_offset && (uint) buf_offset + 32 < BUF_size && is_arr_init(pol,0,((uint) counter * 2))
    , res = { final_pol, final_counter, final_ms }
    , ensures = (uint) counter <= final_counter && is_arr_init(final_pol,0,2* (uint) final_counter)
    }
@@ -240,7 +240,7 @@ inline fn __write_u128_boundchk
 inline fn __gen_matrix_buf_rejection_filter24
 ( reg mut ptr u16[MLKEM_N] pol
 , reg u64 counter
-, reg const ptr u8[BUF_SIZE] buf
+, reg const ptr u8[BUF_size] buf
 , reg u64 buf_offset // in bytes
 
 , reg u256 load_shuffle mask bounds
@@ -300,8 +300,8 @@ inline fn __gen_matrix_buf_rejection_filter24
 }
 
 #[safety =
-   { requires = is_arr_init(buf,0,BUF_SIZE) && 0<= (uint) counter &&  (uint) counter <= MLKEM_N &&
-          0 <= (uint) buf_offset && (uint) buf_offset < BUF_SIZE && is_arr_init(pol,0,((uint) counter * 2))
+   { requires = is_arr_init(buf,0,BUF_size) && 0<= (uint) counter &&  (uint) counter <= MLKEM_N &&
+          0 <= (uint) buf_offset && (uint) buf_offset < BUF_size && is_arr_init(pol,0,((uint) counter * 2))
    , res = { final_pol, final_counter }
    , ensures = (uint) counter <= final_counter && is_arr_init(final_pol,0,2* (uint) final_counter)
    }
@@ -309,7 +309,7 @@ inline fn __gen_matrix_buf_rejection_filter24
 fn _gen_matrix_buf_rejection
 ( reg mut ptr u16[MLKEM_N] pol		// polynomial
 , reg u64 counter			// number of coefs. already sampled
-, reg const ptr u8[BUF_SIZE] buf	// whole buffer (size=21+21+25 (+1 pad))
+, reg const ptr u8[BUF_size] buf	// whole buffer (size=21+21+25 (+1 pad))
 , reg u64 buf_offset			// start looking at... (bytes)
 
 ) -> reg ptr u16[MLKEM_N], reg u64	// pol. and counter
@@ -397,14 +397,14 @@ inline fn gen_matrix_get_indexes(
 }
 
 #[safety =
-   { requires = is_arr_init(buf,0,BUF_SIZE)
-   , ensures = is_arr_init(pol,0,MLKEM_N * 2) && is_arr_init(buf,0,BUF_SIZE)
+   { requires = is_arr_init(buf,0,BUF_size)
+   , ensures = is_arr_init(pol,0,MLKEM_N * 2) && is_arr_init(buf,0,BUF_size)
    }
  ]
 fn __gen_matrix_fill_polynomial
 ( reg mut ptr u16[MLKEM_N] pol
-, reg mut ptr u8[BUF_SIZE] buf
-) -> reg ptr u16[MLKEM_N], reg ptr u8[BUF_SIZE]
+, reg mut ptr u8[BUF_size] buf
+) -> reg ptr u16[MLKEM_N], reg ptr u8[BUF_size]
 {
   reg u64 counter, buf_offset;
 
@@ -430,14 +430,14 @@ fn __gen_matrix_fill_polynomial
  ]
 fn _gen_matrix_sample_four_polynomials
 ( reg mut ptr u16[4*MLKEM_N] polx4
-, reg mut ptr u8[BUF_SIZE * 4] buf
+, reg mut ptr u8[BUF_size * 4] buf
 , reg ptr u8[32] rho
 , reg u64 pos_entry
 , reg u64 transposed
-) -> reg ptr u16[4*MLKEM_N], reg ptr u8[BUF_SIZE * 4]
+) -> reg ptr u16[4*MLKEM_N], reg ptr u8[BUF_size * 4]
 {
   reg ptr u16[MLKEM_N] pol;
-  reg ptr u8[BUF_SIZE] bufp;
+  reg ptr u8[BUF_size] bufp;
   stack u256[25] state;
   reg ptr u256[25] stx4;
   stack u8[8] indexes;
@@ -449,35 +449,35 @@ fn _gen_matrix_sample_four_polynomials
   _, buf = _shake128x4_squeeze3blocks(stx4, buf);
 
   #spill(buf,polx4);
-  bufp = buf[BUF_SIZE * 0 : BUF_SIZE];
+  bufp = buf[BUF_size * 0 : BUF_size];
   pol = polx4[0*MLKEM_N:MLKEM_N];
   pol, bufp = __gen_matrix_fill_polynomial(pol, bufp);
   #unspill(buf, polx4);
-  buf[BUF_SIZE * 0 : BUF_SIZE] = bufp;
+  buf[BUF_size * 0 : BUF_size] = bufp;
   polx4[0*MLKEM_N:MLKEM_N] = pol;
 
   #spill(buf,polx4);
-  bufp = buf[BUF_SIZE * 1 : BUF_SIZE];
+  bufp = buf[BUF_size * 1 : BUF_size];
   pol = polx4[1*MLKEM_N:MLKEM_N];
   pol, bufp = __gen_matrix_fill_polynomial(pol, bufp);
   #unspill(buf, polx4);
-  buf[BUF_SIZE * 1 : BUF_SIZE] = bufp;
+  buf[BUF_size * 1 : BUF_size] = bufp;
   polx4[1*MLKEM_N:MLKEM_N] = pol;
 
   #spill(buf,polx4);
-  bufp = buf[BUF_SIZE * 2 : BUF_SIZE];
+  bufp = buf[BUF_size * 2 : BUF_size];
   pol = polx4[2*MLKEM_N:MLKEM_N];
   pol, bufp = __gen_matrix_fill_polynomial(pol, bufp);
   #unspill(buf, polx4);
-  buf[BUF_SIZE * 2 : BUF_SIZE] = bufp;
+  buf[BUF_size * 2 : BUF_size] = bufp;
   polx4[2*MLKEM_N:MLKEM_N] = pol;
 
   #spill(buf,polx4);
-  bufp = buf[BUF_SIZE * 3 : BUF_SIZE];
+  bufp = buf[BUF_size * 3 : BUF_size];
   pol = polx4[3*MLKEM_N:MLKEM_N];
   pol, bufp = __gen_matrix_fill_polynomial(pol, bufp);
   #unspill(buf, polx4);
-  buf[BUF_SIZE * 3 : BUF_SIZE] = bufp;
+  buf[BUF_size * 3 : BUF_size] = bufp;
   polx4[3*MLKEM_N:MLKEM_N] = pol;
 
   return polx4, buf;
@@ -485,22 +485,23 @@ fn _gen_matrix_sample_four_polynomials
 
 #[safety =
    { requires = is_arr_init(rho,0,32)
-   , ensures = is_arr_init(pol,0,MLKEM_N * 2) && is_arr_init(buf,0,BUF_SIZE)
+   , ensures = is_arr_init(pol,0,MLKEM_N * 2) && is_arr_init(buf,0,BUF_size)
    }
  ]
 inline fn __gen_matrix_sample_one_polynomial
 ( reg mut ptr u16[MLKEM_N] pol
-, reg mut ptr u8[BUF_SIZE] buf
+, reg mut ptr u8[BUF_size] buf
 , reg ptr u8[32] rho
 , reg u16 rc
-) -> reg ptr u16[MLKEM_N], reg ptr u8[BUF_SIZE]
+) -> reg ptr u16[MLKEM_N], reg ptr u8[BUF_size]
 {
   stack u64[25] st;
   stack u8[2] pos;
 
-  #spill(pol);
+  #spill(pol,buf);
   pos[:u16 0] = rc;
   st = _shake128_absorb_A32_A2(st, rho, pos);
+  #unspill(buf);
   _, buf = _shake128_squeeze3blocks(st, buf);
 
   #unspill(pol);

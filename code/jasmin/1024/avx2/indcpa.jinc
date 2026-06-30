@@ -159,7 +159,11 @@ fn __indcpa_enc(
    }
  ]
 inline
-fn __indcpa_dec(reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp, reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct, reg ptr u8[MLKEM_POLYVECBYTES] sk) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES]
+fn __indcpa_dec
+( reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp
+, reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct
+, reg ptr u8[MLKEM_POLYVECBYTES] sk
+) -> reg ptr u8[MLKEM_INDCPA_MSGBYTES]
 {
   stack u16[MLKEM_N] t v mp;
   stack u16[MLKEM_VECN] bp skpv;

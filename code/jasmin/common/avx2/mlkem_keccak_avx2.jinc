@@ -285,12 +285,18 @@ fn _shake128_squeeze3blocks
    , reg ptr u8[ABUFLEN::_ASIZE]
 {
  reg ui64 offset;
+ #spill(buf);
  st = _keccakf1600(st);
+ #unspill(buf);
  offset = 0;
  buf, offset = ABUFLEN::__dumpstate(buf, offset, R168, st);
+ #spill(buf,offset);
  st = _keccakf1600(st);
+ #unspill(buf,offset);
  buf, offset = ABUFLEN::__dumpstate(buf, offset, R168, st);
+ #spill(buf,offset);
  st = _keccakf1600(st);
+ #unspill(buf,offset);
  buf, offset = ABUFLEN::__dumpstate(buf, offset, 200, st);
  return st, buf;
 }
