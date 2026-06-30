@@ -116,7 +116,7 @@ fn __indcpa_enc(
   nonce = 0;
   sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], ep[0:MLKEM_N], noiseseed, nonce);
 
- nonce = 4;
+  nonce = 4;
   ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N] = _poly_getnoise_eta1_4x(ep[MLKEM_N:MLKEM_N], ep[2*MLKEM_N:MLKEM_N], epp, bp[0:MLKEM_N], noiseseed, nonce);
 
   sp = __polyvec_ntt(sp);

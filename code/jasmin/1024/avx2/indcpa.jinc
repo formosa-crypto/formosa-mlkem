@@ -9,7 +9,12 @@ require "gen_matrix.jinc"
    }
  ]
 inline
-fn __indcpa_keypair(#[spill_to_mmx] reg ptr u8[MLKEM_PUBLICKEYBYTES] pk, #[spill_to_mmx] reg ptr u8[MLKEM_POLYVECBYTES] sk, reg ptr u8[MLKEM_SYMBYTES] randomnessp) -> reg ptr u8[MLKEM_PUBLICKEYBYTES], reg ptr u8[MLKEM_POLYVECBYTES]
+fn __indcpa_keypair
+( #[spill_to_mmx] reg ptr u8[MLKEM_PUBLICKEYBYTES] pk
+, #[spill_to_mmx] reg ptr u8[MLKEM_POLYVECBYTES] sk
+, reg ptr u8[MLKEM_SYMBYTES] randomnessp
+) -> reg ptr u8[MLKEM_PUBLICKEYBYTES]
+   , reg ptr u8[MLKEM_POLYVECBYTES]
 {
   stack u16[MLKEM_K*MLKEM_VECN] aa;
   stack u16[MLKEM_VECN] e pkpv skpv;
@@ -98,7 +103,7 @@ fn __indcpa_enc(
   inline int w;
   reg u64 transposed;
 
-  () = #spill(ct);
+  () = #spill(ct, noiseseed);
   pkpv = __i_polyvec_frombytes(pk[0:MLKEM_POLYVECBYTES]);
 
   for w = 0 to MLKEM_SYMBYTES/8
@@ -113,6 +118,7 @@ fn __indcpa_enc(
   transposed = 1;
   aat = _gen_matrix_avx2(aat, publicseed, transposed);
 
+  #unspill(noiseseed);
   nonce = 0;
   sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], sp[3*MLKEM_N:MLKEM_N] = _poly_getnoise_eta1_4x(sp[0:MLKEM_N], sp[MLKEM_N:MLKEM_N], sp[2*MLKEM_N:MLKEM_N], sp[3*MLKEM_N:MLKEM_N], noiseseed, nonce);
 

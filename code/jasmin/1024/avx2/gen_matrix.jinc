@@ -14,8 +14,8 @@ fn _gen_matrix_avx2
 {
   // local variables
   inline int i j;
-  stack u8[BUF_size * 4] buf_s;
-  reg ptr u8[BUF_size * 4] buf;
+  stack u8[BUF_SIZE * 4] buf_s;
+  reg ptr u8[BUF_SIZE * 4] buf;
   reg ptr u16[4*MLKEM_N] polx4;
   reg u64 pos_entry;
 
@@ -26,12 +26,13 @@ fn _gen_matrix_avx2
   for i = 0 to 4
   {
     pos_entry = 8*i;
+    #spill(matrix,rho);
     polx4 = matrix[4*i*MLKEM_N:4*MLKEM_N];
     () = #unspill(transposed);
     polx4, buf = _gen_matrix_sample_four_polynomials(polx4, buf, rho, pos_entry, transposed);
+    #unspill(matrix,rho);
     matrix[i*4*MLKEM_N:4*MLKEM_N] = polx4;
   }
-
 
   for i = 0 to MLKEM_K
   { for j = 0 to MLKEM_K
