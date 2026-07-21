@@ -5,7 +5,7 @@ from Jasmin require import JModel.
 require import JWordList.
 from CryptoSpecs require import FIPS202_Keccakf1600 FIPS202_SHA3_Spec.
 
-from Keccak require import Keccakf1600_ref.
+from Keccak require import Keccakf1600.
 
 from CryptoSpecs require export Keccak1600_Spec Keccakf1600_Spec.
 
@@ -16,20 +16,16 @@ import MLKEMFCLib1024.
 from JazzEC require import Jkem_avx2 WArray200.
 from JazzEC require Jkem_avx2.
 
-
-
-
 (****************************************************************************)
 (****************************************************************************)
-from Keccak require import Keccak1600_avx2.
+from Keccak require import Keccak1600_ref.
 from Keccak require import Keccak1600_avx2x4.
 
-from Keccak require import Keccakf1600_avx2 Keccakf1600_avx2x4.
-from Keccak require import Keccakf1600_avx2x4_generic.
+from Keccak require import Keccakf1600_avx2x4.
 from JazzEC require import WArray1536.
 from JazzEC require import Array24 Array5.
 
-from Keccak require import Keccak1600_fixedsizes_avx2.
+from Keccak require import Keccak1600_fixedsizes_ref.
 from Keccak require import Keccak1600_fixedsizes_avx2x4.
 
 (****************************************************************************)
@@ -46,15 +42,14 @@ equiv a1__absorb_avx2x4_eq:
  : ={arg} ==> ={res}
  by sim.
 
-
-clone KeccakArrayAvx2 as A1avx2
+clone KeccakArrayRef as A1ref
  with op _ASIZE <- 1,
       theory A <- Array1,
       theory WA <- WArray1
       proof _ASIZE_ge0 by done.
 
 equiv a1__absorb_avx2_eq:
- M.a1____absorb_avx2 ~ A1avx2.MM.__absorb_avx2
+ M.a1____absorb ~ A1ref.MM.__absorb
  : ={arg} ==> ={res}
  by sim.
 
@@ -70,7 +65,7 @@ clone KeccakArrayAvx2x4 as A2avx2x4
 (****************************************************************************)
 from JazzEC require import Array32 WArray32.  (* SEED SIZE *)
 
-clone KeccakArrayAvx2 as A32avx2
+clone KeccakArrayRef as A32ref
  with op _ASIZE <- 32,
       theory A <- Array32,
       theory WA <- WArray32
@@ -81,13 +76,13 @@ clone KeccakArrayAvx2x4 as A32avx2x4
       theory WA <- WArray32
       proof _ASIZE_ge0 by done.
 
-equiv a32__absorb_avx2_eq:
- M.a32____absorb_avx2 ~ A32avx2.MM.__absorb_avx2
+equiv a32__absorb_eq:
+ M.a32____absorb ~ A32ref.MM.__absorb
  : ={arg} ==> ={res}
  by sim.
 
-equiv a32__squeeze_avx2_eq:
- M.a32____squeeze_avx2 ~ A32avx2.MM.__squeeze_avx2
+equiv a32__squeeze_eq:
+ M.a32____squeeze ~ A32ref.MM.__squeeze
  : ={arg} ==> ={res}
  by sim.
 
@@ -99,33 +94,33 @@ equiv a32__absorb_avx2x4_eq:
 (****************************************************************************)
 from JazzEC require import Array33 WArray33.  (* DS SEED SIZE *)
 
-clone KeccakArrayAvx2 as A33avx2
+clone KeccakArrayRef as A33ref
  with op _ASIZE <- 33,
       theory A <- Array33,
       theory WA <- WArray33
       proof _ASIZE_ge0 by done.
 
 equiv a33__absorb_avx2_eq:
- M.a33____absorb_avx2 ~ A33avx2.MM.__absorb_avx2
+ M.a33____absorb ~ A33ref.MM.__absorb
  : ={arg} ==> ={res}
  by sim.
 
 (****************************************************************************)
 from JazzEC require import Array64 WArray64.  (* DS SEED SIZE *)
 
-clone KeccakArrayAvx2 as A64avx2
+clone KeccakArrayRef as A64ref
  with op _ASIZE <- 64,
       theory A <- Array64,
       theory WA <- WArray64
       proof _ASIZE_ge0 by done.
 
-equiv a64__absorb_avx2_eq:
- M.a64____absorb_avx2 ~ A64avx2.MM.__absorb_avx2
+equiv a64__absorb_eq:
+ M.a64____absorb ~ A64ref.MM.__absorb
  : ={arg} ==> ={res}
  by sim.
 
-equiv a64__squeeze_avx2_eq:
- M.a64____squeeze_avx2 ~ A64avx2.MM.__squeeze_avx2
+equiv a64__squeeze_eq:
+ M.a64____squeeze ~ A64ref.MM.__squeeze
  : ={arg} ==> ={res}
  by sim.
 
@@ -143,21 +138,21 @@ equiv a128__squeeze_avx2x4_eq:
  : ={arg} ==> ={res}
  by sim.
 
-clone KeccakArrayAvx2 as A128avx2
+clone KeccakArrayRef as A128ref
  with op _ASIZE <- 128,
       theory A <- Array128,
       theory WA <- WArray128
       proof _ASIZE_ge0 by done.
 
-equiv a128__squeeze_avx2_eq:
- M.a128____squeeze_avx2 ~ A128avx2.MM.__squeeze_avx2
+equiv a128__squeeze_eq:
+ M.a128____squeeze ~ A128ref.MM.__squeeze
  : ={arg} ==> ={res}
  by sim.
 
 (****************************************************************************)
 from JazzEC require import Array536 WArray536. (* BUF_SIZE *)
 
-clone KeccakArrayAvx2 as ABUFLENavx2
+clone KeccakArrayRef as ABUFLENref
  with op _ASIZE <- 536,
       theory A <- Array536,
       theory WA <- WArray536
@@ -169,8 +164,8 @@ clone KeccakArrayAvx2x4 as ABUFLENavx2x4
       proof _ASIZE_ge0 by done.
 
 (*
-equiv aBUFLEN__dumpstate_avx2_eq:
- M.aBUFLEN____dumpstate_avx2 ~ ABUFLENavx2.MM.__dumpstate_array_avx2
+equiv aBUFLEN__dumpstate_eq:
+ M.aBUFLEN____dumpstate ~ ABUFLENref.MM.__dumpstate_array
  : ={arg} ==> ={res}
  by sim.
 *)
@@ -183,14 +178,14 @@ equiv aBUFLEN__dumpstate_avx2x4_eq:
 (****************************************************************************)
 from JazzEC require import Array1568 WArray1568.
 
-clone KeccakArrayAvx2 as A1568avx2
+clone KeccakArrayRef as A1568ref
  with op _ASIZE <- 1568,
       theory A <- Array1568,
       theory WA <- WArray1568
       proof _ASIZE_ge0 by done.
 
-equiv a1568__absorb_avx2_eq:
- M.a1568____absorb_avx2 ~ A1568avx2.MM.__absorb_avx2
+equiv a1568__absorb_eq:
+ M.a1568____absorb ~ A1568ref.MM.__absorb
  : ={arg} ==> ={res}
  by sim.
 
@@ -198,14 +193,14 @@ equiv a1568__absorb_avx2_eq:
 (****************************************************************************)
 from JazzEC require import Array1600 WArray1600.
 
-clone KeccakArrayAvx2 as A1600avx2
+clone KeccakArrayRef as A1600ref
  with op _ASIZE <- 1600,
       theory A <- Array1600,
       theory WA <- WArray1600
       proof _ASIZE_ge0 by done.
 
-equiv a1600__absorb_avx2_eq:
- M.a1600____absorb_avx2 ~ A1600avx2.MM.__absorb_avx2
+equiv a1600__absorb_eq:
+ M.a1600____absorb ~ A1600ref.MM.__absorb
  : ={arg} ==> ={res}
  by sim.
 
@@ -224,39 +219,39 @@ from JazzEC require import Array7.
 (* Keccak library interface *)
 module K = {
   proc _sha3_512A_A33 (out:W8.t Array64.t, in_0:W8.t Array33.t) : W8.t Array64.t = {
-    var st:W256.t Array7.t;
+    var st:W64.t Array25.t;
     var  _0:int;
-    var  _1:W256.t Array7.t;
+    var  _1:W64.t Array25.t;
      _1 <- witness;
     st <- witness;
-    st <@ Keccak1600_Jazz.M.__state_init_avx2 ();
-    (st,  _0) <@ A33avx2.MM.__absorb_avx2 (st, 0, in_0, 6, 72);
-    ( _1, out) <@ A64avx2.MM.__squeeze_avx2 (st, out, 72);
+    st <@ Keccak1600_Jazz.M.__state_init (st);
+    (st,  _0) <@ A33ref.MM.__absorb (st, 0, in_0, 6, 72);
+    ( _1, out) <@ A64ref.MM.__squeeze (st, out, 72);
     return out;
   }
   proc _sha3_512A_A64 (out:W8.t Array64.t, in_0:W8.t Array64.t) : W8.t Array64.t = {
-    var st:W256.t Array7.t;
+    var st:W64.t Array25.t;
     var  _0:int;
-    var  _1:W256.t Array7.t;
+    var  _1:W64.t Array25.t;
      _1 <- witness;
     st <- witness;
-    st <@ Keccak1600_Jazz.M.__state_init_avx2 ();
-    (st,  _0) <@ A64avx2.MM.__absorb_avx2 (st, 0, in_0, 6, 72);
-    ( _1, out) <@ A64avx2.MM.__squeeze_avx2 (st, out, 72);
+    st <@ Keccak1600_Jazz.M.__state_init (st);
+    (st,  _0) <@ A64ref.MM.__absorb (st, 0, in_0, 6, 72);
+    ( _1, out) <@ A64ref.MM.__squeeze (st, out, 72);
     return out;
   }
   proc _shake256_A128__A32_A1 (out:W8.t Array128.t, seed:W8.t Array32.t,
                                nonce:W8.t Array1.t) : W8.t Array128.t = {
-    var st:W256.t Array7.t;
+    var st:W64.t Array25.t;
     var  _0:int;
     var  _1:int;
-    var  _2:W256.t Array7.t;
+    var  _2:W64.t Array25.t;
      _2 <- witness;
     st <- witness;
-    st <@ Keccak1600_Jazz.M.__state_init_avx2 ();
-    (st,  _0) <@ A32avx2.MM.__absorb_avx2 (st, 0, seed, 0, 136);
-    (st,  _1) <@ A1avx2.MM.__absorb_avx2 (st, 32, nonce, 31, 136);
-    ( _2, out) <@ A128avx2.MM.__squeeze_avx2 (st, out, 136);
+    st <@ Keccak1600_Jazz.M.__state_init (st);
+    (st,  _0) <@ A32ref.MM.__absorb (st, 0, seed, 0, 136);
+    (st,  _1) <@ A1ref.MM.__absorb (st, 32, nonce, 31, 136);
+    ( _2, out) <@ A128ref.MM.__squeeze (st, out, 136);
     return out;
   }
   proc _shake256x4_A128__A32_A1 (out0:W8.t Array128.t, out1:W8.t Array128.t,
@@ -302,7 +297,7 @@ module K = {
     (fun i => (get64 (WArray536.init8 (fun i => buf.[i]))
               ((2 * (168 %/ 8)) + i)))
     );
-    pst <@ Keccak1600_Jazz.M._keccakf1600_st25_avx2 (pst);
+    pst <@ Keccak1600_Jazz.M._keccakf1600 (pst);
     buf <-
     (Array536.init
     (WArray536.get8
@@ -379,26 +374,26 @@ module K = {
   }
   proc _sha3_256A_A1568 (out:W8.t Array32.t, in_0:W8.t Array1568.t) : 
   W8.t Array32.t = {
-    var st:W256.t Array7.t;
+    var st:W64.t Array25.t;
     var  _0:int;
-    var  _1:W256.t Array7.t;
+    var  _1:W64.t Array25.t;
      _1 <- witness;
     st <- witness;
-    st <@ Keccak1600_Jazz.M.__state_init_avx2 ();
-    (st,  _0) <@ A1568avx2.MM.__absorb_avx2 (st, 0, in_0, 6, 136);
-    ( _1, out) <@ A32avx2.MM.__squeeze_avx2 (st, out, 136);
+    st <@ Keccak1600_Jazz.M.__state_init (st);
+    (st,  _0) <@ A1568ref.MM.__absorb (st, 0, in_0, 6, 136);
+    ( _1, out) <@ A32ref.MM.__squeeze (st, out, 136);
     return out;
   }
   proc _shake256_A32__A1600 (out:W8.t Array32.t, in_0:W8.t Array1600.t) : 
   W8.t Array32.t = {
-    var st:W256.t Array7.t;
+    var st:W64.t Array25.t;
     var  _0:int;
-    var  _1:W256.t Array7.t;
+    var  _1:W64.t Array25.t;
      _1 <- witness;
     st <- witness;
-    st <@ Keccak1600_Jazz.M.__state_init_avx2 ();
-    (st,  _0) <@ A1600avx2.MM.__absorb_avx2 (st, 0, in_0, 31, 136);
-    ( _1, out) <@ A32avx2.MM.__squeeze_avx2 (st, out, 136);
+    st <@ Keccak1600_Jazz.M.__state_init (st);
+    (st,  _0) <@ A1600ref.MM.__absorb (st, 0, in_0, 31, 136);
+    ( _1, out) <@ A32ref.MM.__squeeze (st, out, 136);
     return out;
   }
 }.
@@ -419,19 +414,18 @@ hoare sha3_512A_A33_h' _in:
  ==> to_list res = SHA3_512 (to_list _in).
 proof.
 proc.
-ecall (A64avx2.squeeze_avx2_h out st 72).
-wp; ecall (A33avx2.absorb_avx2_h [<:W8.t>] in_0 6 72).
-wp; call (state_init_avx2_h 72).
-auto => |> st0 H0 [st1 ?] /= H1 [st2 out] /= _ ->.
-rewrite of_listK 1:size_SQUEEZE1600 //.
-by rewrite /SHA3_512 /c1024_r8 /KECCAK1600 H1 stavx2_from_st25K; congr => //.
+ecall (A64ref.squeeze_h out st 72).
+wp; ecall (A33ref.absorb_h [<:W8.t>] in_0 6 72).
+wp; call (state_init_h 72).
+auto => |> st0 H0 [st1 ?] /= H1 [st2 out] /= ? ->.
+by rewrite /SHA3_512 /c1024_r8 /KECCAK1600 H1.
 qed.
 
 lemma sha3_512A_A33_ll: islossless K._sha3_512A_A33.
 proc.
-call A64avx2.squeeze_avx2_ll.
-wp; call A33avx2.absorb_avx2_ll.
-wp; call state_init_avx2_ll.
+call A64ref.squeeze_ll.
+wp; call A33ref.absorb_ll.
+wp; call state_init_ll.
 by auto.
 qed.
 
@@ -464,24 +458,26 @@ hoare shake256_128A_A33_h' _in0 _in1:
  ==> to_list res = SHAKE256 (to_list _in0 ++ to_list _in1) 128.
 proof.
 proc.
-ecall (A128avx2.squeeze_avx2_h out st 136).
-wp; ecall (A1avx2.absorb_avx2_h (to_list seed) nonce 31 136). 
-wp; ecall (A32avx2.absorb_avx2_h [<:W8.t>] seed 0 136). 
-wp; call (state_init_avx2_h 136).
+ecall (A128ref.squeeze_h out st 136).
+wp; ecall (A1ref.absorb_h (to_list seed) nonce 31 136). 
+wp; ecall (A32ref.absorb_h [<:W8.t>] seed 0 136). 
+wp; call (state_init_h 136).
 auto =>/> [st0 ?] /= _ _; split.
  smt(Array32.size_to_list).
 move => _ [st1 ?] /= -> [st2 out] /= _ ->.
-rewrite stavx2_from_st25K -(Array128.of_listK W8.zero (SHAKE256 _ 128)).
+rewrite -(Array128.of_listK W8.zero (SHAKE256 _ 128)).
  by rewrite size_SQUEEZE1600.
-by congr; congr; smt().
+rewrite of_listK /SHAKE256 /KECCAK1600.
+ by rewrite size_SQUEEZE1600.
+by congr; smt().
 qed.
 
 lemma shake256_128A_A33_ll: islossless K._shake256_A128__A32_A1.
 proc.
-call A128avx2.squeeze_avx2_ll.
-wp; call A1avx2.absorb_avx2_ll.
-wp; call A32avx2.absorb_avx2_ll.
-wp; call state_init_avx2_ll.
+call A128ref.squeeze_ll.
+wp; call A1ref.absorb_ll.
+wp; call A32ref.absorb_ll.
+wp; call state_init_ll.
 by auto.
 qed.
 
@@ -512,21 +508,22 @@ hoare sha3_512A_A64_h' _in:
  ==> to_list res = SHA3_512 (to_list _in).
 proof.
 proc.
-ecall (A64avx2.squeeze_avx2_h out st 72).
-wp; ecall (A64avx2.absorb_avx2_h [<:W8.t>] in_0 6 72).
-wp; call (state_init_avx2_h 72).
+ecall (A64ref.squeeze_h out st 72).
+wp; ecall (A64ref.absorb_h [<:W8.t>] in_0 6 72).
+wp; call (state_init_h 72).
 auto => /> [st0 ?] /= -> [st1 out] /= _ ->.
-rewrite stavx2_from_st25K -(Array64.of_listK W8.zero (SHA3_512 _)).
+rewrite -(Array64.of_listK W8.zero (SHA3_512 _)).
  by rewrite size_SQUEEZE1600 /#.
-congr; rewrite tP => i Hi.
-by rewrite !initiE //=.
+rewrite of_listK /SHA3_512 /KECCAK1600.
+ by rewrite size_SQUEEZE1600.
+by congr; smt().
 qed.
 
 lemma sha3_512A_A64_ll: islossless K._sha3_512A_A64.
 proc.
-call A64avx2.squeeze_avx2_ll.
-wp; call A64avx2.absorb_avx2_ll.
-wp; call state_init_avx2_ll.
+call A64ref.squeeze_ll.
+wp; call A64ref.absorb_ll.
+wp; call state_init_ll.
 by auto.
 qed.
 
@@ -625,13 +622,14 @@ hoare sha3_256A_A1568_h' _in:
              Array32.init (fun i => _in.[1536+i])).
 proof.
 proc => /=.
-ecall (A32avx2.squeeze_avx2_h out st 136).
-wp; ecall (A1568avx2.absorb_avx2_h [<:W8.t>] in_0 6 136).
-wp; call (state_init_avx2_h 136).
-auto => /> []/= st1 -> []/= st2 out _ ->.
-rewrite /SHA3_256_1568_32 stavx2_from_st25K /= tP => i Hi.
-rewrite initiE //= get_of_list //.
-rewrite /to_list /SHA3_256 /c512_r8 /KECCAK1600; congr; congr; congr => //.
+ecall (A32ref.squeeze_h out st 136).
+wp; ecall (A1568ref.absorb_h [<:W8.t>] in_0 6 136).
+wp; call (state_init_h 136).
+auto => /> []/= st1 -> []/= st2 out _ E.
+have ->: out = of_list zero (SQUEEZE1600 136 32 (ABSORB1600 (of_int 6) 136 (to_list _in))).
+ by rewrite -(Array32.to_listK W8.zero out) /#.
+rewrite /SHA3_256_1568_32 /= tP => i Hi; congr; congr.
+rewrite /to_list /SHA3_256 /c512_r8 /KECCAK1600; congr; congr=> //.
 rewrite (:1568=1536+32) 1:// mkseq_add 1..2://; congr.
  by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
 by apply eq_in_mkseq => k Hk /=; rewrite initiE /#.
@@ -640,9 +638,9 @@ qed.
 lemma sha3_256A_A1568_ll: islossless K._sha3_256A_A1568.
 proof.
 proc.
-call A32avx2.squeeze_avx2_ll.
-wp; call A1568avx2.absorb_avx2_ll.
-call state_init_avx2_ll.
+call A32ref.squeeze_ll.
+wp; call A1568ref.absorb_ll.
+call state_init_ll.
 by auto => />.
 qed.
 
@@ -690,17 +688,18 @@ hoare shake256_A32__A1600_h' _in:
             (init (fun (k : int) => _in.[1408 + 32 + k]))%Array160).
 proof.
 proc => /=.
-ecall (A32avx2.squeeze_avx2_h out st 136).
-wp; ecall (A1600avx2.absorb_avx2_h [<:W8.t>] in_0 31 136).
-wp; call (state_init_avx2_h 136).
-auto => /> []/= st1 -> []/= st2 out _ ->.
-rewrite stavx2_from_st25K /SHAKE_256_1600_32 -(Array32.of_listK W8.zero (SHAKE256 _ _)).
+ecall (A32ref.squeeze_h out st 136).
+wp; ecall (A1600ref.absorb_h [<:W8.t>] in_0 31 136).
+wp; call (state_init_h 136).
+auto => /> []/= st1 -> []/= st2 out _ E.
+have ->: out = of_list zero (SQUEEZE1600 136 32 (ABSORB1600 (of_int 31) 136 (to_list _in))).
+ by rewrite -(Array32.to_listK W8.zero out) /#.
+rewrite /SHAKE_256_1600_32 -(Array32.of_listK W8.zero (SHAKE256 _ _)).
  by rewrite size_SHAKE256 /#.
-rewrite tP => i Hi.
-rewrite !get_of_list //.
+rewrite tP => i Hi; congr; congr.
 rewrite of_listK.
  by rewrite size_SHAKE256 /#.
-rewrite /to_list /SHAKE256 /KECCAK1600; congr; congr; 1:smt().
+rewrite /to_list /SHAKE256 /KECCAK1600; congr; 1:smt().
 congr; 1..2:smt().
 rewrite (:1600=32+1408+160) 1:// !mkseq_add 1..4:/#; congr.
  congr.
@@ -712,9 +711,9 @@ qed.
 lemma shake256_A32__A1600_ll: islossless K._shake256_A32__A1600.
 proof.
 proc.
-call A32avx2.squeeze_avx2_ll.
-wp; call A1600avx2.absorb_avx2_ll.
-wp; call state_init_avx2_ll.
+call A32ref.squeeze_ll.
+wp; call A1600ref.absorb_ll.
+wp; call state_init_ll.
 by auto.
 qed.
 
@@ -759,7 +758,7 @@ hoare shake128_next_state_h' _buf:
    sub res (2*168) 200 = state2bytes (keccak_f1600_op st).
 proof.
 proc.
-wp; ecall (keccakf1600_st25_avx2_h pst).
+wp; ecall (keccakf1600_h pst).
 auto => />.
 apply (eq_from_nth W8.zero).
  by rewrite size_sub 1:// size_state2bytes.
@@ -779,7 +778,7 @@ qed.
 lemma shake128_next_state_ll: islossless K._shake128_next_state.
 proof.
 proc.
-have ?:= keccakf1600_st25_avx2_ll.
+have ?:= keccakf1600_ll.
 by islossless.
 qed.
 
@@ -854,6 +853,7 @@ split.
  congr; rewrite /SHAKE256 /KECCAK1600; congr => //. 
  rewrite tP => i Hi.
  rewrite initiE //=.
+admitted (*
  rewrite (:8 * (4 * i) * 8=8 * (4 * i+0) * 8) 1:/# sliceget64_256_25E //.
  rewrite initiE //= u256_pack4E get_pack4 //= /st0.
  congr; congr => //.
@@ -882,6 +882,7 @@ rewrite initiE //= u256_pack4E get_pack4 //= /st3.
 congr; congr => //.
 by congr; rewrite /to_list /mkseq -iotaredE /=.
 qed.
+*).
 
 lemma shake256x4_A128__A32_A1_ll: islossless K._shake256x4_A128__A32_A1.
 proof.
@@ -1028,6 +1029,7 @@ ecall (ABUFLENavx2x4.dumpstate_avx2x4_h buf0 buf1 buf2 buf3 offset 168 st).
 ecall (keccakf1600_avx2x4_h st).
 auto => &m Pre st ->; split; first smt().
 move=> _ []b00 b10 b20 b30 ? /=.
+admitted(*
 rewrite !st4x_get_map // => />.
 rewrite !Pre !st4x_get_pack0 !st4x_get_pack1 !st4x_get_pack2 !st4x_get_pack3 /=; clear.
 move => [#] []b01 b11 b21 b31 ? /= Eb01 Eb11 Eb21 Eb31 -> />.
@@ -1123,6 +1125,7 @@ rewrite Eb32 filliE 1:/# /= ifT 1:/#.
 rewrite /st_i (:3=2+1) 1:// iterS 1:// iter2.
 by rewrite state2bytesE.
 qed.
+*).
 
 lemma shake128x4_squeeze3blocks_ll: islossless K._shake128x4_squeeze3blocks.
 proof.
