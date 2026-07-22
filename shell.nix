@@ -21,8 +21,8 @@ let jasmin =
 let formosa-keccak =
   fetchgit {
     url = "https://github.com/formosa-crypto/formosa-keccak.git";
-    rev = "2db21a051a0caa750d52ab9552a5825c015cfc3d";
-    hash = "sha256-7Z9OTbqNPu6uWiaxca8o42GOw6o2x9cb95ouP7i2/r4=";
+    rev = "d637dd740672c4235bfc29bd6b8cce6986519317";
+    hash = lib.fakeHash;
     fetchSubmodules = true;
   }
 ; in
