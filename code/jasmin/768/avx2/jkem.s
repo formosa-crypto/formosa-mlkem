@@ -1,12 +1,13 @@
 	.att_syntax
 	.text
 	.p2align	5
-	.global	_jade_kem_mlkem_mlkem768_amd64_avx2_dec
-	.global	_jade_kem_mlkem_mlkem768_amd64_avx2_enc
-	.global	_jade_kem_mlkem_mlkem768_amd64_avx2_keypair
-	.global	_jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand
-	.global	_jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand
-_jade_kem_mlkem_mlkem768_amd64_avx2_dec:
+	.global	jade_kem_mlkem_mlkem768_amd64_avx2_dec
+	.global	jade_kem_mlkem_mlkem768_amd64_avx2_enc
+	.global	jade_kem_mlkem_mlkem768_amd64_avx2_keypair
+	.global	jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand
+	.global	jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand
+	.type	jade_kem_mlkem_mlkem768_amd64_avx2_dec, %function
+jade_kem_mlkem_mlkem768_amd64_avx2_dec:
 	movq	%rsp, %rax
 	leaq	-15232(%rsp), %rsp
 	andq	$-32, %rsp
@@ -2388,7 +2389,8 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_dec$1:
 	movq	15216(%rsp), %r15
 	movq	15224(%rsp), %rsp
 	ret
-_jade_kem_mlkem_mlkem768_amd64_avx2_enc:
+	.type	jade_kem_mlkem_mlkem768_amd64_avx2_enc, %function
+jade_kem_mlkem_mlkem768_amd64_avx2_enc:
 	movq	%rsp, %rax
 	leaq	-13016(%rsp), %rsp
 	andq	$-32, %rsp
@@ -4004,7 +4006,8 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc$1:
 	movq	13000(%rsp), %r15
 	movq	13008(%rsp), %rsp
 	ret
-_jade_kem_mlkem_mlkem768_amd64_avx2_keypair:
+	.type	jade_kem_mlkem_mlkem768_amd64_avx2_keypair, %function
+jade_kem_mlkem_mlkem768_amd64_avx2_keypair:
 	movq	%rsp, %rax
 	leaq	-10040(%rsp), %rsp
 	andq	$-32, %rsp
@@ -4847,7 +4850,8 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_keypair$1:
 	movq	10024(%rsp), %r15
 	movq	10032(%rsp), %rsp
 	ret
-_jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand:
+	.type	jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand, %function
+jade_kem_mlkem_mlkem768_amd64_avx2_enc_derand:
 	movq	%rsp, %rax
 	leaq	-13016(%rsp), %rsp
 	andq	$-32, %rsp
@@ -6458,7 +6462,8 @@ Ljade_kem_mlkem_mlkem768_amd64_avx2_enc_derand$1:
 	movq	13000(%rsp), %r15
 	movq	13008(%rsp), %rsp
 	ret
-_jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand:
+	.type	jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand, %function
+jade_kem_mlkem_mlkem768_amd64_avx2_keypair_derand:
 	movq	%rsp, %rax
 	leaq	-9976(%rsp), %rsp
 	andq	$-32, %rsp
@@ -12963,3 +12968,4 @@ G$jzetas:
 	.byte	 96,   8,   7,   7,   3,   8,  26,   3,  27,   7, 171,   9, 155,   9, 222,   1
 	.byte	149,  12, 205,  11, 228,   3, 223,   3, 190,   3,  77,   7, 242,   5,  92,   6
 	.ident	"Jasmin Compiler development version at commit a937a46face3d7087d1236780c0bb77acffe20a6 on branch eclib-jcheck"
+	.section	".note.GNU-stack", "", %progbits
