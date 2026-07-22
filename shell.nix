@@ -40,7 +40,7 @@ let
       owner = "easycrypt";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = lib.fakeHash;  # replace with the hash nix reports on first build
+      hash = "sha256-Gq/v2tOe+0tLpUU4PxvV4qzBFyIlxuDdFktav3ls/5Q=";
     };
     postPatch = ''
       substituteInPlace dune-project \
