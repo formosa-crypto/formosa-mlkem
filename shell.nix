@@ -22,7 +22,7 @@ let formosa-keccak =
   fetchgit {
     url = "https://github.com/formosa-crypto/formosa-keccak.git";
     rev = "d637dd740672c4235bfc29bd6b8cce6986519317";
-    hash = lib.fakeHash;
+    hash = "sha256-zCE2d5pM2lLygvBBB/5NLUuXHDxiPJh3SkEOfgxFQ+o=";
     fetchSubmodules = true;
   }
 ; in
