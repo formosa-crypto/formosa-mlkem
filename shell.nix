@@ -34,14 +34,16 @@ let
     ideSupport = false;
     coqPackages = { coq = null; flocq = null; };
   };
-  ecVersion = "a131fcd394184d39ca88f3beb2ff50d626d20eef";
+  ecVersion = "ad94f3fcbec39332c5c531f91ad64f8d4c7365fb";
   ec = (easycrypt.overrideAttrs (o: {
     src = fetchFromGitHub {
       owner = "easycrypt";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = "sha256-IIX1h8Vo/etRkElg65F3groH2QZm+WMEdvazL0cITlE=";
+      hash = lib.fakeHash;  # replace with the hash nix reports on first build for ${ecVersion}
     };
+    # cherry-pick f3826988 (ZModPCentered + PolyReduce centered extensions) onto main HEAD
+    patches = (o.patches or []) ++ [ ./nix-easycrypt-f3826988.patch ];
     postPatch = ''
       substituteInPlace dune-project \
         --replace-warn '(name easycrypt)' '(name easycrypt)(version ${ecVersion})'

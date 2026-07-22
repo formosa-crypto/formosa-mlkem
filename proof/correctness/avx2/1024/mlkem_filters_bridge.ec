@@ -702,26 +702,22 @@ move => x l.
 pose F1 := (fun (x0 : int) =>
      to_uint
        (oget
-          (if BSWAS_48u8_12.sliceget
-                (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+          (if BSWAS_48u8_12.sliceget (init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
                 (12 * x0) \ult
-              W12.of_int 3329 then
+              of_int 3329 then
              Some
-               (BSWAS_48u8_12.sliceget
-                  (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+               (BSWAS_48u8_12.sliceget (init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
                   (12 * x0))
-           else None))).
+           else None<:W12.t>))).
 pose P1 := (fun (x0 : int) =>
-        predC1 None
-          (if BSWAS_48u8_12.sliceget
-                (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
-                (12 * x0) \ult
-              W12.of_int 3329 then
-             Some
-               (BSWAS_48u8_12.sliceget
-                  (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
-                  (12 * x0))
-           else None)).
+        (if BSWAS_48u8_12.sliceget (init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+              (12 * x0) \ult
+            of_int 3329 then
+           Some
+             (BSWAS_48u8_12.sliceget (init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+                (12 * x0))
+         else None<:W12.t>) <>
+        None<:W12.t>).
 pose F2 := (fun (x0 : t) => to_uint ((of_int ((GFq.Zq.asint ((GFq.Zq.incoeff ((BitEncoding.BS2Int.bs2int (w2bits x0)))))))%GFq.Zq))%W16).
 pose P2 := (fun (x0 : t) => (BitEncoding.BS2Int.bs2int (w2bits x0)) < GFq.q).
 rewrite !filter_cons. 
@@ -1274,26 +1270,22 @@ move => x l.
 pose F1 := (fun (x0 : int) =>
      to_uint
        (oget
-          (if BSWAS_24u8_12.sliceget
-                (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
-                12 * x0) \ult
-              W12.of_int 3329 then
+          (if BSWAS_24u8_12.sliceget (init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+                (12 * x0) \ult
+              of_int 3329 then
              Some
-               (BSWAS_24u8_12.sliceget
-                  (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
-                  12 * x0))
-           else None))).
+               (BSWAS_24u8_12.sliceget (init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+                  (12 * x0))
+           else None<:W12.t>))).
 pose P1 := (fun (x0 : int) =>
-        predC1 None
-          (if BSWAS_24u8_12.sliceget
-                (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
-                12 * x0) \ult
-              W12.of_int 3329 then
-             Some
-               (BSWAS_24u8_12.sliceget
-                  (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
-                  12 * x0))
-           else None)).
+        (if BSWAS_24u8_12.sliceget (init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+              (12 * x0) \ult
+            of_int 3329 then
+           Some
+             (BSWAS_24u8_12.sliceget (init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+                (12 * x0))
+         else None<:W12.t>) <>
+        None<:W12.t>).
 pose F2 := (fun (x0 : t) => to_uint ((of_int ((GFq.Zq.asint ((GFq.Zq.incoeff ((BitEncoding.BS2Int.bs2int (w2bits x0)))))))%GFq.Zq))%W16).
 pose P2 := (fun (x0 : t) => (BitEncoding.BS2Int.bs2int (w2bits x0)) < GFq.q).
 rewrite !filter_cons. 

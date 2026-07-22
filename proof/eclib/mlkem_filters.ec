@@ -977,8 +977,8 @@ seq 0 : ((forall i, 0 <= i < 2 =>
    - by rewrite size_map size_iota lez_maxr 1:// size_w2bits.
    move=> j; rewrite size_map size_iota lez_maxr 1://.
    move=> rgj; rewrite (nth_map witness) /= 1:size_iota 1:/#.
-   rewrite nth_iota 1:// /= rgj /= (fun_if (predC1 None)) /predC1 /=.
-   by rewrite (nth_change_dfl false) 1:size_w2bits 1:// /= rgj /=.
+   rewrite nth_iota 1:// /= rgj /=.
+   by rewrite (nth_change_dfl false) 1:size_w2bits 1:// /= rgj /= /#.
 
 seq 1 : (#pre
   /\ (size (ws 0 8) = W64.to_uint (popcount_64 (zextend_8_64 good0_0)))
@@ -1296,8 +1296,8 @@ seq 0 : ((forall i, 0 <= i < 4 =>
    - by rewrite size_map size_iota lez_maxr 1:// size_w2bits.
    move=> j; rewrite size_map size_iota lez_maxr 1://.
    move=> rgj; rewrite (nth_map witness) /= 1:size_iota 1:/#.
-   rewrite nth_iota 1:// /= rgj /= (fun_if (predC1 None)) /predC1 /=.
-   by rewrite (nth_change_dfl false) 1:size_w2bits 1:// /= rgj /=.
+   rewrite nth_iota 1:// /= rgj /=.
+   by rewrite (nth_change_dfl false) 1:size_w2bits 1:// /= rgj /= /#.
 
 seq 1 : (#pre
   /\ (size (ws 0 8) = W64.to_uint (popcount_64 (zextend_8_64 good0_0)))

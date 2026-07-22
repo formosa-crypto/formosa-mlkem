@@ -62,7 +62,7 @@ abbrev all_range_2 P (min1 max1 min2 max2 : int) = all_range (fun y => all_range
 lemma all_range_2_empty P (min1 max1 min2 max2 : int) :
   max1 <= min1 =>
   all_range_2 P min1 max1 min2 max2.
-proof. by move => lemax1min1; apply (all_range_imp predT) => [/= x Hx_range _|]; [apply all_range_empty|apply all_predT]. qed.
+proof. by move => lemax1min1; apply (all_range_imp predT) => [/= x Hx_range|]; [apply all_range_empty|apply all_predT]. qed.
 
 lemma all_range_2_min P (min1 max1 min2 max2 : int) :
   min1 < max1 =>
