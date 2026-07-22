@@ -2104,7 +2104,7 @@ module M = {
                                                        W64.t * W64.t *
                                                        W64.t Array25.t *
                                                        W64.t Array25.t = {
-    var cnt:W64.t Array1.t;
+    var cnt:W64.t;
     var rcx:W64.t;
     var rdx:W64.t;
     var r9:W64.t;
@@ -2112,10 +2112,9 @@ module M = {
     var r14:W64.t;
     var rC:W64.t Array24.t;
     rC <- witness;
-    cnt <- witness;
     e.[0] <- r11;
     e.[1] <- rdi;
-    cnt.[0] <- rax;
+    cnt <- rax;
     e.[2] <- rsi;
     rcx <- a.[15];
     rcx <- (rcx `^` r8);
@@ -2180,7 +2179,7 @@ module M = {
     e.[8] <- r10;
     r12 <- ((invw r9) `&` r14);
     rC <- kECCAK1600_RC;
-    r14 <- cnt.[0];
+    r14 <- cnt;
     r12 <- (r12 `^` rC.[(W64.to_uint (r14 + (W64.of_int 2)))]);
     r12 <- (r12 `^` rbp);
     rsi <- (rsi `^` r9);
@@ -2363,7 +2362,7 @@ module M = {
     rsi <- (rsi `^` rcx);
     a.[2] <- rsi;
     rbp <- ((invw rax) `&` rcx);
-    rcx <- cnt.[0];
+    rcx <- cnt;
     rC <- kECCAK1600_RC;
     rbp <- (rbp `^` rC.[(W64.to_uint (rcx + (W64.of_int 3)))]);
     rbp <- (rbp `^` r12);
@@ -2479,7 +2478,7 @@ module M = {
     rsi <- (rsi `^` rcx);
     rbx <- ((invw rax) `&` rcx);
     rbx <- (rbx `^` r14);
-    rcx <- cnt.[0];
+    rcx <- cnt;
     rcx <- (rcx + (W64.of_int 2));
     rax <- rcx;
     rbp <- e.[9];
@@ -8169,6 +8168,7 @@ module M = {
   }
   proc _shake128_next_state (buf:W8.t Array536.t) : W8.t Array536.t = {
     var st:W64.t Array25.t;
+    var ms:W64.t;
     st <- witness;
     (* Erased call to spill *)
     st <-
@@ -8178,6 +8178,8 @@ module M = {
     );
     st <@ _keccakf1600 (st);
     (* Erased call to unspill *)
+    ms <- (init_msf);
+    buf <- (protect_ptr buf ms);
     buf <-
     (Array536.init
     (WArray536.get8
@@ -10409,6 +10411,7 @@ module M = {
     var stx4:W256.t Array25.t;
     var bufp:W8.t Array536.t;
     var pol:W16.t Array256.t;
+    var ms:W64.t;
     var  _0:W256.t Array25.t;
      _0 <- witness;
     bufp <- witness;
@@ -10429,6 +10432,8 @@ module M = {
     pol <- (Array256.init (fun i => polx4.[((0 * 256) + i)]));
     (pol, bufp) <@ __gen_matrix_fill_polynomial (pol, bufp);
     (* Erased call to unspill *)
+    ms <- (init_msf);
+    buf <- (protect_ptr buf ms);
     buf <-
     (Array2144.init
     (fun i => (if ((536 * 0) <= i < ((536 * 0) + 536)) then bufp.[(i -
@@ -10446,6 +10451,8 @@ module M = {
     pol <- (Array256.init (fun i => polx4.[((1 * 256) + i)]));
     (pol, bufp) <@ __gen_matrix_fill_polynomial (pol, bufp);
     (* Erased call to unspill *)
+    ms <- (init_msf);
+    buf <- (protect_ptr buf ms);
     buf <-
     (Array2144.init
     (fun i => (if ((536 * 1) <= i < ((536 * 1) + 536)) then bufp.[(i -
@@ -10463,6 +10470,8 @@ module M = {
     pol <- (Array256.init (fun i => polx4.[((2 * 256) + i)]));
     (pol, bufp) <@ __gen_matrix_fill_polynomial (pol, bufp);
     (* Erased call to unspill *)
+    ms <- (init_msf);
+    buf <- (protect_ptr buf ms);
     buf <-
     (Array2144.init
     (fun i => (if ((536 * 2) <= i < ((536 * 2) + 536)) then bufp.[(i -
@@ -10480,6 +10489,8 @@ module M = {
     pol <- (Array256.init (fun i => polx4.[((3 * 256) + i)]));
     (pol, bufp) <@ __gen_matrix_fill_polynomial (pol, bufp);
     (* Erased call to unspill *)
+    ms <- (init_msf);
+    buf <- (protect_ptr buf ms);
     buf <-
     (Array2144.init
     (fun i => (if ((536 * 3) <= i < ((536 * 3) + 536)) then bufp.[(i -

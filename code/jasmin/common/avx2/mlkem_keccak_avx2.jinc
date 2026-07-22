@@ -138,7 +138,7 @@ fn _sha3_512A_A33
    }
  ]
 fn _sha3_512A_A64
-( reg mut ptr u8[64] out
+( #[spill_to_mmx] reg mut ptr u8[64] out
 , reg const ptr u8[64] in
 ) -> reg ptr u8[64]
 { stack u64[25] st;
@@ -285,18 +285,25 @@ fn _shake128_squeeze3blocks
    , reg ptr u8[ABUFLEN::_ASIZE]
 {
  reg ui64 offset;
+ #[msf] reg u64 ms;
  #spill(buf);
  st = _keccakf1600(st);
  #unspill(buf);
+ ms = #init_msf();
+ buf = #protect_ptr(buf, ms);
  offset = 0;
  buf, offset = ABUFLEN::__dumpstate(buf, offset, R168, st);
  #spill(buf,offset);
  st = _keccakf1600(st);
  #unspill(buf,offset);
+ ms = #init_msf();
+ buf = #protect_ptr(buf, ms);
  buf, offset = ABUFLEN::__dumpstate(buf, offset, R168, st);
  #spill(buf,offset);
  st = _keccakf1600(st);
  #unspill(buf,offset);
+ ms = #init_msf();
+ buf = #protect_ptr(buf, ms);
  buf, offset = ABUFLEN::__dumpstate(buf, offset, 200, st);
  return st, buf;
 }
@@ -313,10 +320,13 @@ fn _shake128_next_state
 ) -> reg ptr u8[ABUFLEN::_ASIZE] /* buf */
 {
  reg ptr u64[25] st;
+ #[msf] reg u64 ms;
  #spill(buf);
  st = buf[:u64 2*(168/8) : 25];
  st = _keccakf1600(st);
  #unspill(buf);
+ ms = #init_msf();
+ buf = #protect_ptr(buf, ms);
  buf[:u64 2*(168/8) : 25] = st;
 
  return buf;
@@ -403,7 +413,7 @@ fn _sha3_256A_A1568
    }
  ]
 fn _shake256_A32__A1120
-(  reg mut ptr u8[32] out
+(  #[spill_to_mmx] reg mut ptr u8[32] out
 ,  reg const ptr u8[1120] in
 ) -> reg ptr u8[32]
 { stack u64[25] st;
@@ -421,7 +431,7 @@ fn _shake256_A32__A1120
    }
  ]
 fn _shake256_A32__A1600
-(  reg mut ptr u8[32] out
+(  #[spill_to_mmx] reg mut ptr u8[32] out
 ,  reg const ptr u8[1600] in
 ) -> reg ptr u8[32]
 { stack u64[25] st;

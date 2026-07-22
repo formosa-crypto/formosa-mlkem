@@ -291,6 +291,7 @@ module K = {
   }
   proc _shake128_next_state (buf:W8.t Array536.t) : W8.t Array536.t = {
     var pst:W64.t Array25.t;
+    var ms:W64.t;
     pst <- witness;
     pst <-
     (Array25.init
@@ -298,6 +299,8 @@ module K = {
               ((2 * (168 %/ 8)) + i)))
     );
     pst <@ Keccak1600_Jazz.M._keccakf1600 (pst);
+    ms <- W64.zero;
+    buf <- SLH64.protect_ptr buf ms;
     buf <-
     (Array536.init
     (WArray536.get8

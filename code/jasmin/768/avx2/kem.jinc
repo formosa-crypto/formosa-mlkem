@@ -9,7 +9,7 @@ require "../../common/avx2/verify.jinc"
 inline
 fn __crypto_kem_keypair_jazz
 ( reg ptr u8[MLKEM_PUBLICKEYBYTES] pk
-, reg ptr u8[MLKEM_SECRETKEYBYTES] sk
+, #[spill_to_mmx] reg ptr u8[MLKEM_SECRETKEYBYTES] sk
 , reg ptr u8[MLKEM_SYMBYTES*2] randomnessp
 ) -> reg ptr u8[MLKEM_PUBLICKEYBYTES]
    , reg ptr u8[MLKEM_SECRETKEYBYTES]
@@ -59,7 +59,7 @@ fn __crypto_kem_keypair_jazz
  ]
 inline
 fn __crypto_kem_enc_jazz(
-  reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
+  #[spill_to_mmx] reg ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
   #[spill_to_mmx] reg ptr u8[MLKEM_SYMBYTES] shk,
   #[spill_to_mmx] reg ptr u8[MLKEM_PUBLICKEYBYTES] pk,
   reg ptr u8[MLKEM_SYMBYTES] randomnessp)

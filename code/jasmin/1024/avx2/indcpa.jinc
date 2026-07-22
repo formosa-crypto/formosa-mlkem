@@ -91,7 +91,7 @@ fn __indcpa_enc(
   #[spill_to_mmx] reg mut ptr u8[MLKEM_CIPHERTEXTBYTES] ct,
   reg ptr u8[MLKEM_INDCPA_MSGBYTES] msgp,
   reg ptr u8[MLKEM_PUBLICKEYBYTES] pk,
-  reg ptr u8[MLKEM_SYMBYTES] noiseseed)
+  #[spill_to_mmx] reg ptr u8[MLKEM_SYMBYTES] noiseseed)
 -> reg ptr u8[MLKEM_CIPHERTEXTBYTES]
 {
   stack u16[MLKEM_VECN] pkpv sp ep bp;

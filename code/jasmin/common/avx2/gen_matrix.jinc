@@ -441,6 +441,7 @@ fn _gen_matrix_sample_four_polynomials
   stack u256[25] state;
   reg ptr u256[25] stx4;
   stack u8[8] indexes;
+  #[msf] reg u64 ms;
 
   indexes.[:u64 0] = gen_matrix_get_indexes(pos_entry, transposed);
 
@@ -453,6 +454,8 @@ fn _gen_matrix_sample_four_polynomials
   pol = polx4[0*MLKEM_N:MLKEM_N];
   pol, bufp = __gen_matrix_fill_polynomial(pol, bufp);
   #unspill(buf, polx4);
+  ms = #init_msf();
+  buf = #protect_ptr(buf, ms);
   buf[BUF_size * 0 : BUF_size] = bufp;
   polx4[0*MLKEM_N:MLKEM_N] = pol;
 
@@ -461,6 +464,8 @@ fn _gen_matrix_sample_four_polynomials
   pol = polx4[1*MLKEM_N:MLKEM_N];
   pol, bufp = __gen_matrix_fill_polynomial(pol, bufp);
   #unspill(buf, polx4);
+  ms = #init_msf();
+  buf = #protect_ptr(buf, ms);
   buf[BUF_size * 1 : BUF_size] = bufp;
   polx4[1*MLKEM_N:MLKEM_N] = pol;
 
@@ -469,6 +474,8 @@ fn _gen_matrix_sample_four_polynomials
   pol = polx4[2*MLKEM_N:MLKEM_N];
   pol, bufp = __gen_matrix_fill_polynomial(pol, bufp);
   #unspill(buf, polx4);
+  ms = #init_msf();
+  buf = #protect_ptr(buf, ms);
   buf[BUF_size * 2 : BUF_size] = bufp;
   polx4[2*MLKEM_N:MLKEM_N] = pol;
 
@@ -477,6 +484,8 @@ fn _gen_matrix_sample_four_polynomials
   pol = polx4[3*MLKEM_N:MLKEM_N];
   pol, bufp = __gen_matrix_fill_polynomial(pol, bufp);
   #unspill(buf, polx4);
+  ms = #init_msf();
+  buf = #protect_ptr(buf, ms);
   buf[BUF_size * 3 : BUF_size] = bufp;
   polx4[3*MLKEM_N:MLKEM_N] = pol;
 
@@ -497,11 +506,14 @@ inline fn __gen_matrix_sample_one_polynomial
 {
   stack u64[25] st;
   stack u8[2] pos;
+  #[msf] reg u64 ms;
 
   #spill(pol,buf);
   pos[:u16 0] = rc;
   st = _shake128_absorb_A32_A2(st, rho, pos);
   #unspill(buf);
+  ms = #init_msf();
+  buf = #protect_ptr(buf, ms);
   _, buf = _shake128_squeeze3blocks(st, buf);
 
   #unspill(pol);

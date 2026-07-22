@@ -243,12 +243,12 @@ module MLKEM_PRGs = {
 (* Security-world view of the spec PRGs: same computation, outputs lifted to
    the algebraic vector the PRG distinguisher games (PRG_KG/PRG_ENC) speak. *)
 module MLKEM_PRGs_alg = {
-  proc prg_kg(coins : W8.t Array32.t) : W8.t Array32.t * KMatrix.vector * KMatrix.vector = {
+  proc prg_kg(coins : W8.t Array32.t) : W8.t Array32.t * KMatrix.Vector.vector * KMatrix.Vector.vector = {
     var r;
     r <@ MLKEM_PRGs.prg_kg(coins);
     return (r.`1, poly2alg r.`2, poly2alg r.`3);
   }
-  proc prg_enc(noiseseed : W8.t Array32.t) : KMatrix.vector * KMatrix.vector * poly = {
+  proc prg_enc(noiseseed : W8.t Array32.t) : KMatrix.Vector.vector * KMatrix.Vector.vector * poly = {
     var r;
     r <@ MLKEM_PRGs.prg_enc(noiseseed);
     return (poly2alg r.`1, poly2alg r.`2, r.`3);
@@ -1167,7 +1167,7 @@ transitivity {2} { rho <$ srand; noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ 
    + inline *. swap {1} 3 -2. swap {2} 3 1.
      wp;rnd{1};conseq (:r{1} = (rho{2}, poly2alg v{2}, poly2alg v0{2})); 1: smt().
      rndsem* {2} 0.
-     rnd (fun (r : W8.t Array32.t * KMatrix.vector * KMatrix.vector) => (r.`1, alg2poly r.`2, alg2poly r.`3))   (* {1}->{2}: unwrap *)
+     rnd (fun (r : W8.t Array32.t * KMatrix.Vector.vector * KMatrix.Vector.vector) => (r.`1, alg2poly r.`2, alg2poly r.`3))   (* {1}->{2}: unwrap *)
     (fun (t : W8.t Array32.t * poly KVec.t * poly KVec.t)        => (t.`1, poly2alg t.`2, poly2alg t.`3)).  (* {2}->{1}: wrap = the post map *)
      auto => |>; split; 1: by move=> t _; rewrite !alg2polyK; case: t => /#.
      move => ?.
@@ -1355,11 +1355,11 @@ transitivity {2} { noise1 <@ CBD2rnd.sample_vec_real(); noise2 <@ CBD2rnd.sample
       apply eq_dlet; first done.
       move=> x1 /=; rewrite !dlet_unit /=.
       by rewrite dlet_unit /=.
-    rnd (fun (r : KMatrix.vector * KMatrix.vector * KMatrix.R) => (alg2poly r.`1, alg2poly r.`2, r.`3)) (fun (t : PolyVec.polyvec * PolyVec.polyvec * poly) => (poly2alg t.`1, poly2alg t.`2, t.`3)).
+    rnd (fun (r : KMatrix.Vector.vector * KMatrix.Vector.vector * KMatrix.R) => (alg2poly r.`1, alg2poly r.`2, r.`3)) (fun (t : PolyVec.polyvec * PolyVec.polyvec * poly) => (poly2alg t.`1, poly2alg t.`2, t.`3)).
     skip => &1 &2 _.
     split; first by move=> vv0pR _ /=; rewrite !alg2polyK; case: vv0pR.
     move=> _; split.
-    + move=> vv0pR _; rewrite HIE (dmap1E_can _ _ (fun (r : KMatrix.vector * KMatrix.vector * KMatrix.R) => (alg2poly r.`1, alg2poly r.`2, r.`3))).
+    + move=> vv0pR _; rewrite HIE (dmap1E_can _ _ (fun (r : KMatrix.Vector.vector * KMatrix.Vector.vector * KMatrix.R) => (alg2poly r.`1, alg2poly r.`2, r.`3))).
       + by move=> x /=; rewrite !poly2algK; case: x.
       + by move=> a _ /=; rewrite !alg2polyK; case: a.
       by rewrite /= !alg2polyK; case: vv0pR.
