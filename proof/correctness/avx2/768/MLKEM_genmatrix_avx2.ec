@@ -674,16 +674,15 @@ transitivity ParseFilter.sample3buf
   smt().
 + by move=> />.
 proc; simplify; call fill_poly_eq.
-seq 4 1: ( stmatch_avx2 st{2} stavx2{1} ).
- sp 1 0.
+seq 5 1: ( st{2} = st{1} ).
+ sp 2 0.
  ecall {1} (shake128_absorb_A32_A2_ph rho{1} pos{1}); auto => &1 &2 [#] Epos Erho Hrc1 Hrc2 st.
  rewrite pack2_rc of_listK /#.
 
 simplify.
 exlim st{2} => _st.
 ecall {1} (shake128_squeeze3blocks_ph buf{1} _st).
-auto => /> &m Hmatch Ematch buf.
-move=> Hb0 Hb1 Hb2 Hst.
+auto => /> [_0r buf] /= Hb0 Hb1 Hb2 Hst.
 split.
 rewrite -(buf_subl_cat buf 0 168) 1://.
 rewrite -(buf_subl_cat buf 168 (2*168)) 1:// catA /=.
@@ -811,7 +810,7 @@ seq 11 27: ( buf_ok (buf4x_buf buf{1} 0) buf0{2} st0{2}
           /\ buf_ok (buf4x_buf buf{1} 1) buf1{2} st1{2}
           /\ buf_ok (buf4x_buf buf{1} 2) buf2{2} st2{2}
           /\ buf_ok (buf4x_buf buf{1} 3) buf3{2} st3{2} ).
- seq 9 7: ( st4x_match stx4{1} (st0{2},st1{2},st2{2},st3{2})).
+ seq 10 7: ( st4x_match stx4{1} (st0{2},st1{2},st2{2},st3{2})).
   wp; ecall {1} (shake128x4_absorb_A32_A2_ph rho{1} indexes{1}) => /=.
   wp; ecall {1} (gen_matrix_get_indexes_ph pos{2} t{2}) => /=.
   auto => &1 &2 [# -> Epos Ht Hpos]; split; first smt().

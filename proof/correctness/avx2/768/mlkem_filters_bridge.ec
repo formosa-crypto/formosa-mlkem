@@ -76,7 +76,8 @@ op auxdata_ok (load_shuffle mask bounds ones: W256.t)
 from JazzEC require import WArray512 Array40 Array256 Array56 WArray536 WArray2048.
 require import IntDiv.
 
-require import Mlkem_filters_bindings.
+require import Mlkem_bindings CircuitBindingsExtra XWord512 XWord256 XWord128 XWord64 XWord12.
+require import XArray16 XArray24 XArray32 XArray40 XArray48 XArray56 XArray2048.
 require import Mlkem_filters.
 
 lemma vmov64_ext_256 b :
@@ -103,10 +104,11 @@ qed.
 lemma sliceget_8_64_2048_get64 a i :
  0 <= i < 256 =>
  get64 ((WArray2048.init8 (Array2048."_.[_]" a))) i =
-    sliceget_8_64_2048 a (64 * i).
-proof. 
+    BSWAS_2048u8_64.sliceget a (64 * i).
+proof.
 move => ib.
-    rewrite /sliceget_8_64_2048 get64E /pack8_t. 
+    have h64 : 0 <= 64 * i <= 2048*8 - 64 by smt().
+    rewrite (BSWAS_2048u8_64_initE a (64 * i) h64) get64E /pack8_t.
     rewrite -{1}W8u8.unpack8K.
     rewrite -(W8u8.unpack8K 
          (W64.init (fun (j : int) => a.[(64 * i + j) %/ 8].[(64 * i + j) %% 8]))).
@@ -287,7 +289,16 @@ plist _p _ctr ++ mkseq (Array40."_.[_]" res{2}.`1) (to_uint res{2}.`2)
 ].
 proc => /=.
 seq 2 2 : (#pre /\ ={f0,f1}).
-+ auto => /> &1 &2 *;split;congr;rewrite /sliceget_8_256_56 /=;
++ auto => /> &1 &2 *;split;congr.
+  - have h0: 0 <= 0 <= 56*8 - 256 by smt().
+    rewrite (BSWAS_56u8_256_initE _ 0 h0) /=;
+    (rewrite get256E -(W32u8.unpack8K (W256.init _));
+    congr;apply W32u8.Pack.ext_eq => x xb;
+    rewrite initiE 1:/# /= initiE;1:smt(W64.to_uint_cmp);
+    rewrite wordP => k kb;
+    by rewrite get_unpack8 1:/# /(\bits8) initiE 1:/# /= initiE 1:/# /= /#).
+  have h1: 0 <= 24*8 <= 56*8 - 256 by smt().
+  rewrite (BSWAS_56u8_256_initE _ (24*8) h1) /=;
   (rewrite get256E -(W32u8.unpack8K (W256.init _));
   congr;apply W32u8.Pack.ext_eq => x xb;
   rewrite initiE 1:/# /= initiE;1:smt(W64.to_uint_cmp);
@@ -464,7 +475,7 @@ seq 1 1 : (#{/~pol{1} = _p}pre /\ plist pol{1} (_ctr + to_uint t0_0{2}) = plist 
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite ifT /=;1:smt(W64.to_uint_cmp size_mkseq).
-    rewrite /extract_256_128 -get_w2bits -Mlkem_bindings.BVA_truncate_Top_JWord_W256_t_Top_JWord_W128_t.bvtruncateP . 
+    rewrite /extract_256_128 -get_w2bits -XWord256.BVA_truncate_Top_JWord_W256_t_Top_JWord_W128_t.bvtruncateP . 
     rewrite nth_take;1,2:smt(W64.to_uint_cmp size_mkseq).
     by rewrite initiE /=;smt(W64.to_uint_cmp size_mkseq).
 
@@ -557,7 +568,7 @@ seq 1 1 : (#{/~plist pol{1} (_ctr + to_uint t0_1{2}) = plist _p _ctr ++ mkseq ("
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite  initiE /=; 1:smt(W64.to_uint_cmp size_mkseq).
     rewrite ifT /=;1:smt(W64.to_uint_cmp size_mkseq).
-    rewrite /extract_256_128 -get_w2bits -Mlkem_bindings.BVA_truncate_Top_JWord_W256_t_Top_JWord_W128_t.bvtruncateP . 
+    rewrite /extract_256_128 -get_w2bits -XWord256.BVA_truncate_Top_JWord_W256_t_Top_JWord_W128_t.bvtruncateP . 
     rewrite nth_take;1,2:smt(W64.to_uint_cmp size_mkseq).
     by rewrite initiE /=;smt(W64.to_uint_cmp size_mkseq).
 
@@ -664,7 +675,7 @@ conseq  (bridge48 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter48P (Array56.
     rewrite nth_mkseq;1:smt(size_ge0).
     rewrite Hl1;1:smt( size_map take_size take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
     rewrite to_uint_eq.
-    rewrite -BVA_zextend_Top_Mlkem_bindings_W12_t_Top_JWord_W16_t.bvzextendP.
+    rewrite -BVA_zextend_Top_XWord12_W12_t_Top_JWord_W16_t.bvzextendP.
     have : nth witness (map W12.to_uint xx) i  = nth witness (map W16.to_uint yy) i by smt().
     do 2!(rewrite (nth_map witness);1: smt( size_map take_size take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list)). 
     done.
@@ -672,7 +683,7 @@ conseq  (bridge48 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter48P (Array56.
 (* THE MAIN LEMMA *)
 rewrite /yy /bytes2coeffs.
 have -> : BitEncoding.BitChunking.chunk 12 (JWordList.Bytes2Bits.bytes_to_bits (take 48 (drop (to_uint _buf_offset) (bufl _buf)))) =
-    map W12.w2bits (map (fun i => sliceget_8_12_48
+    map W12.w2bits (map (fun i => BSWAS_48u8_12.sliceget
                      (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
                      (12 * i)) (iota_ 0 32)); last first.
 
@@ -691,46 +702,42 @@ move => x l.
 pose F1 := (fun (x0 : int) =>
      to_uint
        (oget
-          (if sliceget_8_12_48
-                (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+          (if BSWAS_48u8_12.sliceget (init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
                 (12 * x0) \ult
-              W12.of_int 3329 then
+              of_int 3329 then
              Some
-               (sliceget_8_12_48
-                  (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+               (BSWAS_48u8_12.sliceget (init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
                   (12 * x0))
-           else None))).
+           else None<:W12.t>))).
 pose P1 := (fun (x0 : int) =>
-        predC1 None
-          (if sliceget_8_12_48
-                (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
-                (12 * x0) \ult
-              W12.of_int 3329 then
-             Some
-               (sliceget_8_12_48
-                  (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
-                  (12 * x0))
-           else None)).
-pose F2 := (fun (x0 : t) => to_uint ((of_int ((GFq.Zq.asint ((GFq.Zq.incoeff ((BitEncoding.BS2Int.bs2int (w2bits x0)))))))%GFq.Zq))%W16).
+        (if BSWAS_48u8_12.sliceget (init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+              (12 * x0) \ult
+            of_int 3329 then
+           Some
+             (BSWAS_48u8_12.sliceget (init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+                (12 * x0))
+         else None<:W12.t>) <>
+        None<:W12.t>).
+pose F2 := (fun (x0 : W12.t) => to_uint (W16.of_int (GFq.Zq.asint (GFq.Zq.incoeff (BitEncoding.BS2Int.bs2int (w2bits x0)))))).
 pose P2 := (fun (x0 : t) => (BitEncoding.BS2Int.bs2int (w2bits x0)) < GFq.q).
 rewrite !filter_cons. 
 case (P1 x) => /=.
 + move => HP1 ->.
-  have HH /= : P2 (sliceget_8_12_48
+  have HH /= : P2 (BSWAS_48u8_12.sliceget
            (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
            12 * x)).
     + move : HP1; rewrite /P1 /P2 /=.
     by rewrite /predC1 ultE /= /to_uint /#.
   rewrite HH /F1 /F2.
    rewrite ultE /= GFq.Zq.incoeffK /=.
-   pose a :=  (sliceget_8_12_48
+   pose a :=  (BSWAS_48u8_12.sliceget
               (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
               (12 * x)).
   rewrite of_uintK /q /= modz_small 1:/# /to_uint /=.
   rewrite ifT 1:/# modz_small;smt(W12.to_uint_cmp).
 
 + move => HP1 ->.
-  have HH /= : !P2 (sliceget_8_12_48
+  have HH /= : !P2 (BSWAS_48u8_12.sliceget
            (Array48.init ("_.[_]" (Array56.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
            12 * x)).
     + move : HP1; rewrite /P1 /P2 /=.
@@ -766,7 +773,8 @@ size
 apply (eq_from_nth witness);1: smt(W12.size_w2bits). 
 rewrite Hs3;move => k kb.
 rewrite nth_take 1,2:/# nth_drop 1,2:/# /w2bits nth_mkseq 1:/# /=.
-rewrite /bytes_to_bits /sliceget_8_12_48 initiE 1:/# /= initiE 1:/#  initiE 1:/# /=.
+have h48 : 0 <= 12 * i <= 48*8 - 12 by smt().
+rewrite /bytes_to_bits (BSWAS_48u8_12_initE _ (12 * i) h48) initiE 1:/# /= initiE 1:/#  initiE 1:/# /=.
 have -> := BitEncoding.BitChunking.nth_flatten witness 8 (map W8.w2bits (take 48 (drop (to_uint _buf_offset) (bufl _buf)))) (12*i+k) _.
 + rewrite allP => x.
   rewrite mapP => He; elim He => vv /=;smt(W8.size_w2bits).
@@ -1083,7 +1091,9 @@ plist _p _ctr ++ mkseq (Array16."_.[_]" res{2}.`1) ((min 256 (to_uint res{1}.`2)
 ].
 proc => /=.
 seq 1 1 : (#pre /\ ={f0}).
-+ auto => /> &1 &2 *;congr;rewrite /sliceget_8_256_32 /=;
++ auto => /> &1 &2 *;congr.
+  have h0: 0 <= 0 <= 32*8 - 256 by smt().
+  rewrite (BSWAS_32u8_256_initE _ 0 h0) /=;
   (rewrite get256E -(W32u8.unpack8K (W256.init _));
   congr;apply W32u8.Pack.ext_eq => x xb;
   rewrite initiE 1:/# /= initiE; 1:smt(W64.to_uint_cmp);
@@ -1233,7 +1243,7 @@ conseq  (bridge24 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter24P (Array32.
     rewrite nth_mkseq;1:smt(size_ge0).
     rewrite Hl1;1:smt( size_ge0 size_map size_take).   
     rewrite to_uint_eq.
-    rewrite -BVA_zextend_Top_Mlkem_bindings_W12_t_Top_JWord_W16_t.bvzextendP.
+    rewrite -BVA_zextend_Top_XWord12_W12_t_Top_JWord_W16_t.bvzextendP.
     have : nth witness (map W12.to_uint xx) i  = nth witness (map W16.to_uint yy) i by smt().
     rewrite nth_take;1,2: by smt(size_take size_map take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list).
     rewrite !(nth_map witness); by smt(size_take size_map take_oversize size_ge0 count_size size_filter size_bytes2coeffs W64.to_uint_cmp size_drop Array536.size_to_list). 
@@ -1241,7 +1251,7 @@ conseq  (bridge24 (to_uint _ctr) (to_uint _buf_offset) _pol)(filter24P (Array32.
 (* THE MAIN LEMMA *)
 rewrite /yy /bytes2coeffs.
 have -> : BitEncoding.BitChunking.chunk 12 (JWordList.Bytes2Bits.bytes_to_bits (take 24 (drop (to_uint _buf_offset) (bufl _buf)))) =
-    map W12.w2bits (map (fun i => sliceget_8_12_24
+    map W12.w2bits (map (fun i => BSWAS_24u8_12.sliceget
                      (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
                      (12 * i)) (iota_ 0 16)); last first.
 
@@ -1260,45 +1270,41 @@ move => x l.
 pose F1 := (fun (x0 : int) =>
      to_uint
        (oget
-          (if sliceget_8_12_24
-                (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
-                12 * x0) \ult
-              W12.of_int 3329 then
+          (if BSWAS_24u8_12.sliceget (init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+                (12 * x0) \ult
+              of_int 3329 then
              Some
-               (sliceget_8_12_24
-                  (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
-                  12 * x0))
-           else None))).
+               (BSWAS_24u8_12.sliceget (init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+                  (12 * x0))
+           else None<:W12.t>))).
 pose P1 := (fun (x0 : int) =>
-        predC1 None
-          (if sliceget_8_12_24
-                (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
-                12 * x0) \ult
-              W12.of_int 3329 then
-             Some
-               (sliceget_8_12_24
-                  (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
-                  12 * x0))
-           else None)).
+        (if BSWAS_24u8_12.sliceget (init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+              (12 * x0) \ult
+            of_int 3329 then
+           Some
+             (BSWAS_24u8_12.sliceget (init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+                (12 * x0))
+         else None<:W12.t>) <>
+        None<:W12.t>).
 pose F2 := (fun (x0 : t) => to_uint ((of_int ((GFq.Zq.asint ((GFq.Zq.incoeff ((BitEncoding.BS2Int.bs2int (w2bits x0)))))))%GFq.Zq))%W16).
 pose P2 := (fun (x0 : t) => (BitEncoding.BS2Int.bs2int (w2bits x0)) < GFq.q).
 rewrite !filter_cons. 
 case (P1 x) => /=.
 + move => HP1 ->.
-  have HH /= : P2 (sliceget_8_12_24 (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+  have HH /= : P2 (BSWAS_24u8_12.sliceget (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
            (12 * x)).
     + move : HP1; rewrite /P1 /P2 /=.
     by rewrite /predC1 ultE /= /to_uint /#.
   rewrite HH /F1 /F2.
    rewrite ultE /= GFq.Zq.incoeffK /=.
-   pose a :=  (sliceget_8_12_24
+   pose a :=  (BSWAS_24u8_12.sliceget
               (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0])))) (
               12 * x)).
   rewrite of_uintK /q /= modz_small 1:/# /to_uint /=.
   rewrite ifT 1:/# modz_small;smt(W12.to_uint_cmp).
 
 + move => HP1 ->.
-  have HH /= : !P2 (sliceget_8_12_24 (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
+  have HH /= : !P2 (BSWAS_24u8_12.sliceget (Array24.init ("_.[_]" (Array32.init (fun (i0 : int) => _buf.[to_uint _buf_offset + i0]))))
            (12 * x)).
     + move : HP1; rewrite /P1 /P2 /=.
     by rewrite /predC1 ultE /= /to_uint /#.
@@ -1333,7 +1339,8 @@ size
 apply (eq_from_nth witness);1: smt(W12.size_w2bits). 
 rewrite Hs3;move => k kb.
 rewrite nth_take 1,2:/# nth_drop 1,2:/# /w2bits nth_mkseq 1:/# /=.
-rewrite /bytes_to_bits initiE 1:/# /= initiE 1:/# initiE 1:/# /=.
+have h24 : 0 <= 12 * i <= 24*8 - 12 by smt().
+rewrite /bytes_to_bits (BSWAS_24u8_12_initE _ (12 * i) h24) initiE 1:/# /= initiE 1:/# initiE 1:/# /=.
 have -> := BitEncoding.BitChunking.nth_flatten witness 8 (map W8.w2bits (take 24 (drop (to_uint _buf_offset) (bufl _buf)))) (12*i+k) _.
 + rewrite allP => x.
   rewrite mapP => He; elim He => vv /=;smt(W8.size_w2bits).

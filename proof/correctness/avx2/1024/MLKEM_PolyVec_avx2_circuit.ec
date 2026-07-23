@@ -10,7 +10,9 @@ require import Fq NTT_Fq MLKEMFCLib MLKEM_W16_Rep MLKEM1024_prelude.
 require import Fq_avx2 NTT_avx2 NTT_avx2_poly AVX2_Ops MLKEMFCLib.
 require import MLKEM_Poly_avx2 MLKEM_PolyVec_avx2.
 require import MLKEM_Poly_avx2_circuit MLKEM_Poly_avx2_circuit_1024.
-require import Mlkem_bindings.
+require import Mlkem_bindings CircuitBindings.
+require import XWord11 XWord12.
+require import XArray4 XArray8 XArray16 XArray32 XArray256 XArray384 XArray1024 XArray1408 XArray1536 XArray1568 XArray1410.
 require import Circuit_semantics Circuit_sem_1024.
 from Spec require import GFq Rq Serialization VecMat Sampling EncDecCorrectness Correctness.
 
@@ -40,18 +42,20 @@ lemma polyvec_csubq_avx2_corr_h (_aw : W16.t Array1024.t):
              pos_bound1024_cxq res 0 1024 1]. 
 proof.
 proc; inline *.
-proc change ^while.1: {rp <- init_256_16 (fun i0 => r.[256*i+i0]);};1: by auto.
-proc change ^while.2: {qx16 <- sliceget16_16_256 jqx16 0;}; 1: by auto.
-proc change ^while.^while.1: {r0 <- sliceget256_16_256 rp (i0*256);};1: by auto => /#.
-proc change ^while.^while.9: {rp <- sliceset256_16_256 rp (i0*256) r0;};1: by auto => /#.
-proc change ^while.6: {r <- init_1024_16 (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0]);};1: by auto. 
+proc change ^while.1: {rp <- BSWA_256u16.init (fun i0 => r.[256*i+i0]);};1: by auto.
+proc change ^while.2: {qx16 <- BSWAS_16u16_256.sliceget jqx16 0;}; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change ^while.^while.1: {r0 <- if (0 <= (32*i0)*8 <= 256*16-256) then BSWAS_256u16_256.sliceget rp ((32*i0)*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) (32*i0) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*i0{2})*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while.9: {rp <- if (0 <= (32*i0)*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp ((32*i0)*8) r0 else Array256.init (fun (i2:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) i0 r0) i2) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (32*i0{2})*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.6: {r <- BSWA_1024u16.init (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0]);};1: by auto. 
 
 do 5!(unroll for ^while).
 cfold ^i0<-.
 wp -2.
 
 conseq (: r = _aw /\ all (fun c => W16.zero \sle c && c \slt W16.of_int 6658) r ==>
-       r = init_1024_16 (fun i => csubq_circuit _aw.[i])); last by circuit.
+       r = BSWA_1024u16.init (fun i => csubq_circuit _aw.[i])); last by circuit.
 
        
 (* BDEP pre conseq *)
@@ -64,7 +68,7 @@ conseq (: r = _aw /\ all (fun c => W16.zero \sle c && c \slt W16.of_int 6658) r 
 (* BDEP post conseq *)
 
 (* We start with some boilerplate *)
-move => &hr [#]/= ->; rewrite /pos_bound256_cxq => Hb rr; rewrite /init_1024_16 /lift_array1024 /= => ->; split.
+move => &hr [#]/= ->; rewrite /pos_bound256_cxq => Hb rr; rewrite /BSWA_1024u16.init /lift_array1024 /= => ->; split.
 
 rewrite tP => i ib.
 rewrite !mapiE 1,2:/# /= initiE 1:/# /=.
@@ -109,22 +113,24 @@ lemma polyvec_decompress_corr_h (_aw : W8.t Array1408.t):
     hoare[ Jkem_avx2.M.__i_polyvec_decompress :
              Array1408.init (fun i => rp.[i]) = _aw ==> pos_bound1024_cxq res 0 1024 1 /\ lift_polyvec res = decompress_polyvec 11 (decode11_vec _aw)].
 proc; inline *.
-proc change 1: { q <- sliceget16_16_256 jqx16 0;}; 1: by auto.
-proc change 2: { shufbidx <- sliceget32_8_256 pvd_shufbidx_s 0;}; 1: by auto.
-proc change 3: { srlvdidx <- sliceget8_32_256 pvd_srlvdidx_s 0;}; 1: by auto.
-proc change 4: { srlvqidx <- sliceget4_64_256 pvd_srlvqidx_s 0;} ; 1: by auto.
-proc change 5: { shift <- sliceget16_16_256 pvd_shift_s 0;}; 1: by auto.
-proc change ^while.^while.1 : {f <- sliceget1568_8_256 rp ((352*k + 22*i)*8);}; 1: by auto => /> /#.
-proc change ^while.^while.10 : {r <- sliceset1024_16_256 r ((16 * k + i)*256) f;}; 1: by auto => /> /#.
+proc change 1: { q <- BSWAS_16u16_256.sliceget jqx16 0;}; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change 2: { shufbidx <- BSWAS_32u8_256.sliceget pvd_shufbidx_s 0;}; 1: by auto; move => &1 &2 ?; rewrite BSWAS_32u8_256_slicegetE /#.
+proc change 3: { srlvdidx <- BSWAS_8u32_256.sliceget pvd_srlvdidx_s 0;}; 1: by auto; move => &1 &2 ?; rewrite BSWAS_8u32_256_slicegetE /#.
+proc change 4: { srlvqidx <- BSWAS_4u64_256.sliceget pvd_srlvqidx_s 0;} ; 1: by auto; move => &1 &2 ?; rewrite BSWAS_4u64_256_slicegetE /#.
+proc change 5: { shift <- BSWAS_16u16_256.sliceget pvd_shift_s 0;}; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change ^while.^while.1 : {f <- if (0 <= (352*k + 22*i)*8 <= 1568*8-256) then BSWAS_1568u8_256.sliceget rp ((352*k + 22*i)*8) else get256_direct (WArray1568.init8 (fun (i_0 : int) => rp.[i_0])) (352*k + 22*i) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (352*k{2} + 22*i{2})*8 <= 1568*8-256); [ move => ?; rewrite BSWAS_1568u8_256_slicegetE /# | by auto ].
+proc change ^while.^while.10 : {r <- if (0 <= (32*(16*k+i))*8 <= 16*1024-256) then BSWAS_1024u16_256.sliceset r ((32*(16*k+i))*8) f else Array1024.init (fun (i1:int) => WArray2048.get16 (WArray2048.set256 (WArray2048.init16 (fun (i_0 : int) => r.[i_0])) (16*k+i) f) i1) ;};
+1: by auto; move => &1 &2 [#] _ -> -> -> ->; case (0 <= (32*(16*k{2}+i{2}))*8 <= 16*1024-256); [ move => ?; rewrite BSWAS_1024u16_256_slicesetE // | by auto ].
 unroll for ^while.
 cfold ^inc<-.
 do 4!(unroll for ^while).
 cfold ^i<-.
 wp -3.
 
-conseq (: rp = init_1568_8 (fun i => if i < 1408 then _aw.[i] else rp.[i])
+conseq (: rp = BSWA_1568u8.init (fun i => if i < 1408 then _aw.[i] else rp.[i])
         ==>
-   r = init_1024_16 (fun i =>
+   r = BSWA_1024u16.init (fun i =>
      decompress11_circuit (W11.init (fun (j : int) => _aw.[(i*11 + j) %/ 8].[(i*11 + j) %% 8]))));last by circuit.
      
 (* We start with some boilerplate *)
@@ -134,7 +140,7 @@ by rewrite initE ib /=; case (i < 1408) => // ?; rewrite -H 1:/# initiE 1:/#.
 move => &hr <- rr ->; split; last first.
 + rewrite KVec.tP => k kb.
   rewrite tP => i ib.
-  rewrite /lift_polyvec /init_1024_16 KVec.initiE 1:/# /= !mapiE 1:/# /= -get_to_list /= initiE 1:/# /= initiE 1:/# /=.
+  rewrite /lift_polyvec /BSWA_1024u16.init KVec.initiE 1:/# /= !mapiE 1:/# /= -get_to_list /= initiE 1:/# /= initiE 1:/# /=.
   rewrite initiE; 1: by smt(kvec_val).
   simplify.
   rewrite mapiE 1:/#.
@@ -145,7 +151,7 @@ move => &hr <- rr ->; split; last first.
 
   
 rewrite /pos_bound1024_cxq qE /= => k kb. 
-rewrite /init_1024_16 initiE 1:/# /=.
+rewrite /BSWA_1024u16.init initiE 1:/# /=.
 by apply decompress11_circuit_rng.
 qed.
 
@@ -241,20 +247,22 @@ lemma auxcompress11_corr_h (_aw : W16.t Array1024.t):
       Array1408.init (fun i => res.[i])  = encode11_vec (compress_polyvec 11 (lift_polyvec _aw))].
 proof.
 proc; inline *.
-proc change ^while.1: { rp0 <- init_256_16 (fun i => r.[256*i0+i]);};1: by auto.
-proc change ^while.2: { qx16 <- sliceget16_16_256 jqx16 0;}; 1: by auto.
-proc change ^while.^while.1: { r0 <- sliceget256_16_256 rp0 (i1*256);};1: by auto => /#.
-proc change ^while.^while.9: { rp0 <- sliceset256_16_256 rp0 (i1*256) r0;};1: by auto => /#.
-proc change ^while.6: { r <- init_1024_16 (fun (i_0 : int) => if 256 * i0 <= i_0 < 256 * i0 + 256 then aux.[i_0 - 256 * i0] else r.[i_0]);};1: by auto. 
-proc change 5: {v <- sliceget16_16_256 jvx16 0;}; 1: by auto.
-proc change ^while{2}.1: {f0 <- sliceget1024_16_256 a (i*256);};1: by auto => /#.
-proc change 12: { srlvqidx <- sliceget4_64_256 pvc_srlvqidx 0; }; 1: by auto.
-proc change 13: { shufbidx <- sliceget32_8_256 pvc_shufbidx_s 0;}; 1: by auto.
-proc change ^while{2}.27 : {rp <- sliceset1410_8_128 rp  (22*i*8) t0;};1: by auto => /#.
-proc change ^while{2}.28 : {rp <- sliceset1410_8_64 rp  ((22*i+16)*8) (truncateu64 t1);}.
-+ auto => />;move => *;rewrite /sliceset1410_8_64 tP => *.
-  rewrite initiE /= 1:/# ifT 1:/# initiE 1:/#.
-  do congr;smt().
+proc change ^while.1: { rp0 <- BSWA_256u16.init (fun i => r.[256*i0+i]);};1: by auto.
+proc change ^while.2: { qx16 <- BSWAS_16u16_256.sliceget jqx16 0;}; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change ^while.^while.1: { r0 <- if (0 <= (32*i1)*8 <= 256*16-256) then BSWAS_256u16_256.sliceget rp0 ((32*i1)*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => rp0.[i_0])) (32*i1) ;};
+1: by auto; move => &1 &2 [#] _ _ -> ->; case (0 <= (32*i1{2})*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while.9: { rp0 <- if (0 <= (32*i1)*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp0 ((32*i1)*8) r0 else Array256.init (fun (i2:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp0.[i_0])) i1 r0) i2) ;};
+1: by auto; move => &1 &2 [#] _ _ -> -> ->; case (0 <= (32*i1{2})*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.6: { r <- BSWA_1024u16.init (fun (i_0 : int) => if 256 * i0 <= i_0 < 256 * i0 + 256 then aux.[i_0 - 256 * i0] else r.[i_0]);};1: by auto. 
+proc change 5: {v <- BSWAS_16u16_256.sliceget jvx16 0;}; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change ^while{2}.1: {f0 <- if (0 <= (32*i)*8 <= 16*1024-256) then BSWAS_1024u16_256.sliceget a ((32*i)*8) else get256_direct (WArray2048.init16 (fun (i_0 : int) => a.[i_0])) (32*i) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*i{2})*8 <= 16*1024-256); [ move => ?; rewrite BSWAS_1024u16_256_slicegetE /# | by auto ].
+proc change 12: { srlvqidx <- BSWAS_4u64_256.sliceget pvc_srlvqidx 0; }; 1: by auto; move => &1 &2 ?; rewrite BSWAS_4u64_256_slicegetE /#.
+proc change 13: { shufbidx <- BSWAS_32u8_256.sliceget pvc_shufbidx_s 0;}; 1: by auto; move => &1 &2 ?; rewrite BSWAS_32u8_256_slicegetE /#.
+proc change ^while{2}.27 : {rp <- if (0 <= 22*i*8 <= 8*1410-128) then BSWAS_1410u8_128.sliceset rp (22*i*8) t0 else Array1410.init (WArray1410.get8 (WArray1410.set128_direct (WArray1410.init8 (fun (i_0 : int) => rp.[i_0])) (22*i) t0)) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= 22*i{2}*8 <= 8*1410-128); [ move => ?; rewrite BSWAS_1410u8_128_slicesetE // | by auto ].
+proc change ^while{2}.28 : {rp <- if (0 <= (22*i+16)*8 <= 8*1410-64) then BSWAS_1410u8_64.sliceset rp ((22*i+16)*8) (truncateu64 t1) else Array1410.init (WArray1410.get8 (WArray1410.set64_direct (WArray1410.init8 (fun (i_0 : int) => rp.[i_0])) (22*i+16) (truncateu64 t1))) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (22*i{2}+16)*8 <= 8*1410-64); [ move => ?; rewrite BSWAS_1410u8_64_slicesetE // | by auto ].
   
 unroll for ^while.
 do 4!(unroll for ^while).
@@ -266,9 +274,9 @@ wp -4.
 
 conseq (: a = _aw /\
    Array1024.all (fun bv => W16.zero \sle bv /\ bv \sle (of_int (2 * 3329))) a
-   ==> init_1408_8 (fun i => rp.[i]) = 
-   let out = init_1024_11 (fun i => compress11_circuit _aw.[i]) in
-   init_1408_8 (fun i =>
+   ==> BSWA_1408u8.init (fun i => rp.[i]) = 
+   let out = BSWA_1024u11.init (fun i => compress11_circuit _aw.[i]) in
+   BSWA_1408u8.init (fun i =>
      W8.init (fun j =>
        (out.[(i*8+j) %/ 11]).[(i*8+j) %% 11]))); last by circuit.
 
@@ -281,7 +289,7 @@ conseq (: a = _aw /\
 (* BDEP post conseq *)
 
 (* We start with some boilerplate *)
-move => &hr [#]/= -> H0 rr; rewrite /= /init_1408_8 !tP => H i ib.
+move => &hr [#]/= -> H0 rr; rewrite /= /BSWA_1408u8.init !tP => H i ib.
 rewrite H // initiE 1:/# /=.
 rewrite wordP => k kb; rewrite !initiE /= 1,2:/#.
 rewrite encode_vec_compress_bits //=.
@@ -358,11 +366,11 @@ move => *. cfold 3. unroll for ^while;auto => /> /#.
 qed.
 
 
-op nttunpack_16 (rp : W16.t Array256.t) : W16.t Array256.t = init_256_16 (fun (i : int) => rp.[nttunpack_idx.[i]]).
+op nttunpack_16 (rp : W16.t Array256.t) : W16.t Array256.t = BSWA_256u16.init (fun (i : int) => rp.[nttunpack_idx.[i]]).
 
 
 op nttunpackv_16 (v : W16.t Array1024.t) : W16.t Array1024.t =
-  init_1024_16
+  BSWA_1024u16.init
     (fun (i : int) =>
        if 0 <= i < 256 then (nttunpack_16 (subarray256 v 0)).[i]
        else
@@ -371,7 +379,7 @@ op nttunpackv_16 (v : W16.t Array1024.t) : W16.t Array1024.t =
 
 lemma nttunpackv_16E v: nttunpackv_16 v = nttunpackv v.
    rewrite /nttunpackv_16 /nttunpackv /nttunpack_16 /nttunpack.
-   by rewrite /init_1024_16 /init_256_16.
+   by rewrite /BSWA_1024u16.init /BSWA_256u16.init.
    qed.
 
 lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t): 
@@ -381,31 +389,45 @@ lemma polyvec_frombytes_corr_h (_aw : W8.t Array1536.t):
              lift_array1024 res = nttunpackv (map incoeff (Array1024.of_list 0 (ByteDecode 12 (to_list _aw))))  /\
              pos_bound1024_cxq res 0 1024  2].
 proc; inline *.
-proc change ^while.1: { rp <- init_256_16 (fun (i_0 : int) => r.[256 * i + i_0]); }; 1: by auto.
-proc change ^while.2: { ap <- init_384_8 (fun (i_0 : int) => a.[384 * i + i_0]); }; 1: by auto.
-proc change ^while.3: { mask <- sliceget16_16_256 maskx16 0; }; 1: by auto.
-proc change ^while.^while.1 : { t0 <- sliceget384_8_256 ap (192*i0*8);}; 1: by auto => /> /#.
-proc change ^while.^while.2 : { t1 <- sliceget384_8_256 ap ((192*i0+32)*8);}; 1: by auto => /> /#.
-proc change ^while.^while.3 : { t2 <- sliceget384_8_256 ap ((192*i0+64)*8);}; 1: by auto => /> /#.
-proc change ^while.^while.4 : { t3 <- sliceget384_8_256 ap ((192*i0+96)*8);}; 1: by auto => /> /#.
-proc change ^while.^while.5 : { t4 <- sliceget384_8_256 ap ((192*i0+128)*8);}; 1: by auto => /> /#.
-proc change ^while.^while.6 : { t5 <- sliceget384_8_256 ap ((192*i0+160)*8);}; 1: by auto => /> /#.
-proc change ^while.^while.101 : { rp <- sliceset256_16_256 rp (8*i0 *256) t6;};1: by auto => /> /#.
-proc change ^while.^while.102 : { rp <- sliceset256_16_256 rp ((8*i0+1) *256) t7;};1: by auto => /> /#.
-proc change ^while.^while.103 : { rp <- sliceset256_16_256 rp ((8*i0+2) *256) t8;};1: by auto => /> /#.
-proc change ^while.^while.104 : { rp <- sliceset256_16_256 rp ((8*i0+3) *256) t9;};1: by auto => /> /#.
-proc change ^while.^while.105 : { rp <- sliceset256_16_256 rp ((8*i0+4) *256) t4;};1: by auto => /> /#.
-proc change ^while.^while.106 : { rp <- sliceset256_16_256 rp ((8*i0+5) *256) t10;};1: by auto => /> /#.
-proc change ^while.^while.107 : { rp <- sliceset256_16_256 rp ((8*i0+6) *256) t11;};1: by auto => /> /#.
-proc change ^while.^while.108 : { rp <- sliceset256_16_256 rp ((8*i0+7) *256) tt;};1: by auto => /> /#.
-proc change ^while.7: { r <- init_1024_16 (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0]);}; 1: by auto.
+proc change ^while.1: { rp <- BSWA_256u16.init (fun (i_0 : int) => r.[256 * i + i_0]); }; 1: by auto.
+proc change ^while.2: { ap <- BSWA_384u8.init (fun (i_0 : int) => a.[384 * i + i_0]); }; 1: by auto.
+proc change ^while.3: { mask <- BSWAS_16u16_256.sliceget maskx16 0; }; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change ^while.^while.1 : { t0 <- if (0 <= (192*i0)*8 <= 8*384-256) then BSWAS_384u8_256.sliceget ap ((192*i0)*8) else get256_direct (WArray384.init8 (fun (i_0 : int) => ap.[i_0])) (192*i0) ;};
+1: by auto; move => &1 &2 [#] _ -> ->; case (0 <= (192*i0{2})*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicegetE /# | by auto ].
+proc change ^while.^while.2 : { t1 <- if (0 <= (192*i0+32)*8 <= 8*384-256) then BSWAS_384u8_256.sliceget ap ((192*i0+32)*8) else get256_direct (WArray384.init8 (fun (i_0 : int) => ap.[i_0])) (192*i0+32) ;};
+1: by auto; move => &1 &2 [#] _ -> ->; case (0 <= (192*i0{2}+32)*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicegetE /# | by auto ].
+proc change ^while.^while.3 : { t2 <- if (0 <= (192*i0+64)*8 <= 8*384-256) then BSWAS_384u8_256.sliceget ap ((192*i0+64)*8) else get256_direct (WArray384.init8 (fun (i_0 : int) => ap.[i_0])) (192*i0+64) ;};
+1: by auto; move => &1 &2 [#] _ -> ->; case (0 <= (192*i0{2}+64)*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicegetE /# | by auto ].
+proc change ^while.^while.4 : { t3 <- if (0 <= (192*i0+96)*8 <= 8*384-256) then BSWAS_384u8_256.sliceget ap ((192*i0+96)*8) else get256_direct (WArray384.init8 (fun (i_0 : int) => ap.[i_0])) (192*i0+96) ;};
+1: by auto; move => &1 &2 [#] _ -> ->; case (0 <= (192*i0{2}+96)*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicegetE /# | by auto ].
+proc change ^while.^while.5 : { t4 <- if (0 <= (192*i0+128)*8 <= 8*384-256) then BSWAS_384u8_256.sliceget ap ((192*i0+128)*8) else get256_direct (WArray384.init8 (fun (i_0 : int) => ap.[i_0])) (192*i0+128) ;};
+1: by auto; move => &1 &2 [#] _ -> ->; case (0 <= (192*i0{2}+128)*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicegetE /# | by auto ].
+proc change ^while.^while.6 : { t5 <- if (0 <= (192*i0+160)*8 <= 8*384-256) then BSWAS_384u8_256.sliceget ap ((192*i0+160)*8) else get256_direct (WArray384.init8 (fun (i_0 : int) => ap.[i_0])) (192*i0+160) ;};
+1: by auto; move => &1 &2 [#] _ -> ->; case (0 <= (192*i0{2}+160)*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicegetE /# | by auto ].
+proc change ^while.^while.101 : { rp <- if (0 <= (32*(8*i0))*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp ((32*(8*i0))*8) t6 else Array256.init (fun (i1:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) (8*i0) t6) i1) ;};
+1: by auto; move => &1 &2 [#] _ -> -> ->; case (0 <= (32*(8*i0{2}))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.^while.102 : { rp <- if (0 <= (32*(8*i0+1))*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp ((32*(8*i0+1))*8) t7 else Array256.init (fun (i1:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) (8*i0+1) t7) i1) ;};
+1: by auto; move => &1 &2 [#] _ -> -> ->; case (0 <= (32*(8*i0{2}+1))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.^while.103 : { rp <- if (0 <= (32*(8*i0+2))*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp ((32*(8*i0+2))*8) t8 else Array256.init (fun (i1:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) (8*i0+2) t8) i1) ;};
+1: by auto; move => &1 &2 [#] _ -> -> ->; case (0 <= (32*(8*i0{2}+2))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.^while.104 : { rp <- if (0 <= (32*(8*i0+3))*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp ((32*(8*i0+3))*8) t9 else Array256.init (fun (i1:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) (8*i0+3) t9) i1) ;};
+1: by auto; move => &1 &2 [#] _ -> -> ->; case (0 <= (32*(8*i0{2}+3))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.^while.105 : { rp <- if (0 <= (32*(8*i0+4))*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp ((32*(8*i0+4))*8) t4 else Array256.init (fun (i1:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) (8*i0+4) t4) i1) ;};
+1: by auto; move => &1 &2 [#] _ -> -> ->; case (0 <= (32*(8*i0{2}+4))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.^while.106 : { rp <- if (0 <= (32*(8*i0+5))*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp ((32*(8*i0+5))*8) t10 else Array256.init (fun (i1:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) (8*i0+5) t10) i1) ;};
+1: by auto; move => &1 &2 [#] _ -> -> ->; case (0 <= (32*(8*i0{2}+5))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.^while.107 : { rp <- if (0 <= (32*(8*i0+6))*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp ((32*(8*i0+6))*8) t11 else Array256.init (fun (i1:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) (8*i0+6) t11) i1) ;};
+1: by auto; move => &1 &2 [#] _ -> -> ->; case (0 <= (32*(8*i0{2}+6))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.^while.108 : { rp <- if (0 <= (32*(8*i0+7))*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp ((32*(8*i0+7))*8) tt else Array256.init (fun (i1:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp.[i_0])) (8*i0+7) tt) i1) ;};
+1: by auto; move => &1 &2 [#] _ -> -> ->; case (0 <= (32*(8*i0{2}+7))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.7: { r <- BSWA_1024u16.init (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux.[i_0 - 256 * i] else r.[i_0]);}; 1: by auto.
 
 unroll for ^while.
 do 4!(unroll for ^while).
 cfold ^i0<-.
 wp -2.
 
-conseq (: _ ==> r = nttunpackv_16 (init_1024_16 (fun i =>
+conseq (: _ ==> r = nttunpackv_16 (BSWA_1024u16.init (fun i =>
      frombytes_circuit (
        W12.init (fun j =>
          let idx = i*12 + j in
@@ -418,7 +440,7 @@ conseq (: _ ==> r = nttunpackv_16 (init_1024_16 (fun i =>
 move => &hr <- rr ->.
 rewrite nttunpackv_16E;split.
 + rewrite  -nttunpackv_lift /lift_array1024 /=; congr; apply Array1024.tP => i ib.
-  rewrite mapiE 1:/# /init_1024_16 initiE 1:/#.
+  rewrite mapiE 1:/# /BSWA_1024u16.init initiE 1:/#.
   simplify.
   rewrite frombytes_circuit_sem; 1: by smt().
   rewrite get_of_list; 1: by smt(kvec_val).
@@ -431,7 +453,7 @@ rewrite /pos_bound1024_cxq.
 move => k kb.
 have : Array1024.all (fun w => bpos16 w (2*q))
     (nttunpackv
-       (init_1024_16
+       (BSWA_1024u16.init
           (fun (i : int) =>
              frombytes_circuit
                (W12.init
@@ -619,10 +641,10 @@ proc __i_polyvec_tobytes(r : W8.t Array1536.t, a : W16.t Array1024.t) : W8.t Arr
  }       
 }.
 
-op nttpack_16 (rp : W16.t Array256.t)  = init_256_16 (fun (i : int) => rp.[nttpack_idx.[i]]).
+op nttpack_16 (rp : W16.t Array256.t)  = BSWA_256u16.init (fun (i : int) => rp.[nttpack_idx.[i]]).
 
 op nttpackv_16 (v : W16.t Array1024.t) =
-  init_1024_16
+  BSWA_1024u16.init
     (fun (i : int) =>
        if 0 <= i < 256 then (nttpack_16 (subarray256 v 0)).[i]
        else
@@ -630,7 +652,7 @@ op nttpackv_16 (v : W16.t Array1024.t) =
          else if 512 <= i < 768 then (nttpack_16 (subarray256 v 2)).[i - 512] else (nttpack_16 (subarray256 v 3)).[i - 768]).
 
 lemma nttpackv_16E v : nttpackv_16 v = nttpackv v.
-rewrite /nttpackv_16 /init_1024_16 /nttpack_16 /init_256_16.
+rewrite /nttpackv_16 /BSWA_1024u16.init /nttpack_16 /BSWA_256u16.init.
 by rewrite /nttpackv /nttpack.
 qed.
 
@@ -639,28 +661,44 @@ lemma auxtobytes_corr_h (_aw : W16.t Array1024.t):
              pos_bound1024_cxq a 0 1024 2 /\ a = _aw ==> 
     res = Array1536.of_list W8.zero (ByteEncode 12 (to_list (map asint (lift_array1024 (nttpackv _aw)))))]. 
 proc;inline *.
-proc change ^while.1: {rp <- init_384_8 (fun i_0 => r.[384 * i + i_0]);};1: by auto.
-proc change ^while.2: {a0 <- init_256_16 (fun i_0 => a.[256 * i + i_0]);};1: by auto.
+proc change ^while.1: {rp <- BSWA_384u8.init (fun i_0 => r.[384 * i + i_0]);};1: by auto.
+proc change ^while.2: {a0 <- BSWA_256u16.init (fun i_0 => a.[256 * i + i_0]);};1: by auto.
 (* FIXME: CHECK qx16 initialization inside while *)
-proc change ^while.4: {qx16 <- sliceget16_16_256 jqx16 0;}; 1: by auto.
-proc change ^while.^while.1: { r0 <- sliceget256_16_256 rp0 (i1*256);}; 1: by auto => /#.
-proc change ^while.^while.9 : {rp0 <- sliceset256_16_256 rp0 (i1*256) r0;}; 1: by auto => /> /#.
-proc change ^while.^while{2}.1 : {t0 <- sliceget256_16_256 a0 (8*i0*256);};1: by auto => /#.
-proc change ^while.^while{2}.2 : {t1 <- sliceget256_16_256 a0 ((8*i0+1)*256);};1: by auto => /#.
-proc change ^while.^while{2}.3 : {t2 <- sliceget256_16_256 a0 ((8*i0+2)*256);};1: by auto => /#.
-proc change ^while.^while{2}.4 : {t3 <- sliceget256_16_256 a0 ((8*i0+3)*256);};1: by auto => /#.
-proc change ^while.^while{2}.5 : {t4 <- sliceget256_16_256 a0 ((8*i0+4)*256);};1: by auto => /#.
-proc change ^while.^while{2}.6 : {t5 <- sliceget256_16_256 a0 ((8*i0+5)*256);};1: by auto => /#.
-proc change ^while.^while{2}.7 : {t6 <- sliceget256_16_256 a0 ((8*i0+6)*256);};1: by auto => /#.
-proc change ^while.^while{2}.8 : {t7 <- sliceget256_16_256 a0 ((8*i0+7)*256);};1: by auto => /#.
-proc change ^while.^while{2}.105 : {rp <- sliceset384_8_256 rp (192*i0*8) t0;};1: by auto => /#.
-proc change ^while.^while{2}.106 : {rp <- sliceset384_8_256 rp ((192*i0+32)*8) t2;};1: by auto => /#.
-proc change ^while.^while{2}.107 : {rp <- sliceset384_8_256 rp ((192*i0+64)*8) t1;};1: by auto => /#.
-proc change ^while.^while{2}.108 : {rp <- sliceset384_8_256 rp ((192*i0+96)*8) t3;};1: by auto => /#.
-proc change ^while.^while{2}.109 : {rp <- sliceset384_8_256 rp ((192*i0+128)*8) ttt;};1: by auto => /#.
-proc change ^while.^while{2}.110 : {rp <- sliceset384_8_256 rp ((192*i0+160)*8) t4;};1: by auto => /#.
-proc change ^while.11: { r <- init_1536_8 (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0]);}; 1: by auto.
-proc change ^while.12: { a <- init_1024_16  (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]);};1: by auto. 
+proc change ^while.4: {qx16 <- BSWAS_16u16_256.sliceget jqx16 0;}; 1: by auto; move => &1 &2 ?; rewrite BSWAS_16u16_256_slicegetE /#.
+proc change ^while.^while.1: { r0 <- if (0 <= (32*i1)*8 <= 256*16-256) then BSWAS_256u16_256.sliceget rp0 ((32*i1)*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => rp0.[i_0])) (32*i1) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*i1{2})*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while.9 : {rp0 <- if (0 <= (32*i1)*8 <= 256*16-256) then BSWAS_256u16_256.sliceset rp0 ((32*i1)*8) r0 else Array256.init (fun (i2:int) => WArray512.get16 (WArray512.set256 (WArray512.init16 (fun (i_0 : int) => rp0.[i_0])) i1 r0) i2) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (32*i1{2})*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicesetE // | by auto ].
+proc change ^while.^while{2}.1 : {t0 <- if (0 <= (32*(8*i0))*8 <= 256*16-256) then BSWAS_256u16_256.sliceget a0 ((32*(8*i0))*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => a0.[i_0])) (32*(8*i0)) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*(8*i0{2}))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while{2}.2 : {t1 <- if (0 <= (32*(8*i0+1))*8 <= 256*16-256) then BSWAS_256u16_256.sliceget a0 ((32*(8*i0+1))*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => a0.[i_0])) (32*(8*i0+1)) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*(8*i0{2}+1))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while{2}.3 : {t2 <- if (0 <= (32*(8*i0+2))*8 <= 256*16-256) then BSWAS_256u16_256.sliceget a0 ((32*(8*i0+2))*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => a0.[i_0])) (32*(8*i0+2)) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*(8*i0{2}+2))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while{2}.4 : {t3 <- if (0 <= (32*(8*i0+3))*8 <= 256*16-256) then BSWAS_256u16_256.sliceget a0 ((32*(8*i0+3))*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => a0.[i_0])) (32*(8*i0+3)) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*(8*i0{2}+3))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while{2}.5 : {t4 <- if (0 <= (32*(8*i0+4))*8 <= 256*16-256) then BSWAS_256u16_256.sliceget a0 ((32*(8*i0+4))*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => a0.[i_0])) (32*(8*i0+4)) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*(8*i0{2}+4))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while{2}.6 : {t5 <- if (0 <= (32*(8*i0+5))*8 <= 256*16-256) then BSWAS_256u16_256.sliceget a0 ((32*(8*i0+5))*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => a0.[i_0])) (32*(8*i0+5)) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*(8*i0{2}+5))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while{2}.7 : {t6 <- if (0 <= (32*(8*i0+6))*8 <= 256*16-256) then BSWAS_256u16_256.sliceget a0 ((32*(8*i0+6))*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => a0.[i_0])) (32*(8*i0+6)) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*(8*i0{2}+6))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while{2}.8 : {t7 <- if (0 <= (32*(8*i0+7))*8 <= 256*16-256) then BSWAS_256u16_256.sliceget a0 ((32*(8*i0+7))*8) else get256_direct (WArray512.init16 (fun (i_0 : int) => a0.[i_0])) (32*(8*i0+7)) ;};
+1: by auto; move => &1 &2 [#] -> ->; case (0 <= (32*(8*i0{2}+7))*8 <= 256*16-256); [ move => ?; rewrite BSWAS_256u16_256_slicegetE /# | by auto ].
+proc change ^while.^while{2}.105 : {rp <- if (0 <= (192*i0)*8 <= 8*384-256) then BSWAS_384u8_256.sliceset rp ((192*i0)*8) t0 else Array384.init (WArray384.get8 (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192*i0) t0)) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (192*i0{2})*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicesetE // | by auto ].
+proc change ^while.^while{2}.106 : {rp <- if (0 <= (192*i0+32)*8 <= 8*384-256) then BSWAS_384u8_256.sliceset rp ((192*i0+32)*8) t2 else Array384.init (WArray384.get8 (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192*i0+32) t2)) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (192*i0{2}+32)*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicesetE // | by auto ].
+proc change ^while.^while{2}.107 : {rp <- if (0 <= (192*i0+64)*8 <= 8*384-256) then BSWAS_384u8_256.sliceset rp ((192*i0+64)*8) t1 else Array384.init (WArray384.get8 (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192*i0+64) t1)) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (192*i0{2}+64)*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicesetE // | by auto ].
+proc change ^while.^while{2}.108 : {rp <- if (0 <= (192*i0+96)*8 <= 8*384-256) then BSWAS_384u8_256.sliceset rp ((192*i0+96)*8) t3 else Array384.init (WArray384.get8 (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192*i0+96) t3)) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (192*i0{2}+96)*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicesetE // | by auto ].
+proc change ^while.^while{2}.109 : {rp <- if (0 <= (192*i0+128)*8 <= 8*384-256) then BSWAS_384u8_256.sliceset rp ((192*i0+128)*8) ttt else Array384.init (WArray384.get8 (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192*i0+128) ttt)) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (192*i0{2}+128)*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicesetE // | by auto ].
+proc change ^while.^while{2}.110 : {rp <- if (0 <= (192*i0+160)*8 <= 8*384-256) then BSWAS_384u8_256.sliceset rp ((192*i0+160)*8) t4 else Array384.init (WArray384.get8 (WArray384.set256_direct (WArray384.init8 (fun (i_0 : int) => rp.[i_0])) (192*i0+160) t4)) ;};
+1: by auto; move => &1 &2 [#] -> -> ->; case (0 <= (192*i0{2}+160)*8 <= 8*384-256); [ move => ?; rewrite BSWAS_384u8_256_slicesetE // | by auto ].
+proc change ^while.11: { r <- BSWA_1536u8.init (fun (i_0 : int) => if 384 * i <= i_0 < 384 * i + 384 then aux.[i_0 - 384 * i] else r.[i_0]);}; 1: by auto.
+proc change ^while.12: { a <- BSWA_1024u16.init  (fun (i_0 : int) => if 256 * i <= i_0 < 256 * i + 256 then aux_0.[i_0 - 256 * i] else a.[i_0]);};1: by auto. 
 
 unroll for ^while.
 do 8!(unroll for ^while).
@@ -672,8 +710,8 @@ wp -4.
 conseq (: 
  a = _aw /\
    Array1024.all (fun bv => W16.zero \sle bv /\ bv \slt (of_int (2 * 3329))) a
-   ==> r =  let ret = init_1024_12 (fun j => tobytes_circuit (nttpackv_16 _aw).[j]) in
-  init_1536_8 (fun i =>
+   ==> r =  let ret = BSWA_1024u12.init (fun j => tobytes_circuit (nttpackv_16 _aw).[j]) in
+  BSWA_1536u8.init (fun i =>
     W8.init (fun j =>
       let idx = i*8 + j in
       let aidx = idx %/ 12 in
@@ -684,9 +722,9 @@ conseq (:
   by rewrite qE /= => H k ?; move : (H k _) => //=.
 
 move => &hr [#]/=; rewrite /pos_bound1024_cxq /bpos16 => H0 <- rr ->.
-rewrite /init_1536_8 /encode12 tP => i ib.
+rewrite /BSWA_1536u8.init /encode12 tP => i ib.
 rewrite initiE 1:/# /= get_of_list 1:/# /= wordP => k kb.
-rewrite initiE //= /init_256_12 initiE 1:/# /=.
+rewrite initiE //= /BSWA_256u12.init initiE 1:/# /=.
 have := nttpackv_pred a{hr} (fun c => bpos16 c (2 * q)).
 rewrite !allP  /= iffE qE /= => [#_ H].
 by rewrite nttpackv_16E  to_bytes_circuit_sem_polyvec;1..3:

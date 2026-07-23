@@ -7,7 +7,7 @@ from JazzEC require import Jkem_avx2.
 
 require import AVX2_Ops W16extra.
 require import Fq NTT_Fq MLKEMFCLib MLKEM_W16_Rep MLKEM768_prelude.
-require import Mlkem_bindings.
+require import CircuitBindings XWord4 XWord5 XWord10 XWord11 XWord12.
 require import Circuit_semantics.
 from Spec require import GFq Rq Serialization VecMat Sampling EncDecCorrectness Correctness.
 
@@ -43,20 +43,21 @@ rewrite (nth_map witness);1: rewrite size_to_list /#.
 rewrite get_to_list mapiE 1:/# /lift_array256 mapiE 1:/# /= incoeffK.
 rewrite /tobytes_circuit /(\ult) /=.
 case (to_uint p.[(i * 8 + k) %/ 12] < 3329) => ?.
-+ rewrite /truncateu12 /of_int get_bits2w 1:/# /= modz_small;1:smt(W16.to_uint_cmp).
++ rewrite /BS_W16_W12_U.truncateu12 /of_int get_bits2w 1:/# /= modz_small;1:smt(W16.to_uint_cmp).
   rewrite qE (modz_small _ 3329); 1,2: by rewrite /to_sint /smod /=;smt(W16.to_uint_cmp pow2_16).
-have -> : (W16_sub p.[(i * 8 + k) %/ 12] (W16.of_int 3329))=
+have -> : (p.[(i * 8 + k) %/ 12] + (- W16.of_int 3329))=
           W16.of_int (to_sint p.[(8 * i + k) %/ 12] %% q); last first.
-+ rewrite /truncateu12 of_uintK  /= modz_small;1:smt(W16.to_uint_cmp).
++ rewrite /BS_W16_W12_U.truncateu12 of_uintK  /= modz_small;1:smt(W16.to_uint_cmp).
   rewrite /of_int get_bits2w 1:/# /= /#.
-rewrite /W16_sub /= to_uint_eq of_uintK modz_small;1:smt(W16.to_uint_cmp).
+have ->: p.[(i * 8 + k) %/ 12] + (- W16.of_int 3329) = p.[(i * 8 + k) %/ 12] - W16.of_int 3329 by ring.
+rewrite /= to_uint_eq of_uintK modz_small;1:smt(W16.to_uint_cmp).
 rewrite to_uintB /=;1: rewrite /(\ule) /= /#.
 rewrite /to_sint /smod /= /#.
 qed.
 
 
 op decompress10_circuit(c : W10.t) : W16.t = 
-  truncateu16 (srl_32 (((zeroextu10_32 c) * W32.of_int 3329) + W32.of_int 512) (W32.of_int 10)).
+  truncateu16 (BSW32.shr (((BS_W32_W10_U.zeroextu32 c) * W32.of_int 3329) + W32.of_int 512) (W32.of_int 10)).
 
 
 lemma pow2_10 : 2^10 = 1024 by auto.
@@ -72,12 +73,12 @@ rewrite -decompress_alt_decompress // /decompress_alt;congr.
 rewrite get_of_list; 1: by smt(kvec_val).
 rewrite /ByteDecode (nth_map []);
  1: by rewrite size_chunk // size_BytesToBits size_to_list /#.
-rewrite /decompress10_circuit /to_sint to_uint_truncateu16 /srl_32 to_uint_shr //=.
+rewrite /decompress10_circuit /to_sint to_uint_truncateu16 /BSW32.shr to_uint_shr //=.
 rewrite to_uintD_small /=.
-+ rewrite to_uintM_small /zeroextu10_32 of_uintK /= modz_small /=;by smt(W10.to_uint_cmp pow2_10).  
-rewrite to_uintM_small /=; 1: by rewrite /zeroextu10_32 of_uintK //= modz_small /=;by smt(W10.to_uint_cmp pow2_10).
-rewrite /smod ifF /=; 1: by rewrite /zeroextu11_32 of_uintK /= modz_small /=;by smt(W10.to_uint_cmp pow2_10).
-rewrite /zeroextu10_32 of_uintK /= modz_small /=;1: by smt(W10.to_uint_cmp pow2_10).
++ rewrite to_uintM_small /BS_W32_W10_U.zeroextu32 of_uintK /= modz_small /=;by smt(W10.to_uint_cmp pow2_10).  
+rewrite to_uintM_small /=; 1: by rewrite /BS_W32_W10_U.zeroextu32 of_uintK //= modz_small /=;by smt(W10.to_uint_cmp pow2_10).
+rewrite /smod ifF /=; 1: by rewrite /BS_W32_W11_U.zeroextu32 of_uintK /= modz_small /=;by smt(W10.to_uint_cmp pow2_10).
+rewrite /BS_W32_W10_U.zeroextu32 of_uintK /= modz_small /=;1: by smt(W10.to_uint_cmp pow2_10).
 rewrite modz_small /=;1: by smt(W10.to_uint_cmp pow2_10).
 rewrite /to_uint;congr;congr;congr;congr;last by smt().
 congr;apply (eq_from_nth false).
@@ -97,12 +98,12 @@ lemma decompress10_circuit_rng  (a : W8.t Array960.t) (i : int) :
      0 <= to_sint (decompress10_circuit (W10.init (fun (j : int) => a.[(i*10 + j) %/ 8].[(i*10 + j) %% 8]))) < 3329.
 proof.
 move => ib.
-rewrite /decompress10_circuit /to_sint to_uint_truncateu16 /srl_32 to_uint_shr //=.
+rewrite /decompress10_circuit /to_sint to_uint_truncateu16 /BSW32.shr to_uint_shr //=.
 rewrite to_uintD_small /=.
-+ rewrite to_uintM_small /zeroextu10_32 of_uintK /= modz_small /=;by smt(W10.to_uint_cmp pow2_10).  
-rewrite to_uintM_small /=; 1: by rewrite /zeroextu5_32 of_uintK //= modz_small /=;by smt(W10.to_uint_cmp pow2_10).
-rewrite /smod ifF /=; 1: by rewrite /zeroextu5_32 of_uintK /= modz_small /=;by smt(W10.to_uint_cmp pow2_10).
-rewrite /zeroextu10_32 of_uintK /= modz_small /=;1: by smt(W10.to_uint_cmp pow2_10).
++ rewrite to_uintM_small /BS_W32_W10_U.zeroextu32 of_uintK /= modz_small /=;by smt(W10.to_uint_cmp pow2_10).  
+rewrite to_uintM_small /=; 1: by rewrite /BS_W32_W5_U.zeroextu32 of_uintK //= modz_small /=;by smt(W10.to_uint_cmp pow2_10).
+rewrite /smod ifF /=; 1: by rewrite /BS_W32_W5_U.zeroextu32 of_uintK /= modz_small /=;by smt(W10.to_uint_cmp pow2_10).
+rewrite /BS_W32_W10_U.zeroextu32 of_uintK /= modz_small /=;1: by smt(W10.to_uint_cmp pow2_10).
 rewrite modz_small /=; by smt(W10.to_uint_cmp pow2_10).
 qed.
 
@@ -116,7 +117,7 @@ move => ib.
 rewrite get_of_list; 1: by smt(kvec_val).
 rewrite /ByteDecode (nth_map []);
  1: by rewrite size_chunk // size_BytesToBits size_to_list /#.
-rewrite /frombytes_circuit /to_sint /zeroextu16 of_uintK /= modz_small /=; 1: by have :=  W12.to_uint_cmp => /= /#.
+rewrite /frombytes_circuit /to_sint /BS_W16_W12_U.zeroextu16 of_uintK /= modz_small /=; 1: by have :=  W12.to_uint_cmp => /= /#.
 rewrite /BytesToBits JWordList.nth_chunk 1,2:/#.
 rewrite (EclibExtra.size_flatten' 8);1,2:smt(mapP W8.size_w2bits Array1152.size_to_list size_map).
 congr.
@@ -138,7 +139,7 @@ lemma frombytes_circuit_rng  (a : W8.t Array1152.t) (i : int) :
              (W12.init (fun (j : int) => a.[(i * 12 + j) %/ 8].[(i * 12 + j) %% 8])))< 4096.
 proof.
 rewrite /frombytes_circuit.
-rewrite  /to_sint  /to_sint /zeroextu16 of_uintK /= modz_small /=; 1: by have :=  W12.to_uint_cmp => /= /#.
+rewrite  /to_sint  /to_sint /BS_W16_W12_U.zeroextu16 of_uintK /= modz_small /=; 1: by have :=  W12.to_uint_cmp => /= /#.
 rewrite /smod /=.
 have :=  W12.to_uint_cmp => /=/#.
 qed.
@@ -146,9 +147,9 @@ qed.
 
 op compress4_circuit(a : W16.t) : W4.t = 
    if (a \ult W16.of_int 3329) then  
-   truncateu32_4 (srl_32 ((sll_32 (zeroextu32 a) (W32.of_int 4) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28))
+   BS_W32_W4_U.truncateu4 (BSW32.shr ((BSW32.shl (zeroextu32 a) (W32.of_int 4) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28))
    else 
-   truncateu32_4 (srl_32 ((sll_32 (zeroextu32 (W16_sub a (W16.of_int 3329))) (W32.of_int 4) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).  
+   BS_W32_W4_U.truncateu4 (BSW32.shr ((BSW32.shl (zeroextu32 (a + (- W16.of_int 3329))) (W32.of_int 4) + W32.of_int 1665) * W32.of_int 80635) (W32.of_int 28)).
 
  
 
@@ -165,18 +166,18 @@ have ->/= : 0 <= k %% 4 < 4 by smt().
 case (to_uint p.[k %/ 4 + i * 2] < 3329) => /= *.
 + rewrite -compress_impl_small //=;1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).  
   congr;congr;congr;congr;congr;congr; 2: by smt().
-  rewrite /truncateu32_4 of_uintK /=. 
-  by rewrite /srl_32 /sll_32 /(`<<`) /(`>>`) /= /#.
+  rewrite /BS_W32_W4_U.truncateu4 of_uintK /=. 
+  by rewrite /BSW32.shr /BSW32.shl /(`<<`) /(`>>`) /= /#.
 
   
-have -> : (incoeff (to_sint p.[(8 * i + k) %/ 4])) = (incoeff (to_sint (W16_sub p.[(8 * i + k) %/ 4] (W16.of_int 3329)))); last first.
+have -> : (incoeff (to_sint p.[(8 * i + k) %/ 4])) = (incoeff (to_sint (p.[(8 * i + k) %/ 4] - W16.of_int 3329))); last first.
 + rewrite -compress_impl_small //=.
   rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota).
   rewrite  /smod /= qE; have := H00 ((8 * i + k) %/ 4) _; 1: by smt().
   move => Hb; have E: to_sint (W16.of_int 3329) = 3329 by rewrite /to_sint /smod /=.
   by rewrite E; smt(W16.to_uint_cmp pow2_16 W16.to_sintE).
-  rewrite /truncateu32_4 of_uintK /=.
-  rewrite /srl_32 /sll_32 /(`<<`) /(`>>`) /=;congr;congr;congr;congr;congr;smt().
+  rewrite /BS_W32_W4_U.truncateu4 of_uintK /=.
+  rewrite /BSW32.shr /BSW32.shl /(`<<`) /(`>>`) /=;congr;congr;congr;congr;congr;smt().
 
 rewrite -eq_incoeff.
 rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /smod /=;smt(size_map size_iota).
@@ -184,7 +185,7 @@ rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /smod /=;s
 qed.
 
 op decompress4_circuit(c : W4.t) : W16.t =
-  truncateu16 (srl_32 (((zeroextu4_32 c) * W32.of_int 3329) + W32.of_int 8) (W32.of_int 4)).
+  truncateu16 (BSW32.shr (((BS_W32_W4_U.zeroextu32 c) * W32.of_int 3329) + W32.of_int 8) (W32.of_int 4)).
 
 
 
@@ -197,12 +198,12 @@ move => ib.
 rewrite -decompress_alt_decompress // /decompress_alt;congr.
 rewrite /= get_of_list // /ByteDecode (nth_map []);
  1: by rewrite size_chunk // size_BytesToBits size_to_list /#.
-rewrite /decompress4_circuit /to_sint to_uint_truncateu16 /srl_32 to_uint_shr //=.
+rewrite /decompress4_circuit /to_sint to_uint_truncateu16 /BSW32.shr to_uint_shr //=.
 rewrite to_uintD_small /=.
-+ rewrite to_uintM_small /zeroextu4_32 of_uintK /= modz_small /=;by smt(W4.to_uint_cmp pow2_4).  
-rewrite to_uintM_small /=; 1: by rewrite /zeroextu4_32 of_uintK //= modz_small /=;by smt(W4.to_uint_cmp pow2_4).
-rewrite /smod ifF /=; 1: by rewrite /zeroextu4_32 of_uintK /= modz_small /=;by smt(W4.to_uint_cmp pow2_4).
-rewrite /zeroextu4_32 of_uintK /= modz_small /=;1: by smt(W4.to_uint_cmp pow2_4).
++ rewrite to_uintM_small /BS_W32_W4_U.zeroextu32 of_uintK /= modz_small /=;by smt(W4.to_uint_cmp pow2_4).  
+rewrite to_uintM_small /=; 1: by rewrite /BS_W32_W4_U.zeroextu32 of_uintK //= modz_small /=;by smt(W4.to_uint_cmp pow2_4).
+rewrite /smod ifF /=; 1: by rewrite /BS_W32_W4_U.zeroextu32 of_uintK /= modz_small /=;by smt(W4.to_uint_cmp pow2_4).
+rewrite /BS_W32_W4_U.zeroextu32 of_uintK /= modz_small /=;1: by smt(W4.to_uint_cmp pow2_4).
 rewrite modz_small /=;1: by smt(W4.to_uint_cmp pow2_4).
 rewrite /to_uint;congr;congr;congr;congr;last by smt().
 congr;apply (eq_from_nth false).
@@ -222,20 +223,20 @@ lemma decompress4_circuit_rng  (a : W8.t Array128.t) (i : int) :
      0 <= to_sint (decompress4_circuit (W4.init (fun (j : int) => a.[i %/ 2].[i %% 2 * 4 + j]))) < 3329.
 proof.
 move => ib.
-rewrite /decompress4_circuit /to_sint to_uint_truncateu16 /srl_32 to_uint_shr //=.
+rewrite /decompress4_circuit /to_sint to_uint_truncateu16 /BSW32.shr to_uint_shr //=.
 rewrite to_uintD_small /=.
-+ rewrite to_uintM_small /zeroextu4_32 of_uintK /= modz_small /=;by smt(W4.to_uint_cmp pow2_4).  
-rewrite to_uintM_small /=; 1: by rewrite /zeroextu4_32 of_uintK //= modz_small /=;by smt(W4.to_uint_cmp pow2_4).
-rewrite /smod ifF /=; 1: by rewrite /zeroextu4_32 of_uintK /= modz_small /=;by smt(W4.to_uint_cmp pow2_4).
-rewrite /zeroextu4_32 of_uintK /= modz_small /=;1: by smt(W4.to_uint_cmp pow2_4).
++ rewrite to_uintM_small /BS_W32_W4_U.zeroextu32 of_uintK /= modz_small /=;by smt(W4.to_uint_cmp pow2_4).  
+rewrite to_uintM_small /=; 1: by rewrite /BS_W32_W4_U.zeroextu32 of_uintK //= modz_small /=;by smt(W4.to_uint_cmp pow2_4).
+rewrite /smod ifF /=; 1: by rewrite /BS_W32_W4_U.zeroextu32 of_uintK /= modz_small /=;by smt(W4.to_uint_cmp pow2_4).
+rewrite /BS_W32_W4_U.zeroextu32 of_uintK /= modz_small /=;1: by smt(W4.to_uint_cmp pow2_4).
 rewrite modz_small /=; by smt(W4.to_uint_cmp pow2_4).
 qed.
 
 op compress10_circuit(a : W16.t) : W10.t = 
    if (a \ult W16.of_int 3329) then  
-   truncate64_10 (srl_64 ((sll_64 (zeroextu64 a) (W64.of_int 10) + W64.of_int 1665) * W64.of_int 1290167) (W64.of_int 32))
+   BS_W64_W10_U.truncateu10 (BSW64.shr ((BSW64.shl (zeroextu64 a) (W64.of_int 10) + W64.of_int 1665) * W64.of_int 1290167) (W64.of_int 32))
    else 
-   truncate64_10 (srl_64 ((sll_64 (zeroextu64 (W16_sub a (W16.of_int 3329))) (W64.of_int 10) + W64.of_int 1665) * W64.of_int 1290167) (W64.of_int 32)).
+   BS_W64_W10_U.truncateu10 (BSW64.shr ((BSW64.shl (zeroextu64 (a + (- W16.of_int 3329))) (W64.of_int 10) + W64.of_int 1665) * W64.of_int 1290167) (W64.of_int 32)).
 
 
 
@@ -253,17 +254,17 @@ case (to_uint p.[(i * 8 + k) %/ 10] < 3329) => /= *.
 + rewrite -Fq.Fq768.compress_impl_large //=; 1: by rewrite /bpos16 qE /= /to_sint /smod /=;smt(W16.to_uint_cmp).  
   congr;congr;congr;congr;congr;congr; 2: by smt().
   rewrite /truncateu64_10 of_uintK /=. 
-  by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) /= /#.
+  by rewrite /BSW64.shr /BSW64.shl /(`<<`) /(`>>`) /= /#.
 
   
-have -> : (incoeff (to_sint p.[(8 * i + k) %/ 10])) = (incoeff (to_sint (W16_sub p.[(8 * i + k) %/ 10] (W16.of_int 3329)))); last first.
+have -> : (incoeff (to_sint p.[(8 * i + k) %/ 10])) = (incoeff (to_sint (p.[(8 * i + k) %/ 10] - W16.of_int 3329))); last first.
 + rewrite -Fq.Fq768.compress_impl_large //=.
   rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329)) /= /smod /=;smt(size_map size_iota).
   rewrite  /= /smod /= qE; have Hub := H00 ((8 * i + k) %/ 10) _; 1: by smt().
   have E: to_sint (W16.of_int 3329) = 3329 by rewrite /to_sint /smod /=.
   by rewrite E; smt(W16.to_uint_cmp pow2_16 W16.to_sintE qE).
   rewrite /truncateu64_10 of_uintK /=.
-  by rewrite /srl_64 /sll_64 /(`<<`) /(`>>`) /= /#.
+  by rewrite /BSW64.shr /BSW64.shl /(`<<`) /(`>>`) /= /#.
 
 rewrite -eq_incoeff.
 rewrite to_sintB_small /=;1: by rewrite  /(to_sint (W16.of_int 3329))/= /smod /=;smt(size_map size_iota).

@@ -31,7 +31,7 @@ run-extended: compile-extended
 
 #-- formosa-mlkem (this repository ----------------------------------
 #-- avx2
-bin/formosa-mlkem-768-avx2: randombytes/librandombytes1.a
+bin/formosa-mlkem-768-avx2: ../code/jasmin/768/avx2/jkem.s src/crypto_kem.c randombytes/librandombytes1.a
 	$(CC) $(CFLAGS) -o $@ src/crypto_kem.c \
 		-DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem768_amd64_avx2 \
 		-DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem768_amd64_avx2 \
@@ -40,7 +40,7 @@ bin/formosa-mlkem-768-avx2: randombytes/librandombytes1.a
     ../code/jasmin/768/avx2/jkem.s \
     randombytes/librandombytes1.a
 
-bin/formosa-mlkem-1024-avx2: randombytes/librandombytes1.a
+bin/formosa-mlkem-1024-avx2: ../code/jasmin/1024/avx2/jkem.s src/crypto_kem.c randombytes/librandombytes1.a
 	$(CC) $(CFLAGS) -o $@ src/crypto_kem.c \
 		-DJADE_NAMESPACE=JADE_KEM_mlkem_mlkem1024_amd64_avx2 \
 		-DJADE_NAMESPACE_LC=jade_kem_mlkem_mlkem1024_amd64_avx2 \

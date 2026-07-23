@@ -92,6 +92,7 @@ export fn jade_kem_mlkem_mlkem1024_amd64_avx2_keypair(
   return public_key, secret_key, r;
 }
 
+
 #[safety =
    { requires = is_arr_init(public_key,0,MLKEM_PUBLICKEYBYTES)
    , ensures = is_arr_init(ciphertext,0,MLKEM_CIPHERTEXTBYTES) && is_arr_init(shared_secret,0,MLKEM_SYMBYTES)

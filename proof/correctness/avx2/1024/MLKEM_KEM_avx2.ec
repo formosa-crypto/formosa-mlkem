@@ -30,8 +30,8 @@ lemma mlkem_kem_correct_kg  :
          rho = Array32.init (fun i => res{1}.`1.[i+1536])].
 proof.
 proc => /=.
-seq 4 0 : #pre;1: by auto.
-swap {1} 1 11. sp.
+seq 5 0 : #pre;1: by auto.
+swap {1} 1 12. sp.
 seq 3 1 : (#{/~skcpa{1}}{~sk{1}}pre /\  
    (forall k, 0 <= k < 1536 => sk{1}.[k] = sk{2}.[k]) /\
    pk{2}.`1 = BytesPKVec.init (fun i => pk{1}.[i])  /\
@@ -64,7 +64,7 @@ seq 3 0 : (#pre /\
     rewrite /get8 /init8 /(\bits8) wordP => *.
     rewrite initiE 1:/# /= /#.
     
-seq 2 1 : (#pre /\
+seq 3 1 : (#pre /\
     (forall (k : int), 0 <= k < 32 => sk{1}.[k+1536 + 1568] = hpk{2}.[k])).
 wp;ecall {1} (sha3_256A_M1568_ph pk{1}).
 + auto => /> &1 &2 ???HH0 HH1?; do split.
@@ -342,9 +342,9 @@ lemma mlkem_kem_correct_dec  :
        c1 = BytesCtVec.init(fun i => ct{1}.[i]) /\
        c2 = BytesPoly.init(fun i => ct{1}.[i + 1408])
        ==> ={res}].
-proc => /=. sp 0 1. swap {1} [4..6] 7.
+proc => /=. sp 0 1. swap {1} [5..7] 8.
 
-seq 4 1 : (#pre /\ aux{1} = m{2}).
+seq 6 1 : (#pre /\ aux{1} = m{2}).
 + call (mlkem_correct_dec).
   auto => />.
   move => &1 &2 Hpk1 Hpk2 Hcph; split.

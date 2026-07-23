@@ -33,6 +33,8 @@ jobs:
           matrix:
             category:
             - eclib
+            - xwords
+            - xarrays
             - correctness_768_avx2
             - correctness_1024_avx2
             - safety_768_avx2

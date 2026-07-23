@@ -788,24 +788,24 @@ seq 2 1 : (#pre /\
              (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA rho{2}))) 0)));
                  last by smt(Array1024.allP).
            rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.
-           move : (matrix_unlift (trmx (sampleA rho{2}))); smt().
+           have [??] := (matrix_unlift (trmx (sampleA rho{2}))); do split; smt().
          case (1024 <= k < 2048) => kbb'.
           + have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
              (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA rho{2}))) 1)));
                 last by smt(Array1024.allP).
              rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.
-             move : (matrix_unlift (trmx (sampleA rho{2}))); smt().
+             have [??] := (matrix_unlift (trmx (sampleA rho{2}))); do split;smt().
          case (2048 <= k < 3072) => kbb''.
           + have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
              (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA rho{2}))) 2)));
                 last by smt(Array1024.allP).
              rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.
-             move : (matrix_unlift (trmx (sampleA rho{2}))); smt().
+             have [??] := (matrix_unlift (trmx (sampleA rho{2}))); do split;smt().
          have : (all (fun (c : W16.t) => 0 <= to_sint c && to_sint c < 2 * q)
            (nttunpackv (subarray1024 (unlift_matrix (trmx (sampleA rho{2}))) 3)));
                last by smt(Array1024.allP).
          rewrite nttunpackv_pred allP => kk kkb /=; rewrite /subarray1024 initiE 1:/# /=.
-         move : (matrix_unlift (trmx (sampleA rho{2}))); smt().
+             have [??] := (matrix_unlift (trmx (sampleA rho{2}))); do split;smt().
 
 
 (* === Step 3: first getnoise_4x call (1024: fills sp_0 cleanly, no boundary).
@@ -951,7 +951,7 @@ seq 2 0 : (#pre /\
            (PolyVec.invnttv (lift_polyvec (nttpackv sp_0)))
            (nttpackv (subarray1024 aat w))
            (nttpackv sp_0)).
-         auto => |> &hr ?????Hbpv ? Hbpb?;do split.
+         auto => |> &hr ??HH??Hbpv ? Hbpb?;do split.
          + by rewrite nttvK.
          + smt().
          + by rewrite nttvK.
@@ -964,7 +964,8 @@ seq 2 0 : (#pre /\
            have ->: 1024 * w{hr} = w{hr} * 1024 by ring.
            by ring.
          + by rewrite -nttpackv_lift packvK.
-         + rewrite /signed_bound1024_cxq => k Hk; rewrite initiE 1:/# /=; smt().
+         + rewrite /signed_bound1024_cxq => k Hk; rewrite initiE 1:/# /=.
+           have := HH; rewrite /pos_bound4096_cxq /#.
          + smt().
          + move => ???????? rr Hrb Hrv;do split;1,2,5..:smt().
            + move => j jbl jbh.
@@ -982,8 +983,12 @@ seq 2 0 : (#pre /\
              by rewrite (ntt_dotp_row_eq_ntt_mmul (trmx (sampleA rho{m})) sp_0{hr} w{hr}) 1:/#;smt().
           + smt().
           + rewrite /signed_bound1024_cxq => j jb; rewrite initiE 1:/# /=.
-             case (j < w{hr}*256) => Hj;smt().
-
+             case (j < w{hr}*256) => Hj.
+             + rewrite ifF 1:/#.
+               have := Hbpb; rewrite /signed_bound1024_cxq /#.
+             + rewrite ifT 1:/#.
+               have := Hrb; rewrite /signed_bound_cxq /#.
+             
        auto => |> &1 &2  ????????? H H0 H1.
        do split; 1,3..: smt().
        + move => j Hjl Hjh.
@@ -1003,7 +1008,7 @@ seq 1 0 : (#pre /\
   auto => |> &1 &2 ?? Hpkpv Hthat Hpkb Hrv Hspb Hpqeq ???H0??.
   split.
   + do split.
-    + smt(nttvK vector_unlift).
+    + rewrite nttvK;smt(nttvK vector_unlift).
     + have [_ ] := vector_unlift (ofipolyvec (decode12_vec pk{2}.`1)).
       rewrite /signed_bound1024_cxq /#.
     + have : all (fun (c : W16.t) => b16 c (2 * q)) (nttpackv sp_0{1});

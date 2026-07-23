@@ -4,7 +4,7 @@
 
 CC     ?= arch -x86_64 gcc
 CFLAGS := -Wall -Wextra -g -O3 -fomit-frame-pointer -Wno-implicit-function-declaration -D KYBER_K=4
-JFLAGS := ${JADDFLAGS}
+JFLAGS := -system linux ${JADDFLAGS}
 
 .SECONDARY: jkem.s
 

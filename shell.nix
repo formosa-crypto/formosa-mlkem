@@ -21,8 +21,8 @@ let jasmin =
 let formosa-keccak =
   fetchgit {
     url = "https://github.com/formosa-crypto/formosa-keccak.git";
-    rev = "2db21a051a0caa750d52ab9552a5825c015cfc3d";
-    hash = "sha256-7Z9OTbqNPu6uWiaxca8o42GOw6o2x9cb95ouP7i2/r4=";
+    rev = "d637dd740672c4235bfc29bd6b8cce6986519317";
+    hash = "sha256-zCE2d5pM2lLygvBBB/5NLUuXHDxiPJh3SkEOfgxFQ+o=";
     fetchSubmodules = true;
   }
 ; in
@@ -34,13 +34,13 @@ let
     ideSupport = false;
     coqPackages = { coq = null; flocq = null; };
   };
-  ecVersion = "a131fcd394184d39ca88f3beb2ff50d626d20eef";
+  ecVersion = "1713e790583a773822ce8f7199feaea23c35feda";
   ec = (easycrypt.overrideAttrs (o: {
     src = fetchFromGitHub {
       owner = "easycrypt";
       repo = "easycrypt";
       rev = ecVersion;
-      hash = "sha256-IIX1h8Vo/etRkElg65F3groH2QZm+WMEdvazL0cITlE=";
+      hash = "sha256-Gq/v2tOe+0tLpUU4PxvV4qzBFyIlxuDdFktav3ls/5Q=";
     };
     postPatch = ''
       substituteInPlace dune-project \
