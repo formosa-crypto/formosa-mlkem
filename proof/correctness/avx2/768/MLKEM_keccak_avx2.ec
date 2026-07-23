@@ -762,7 +762,39 @@ wp;ecall (ABUFLENref.dumpstate_h buf offset 168 st).
 wp;ecall (keccakf1600_h st).
 wp;ecall (ABUFLENref.dumpstate_h buf offset 168 st).
 wp; ecall (keccakf1600_h st).
-admit. (* PORT-768: byte-layout obligation; mirror x4 squeeze3blocks scalarized *)
+skip.
+move=> &hr />.
+move=> result0 Er0 Eo0; split; first smt().
+move=> _ result2 Er2 Eo2; split; first smt().
+move=> _ result4 Er4 Eo4.
+rewrite Er4 Er2 Er0 Eo2 Eo0 /SLH64.protect_ptr /=.
+(* block 0: rate bytes after the 1st permutation (reads through both inner fills) *)
+split.
+rewrite /squeezestate_i /squeezestate /st_i /= iter1.
+apply (eq_from_nth W8.zero).
+rewrite size_sub 1://; smt(size_take size_state2bytes).
+move=> i; rewrite size_sub 1:// => Hi.
+rewrite nth_sub 1:/#.
+rewrite /= filliE 1:/#.
+rewrite ifF 1:/# filliE 1:/# ifF 1:/#.
+rewrite /SLH64.protect_ptr /=.
+rewrite filliE 1:/# ifT 1:/# /=.
+rewrite nth_take 1:/#.
+smt().
+by rewrite state2bytesE.
+(* block 1: rate bytes after the 2nd permutation (middle fill) *)
+split.
+rewrite /squeezestate_i /squeezestate /st_i /= iter2; apply (eq_from_nth W8.zero); first (rewrite size_sub 1://; smt(size_take size_state2bytes)).
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# filliE 1:/# ifF 1:/# filliE 1:/# ifT 1:/# /= nth_take 1:/#.
+smt().
+by rewrite state2bytesE.
+(* block 2: rate bytes after the 3rd permutation (outer fill) *)
+split.
+rewrite /squeezestate_i /squeezestate /st_i /= (_: 3 = 2 + 1) 1:// iterS 1:// iter2; apply (eq_from_nth W8.zero); first (rewrite size_sub 1://; smt(size_take size_state2bytes)).
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# filliE 1:/# ifT 1:/# /= nth_take 1:/#; 1: smt(); by rewrite state2bytesE.
+(* capacity block: full 200-byte state after the 3rd permutation *)
+rewrite /st_i /= (_: 3 = 2 + 1) 1:// iterS 1:// iter2; apply (eq_from_nth W8.zero); first by rewrite size_sub 1:// size_state2bytes.
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# filliE 1:/# ifT 1:/# /=; by rewrite state2bytesE.
 qed.
 
 lemma shake128_squeeze3blocks_ll: islossless K._shake128_squeeze3blocks.
@@ -907,36 +939,28 @@ split.
  congr; rewrite /SHAKE256 /KECCAK1600; congr => //.
  rewrite tP => i Hi.
  rewrite initiE //=.
-admitted (*
- rewrite (:8 * (4 * i) * 8=8 * (4 * i+0) * 8) 1:/# sliceget64_256_25E //.
- rewrite initiE //= u256_pack4E get_pack4 //= /st0.
- congr; congr => //.
- by congr; rewrite /to_list /mkseq -iotaredE /=.
-split.
- congr; rewrite /SHAKE256 /KECCAK1600; congr => //.
- rewrite tP => i Hi.
- rewrite initiE //=.
- rewrite sliceget64_256_25E //.
- rewrite initiE //= u256_pack4E get_pack4 //= /st1.
- congr; congr => //.
- by congr; rewrite /to_list /mkseq -iotaredE /=.
-split.
- congr; rewrite /SHAKE256 /KECCAK1600; congr => //.
- rewrite tP => i Hi.
- rewrite initiE //=.
- rewrite sliceget64_256_25E //.
- rewrite initiE //= u256_pack4E get_pack4 //= /st2.
- congr; congr => //.
- by congr; rewrite /to_list /mkseq -iotaredE /=.
-congr; rewrite /SHAKE256 /KECCAK1600; congr => //.
-rewrite tP => i Hi.
-rewrite initiE //=.
-rewrite sliceget64_256_25E //.
-rewrite initiE //= u256_pack4E get_pack4 //= /st3.
-congr; congr => //.
+(* Lane extraction on the llm-interactive branch: st4x_get a k =
+   init_25_64 (fun i => sliceget64_256_25 a (8*(4*i+k)*8)) and init_25_64 = Array25.init,
+   so word i of lane k of the packed state is sliceget64_256_25 (st4x_pack sts) (8*(4*i+k)*8). *)
+have KEY: forall (sts : FIPS202_Keccakf1600.state * FIPS202_Keccakf1600.state * FIPS202_Keccakf1600.state * FIPS202_Keccakf1600.state) (k j : int), 0 <= j < 25 => (st4x_get (st4x_pack sts) k).[j] = Keccak_bindings.sliceget64_256_25 (st4x_pack sts) (8 * (4 * j + k) * 8) by move=> sts k j Hj; rewrite /st4x_get /init_25_64 initiE 1:/# /=.
+(* lane 0: the code above already reduced res.`1 to the per-index goal *)
+rewrite (_: 8 * (4 * i) * 8 = 8 * (4 * i + 0) * 8) 1:/# -KEY 1:/# Keccakf1600_avx2x4_generic.st4x_get_pack0 /=.
+rewrite /st0; congr.
+rewrite /SHAKE_ABSORB /c512_r8 /=.
+congr => //.
 by congr; rewrite /to_list /mkseq -iotaredE /=.
+(* lane 1 (res.`2) *)
+split.
+rewrite Keccakf1600_avx2x4_generic.st4x_get_pack1 /=.
+congr; rewrite /SHAKE256 /KECCAK1600 /=.
+rewrite /SHAKE256_SQUEEZE /c512_r8 /=; congr.
+rewrite /st1; congr => //; by congr; rewrite /to_list /mkseq -iotaredE /=.
+(* lane 2 (res.`3) *)
+split.
+rewrite Keccakf1600_avx2x4_generic.st4x_get_pack2 /=; congr; rewrite /SHAKE256 /KECCAK1600 /SHAKE256_SQUEEZE /c512_r8 /=; congr; rewrite /st2; congr => //; by congr; rewrite /to_list /mkseq -iotaredE /=.
+(* lane 3 (res.`4) *)
+rewrite Keccakf1600_avx2x4_generic.st4x_get_pack3 /=; congr; rewrite /SHAKE256 /KECCAK1600 /SHAKE256_SQUEEZE /c512_r8 /=; congr; rewrite /st3; congr => //; by congr; rewrite /to_list /mkseq -iotaredE /=.
 qed.
-*).
 
 lemma shake256x4_A128__A32_A1_ll: islossless K._shake256x4_A128__A32_A1.
 proof.
@@ -1083,12 +1107,107 @@ ecall (ABUFLENavx2x4.dumpstate_avx2x4_h buf0 buf1 buf2 buf3 offset 168 st).
 ecall (keccakf1600_avx2x4_h st).
 auto => &m Pre st ->; split; first smt().
 move=> _ []b00 b10 b20 b30 ? /=.
-admitted(*
-rewrite !st4x_get_map // => />.
-rewrite !Pre !st4x_get_pack0 !st4x_get_pack1 !st4x_get_pack2 !st4x_get_pack3 /=; clear.
-move => [#] []b01 b11 b21 b31 ? /= Eb01 Eb11 Eb21 Eb31 -> />.
-move=> []b02 b12 b22 b32 ? /= Eb02 Eb12 Eb22 Eb32 _.
-*).
+move=> /> Eb00 Eb10 Eb20 Eb30.
+move=> Eb40 Eo5; split; first smt(); move=> _ result2 [#] Ec0 Ec1 Ec2 Ec3 Eo2.
+move: Pre; rewrite /st4x_match => Hst.
+(* map-commute + base-state facts, and the SHAKE128_SQUEEZE 504 block-decomposition *)
+have MG: forall (X : W256.t Array25.t) (k : int), 0 <= k < 4 => st4x_get (st4x_map keccak_f1600_op X) k = keccak_f1600_op (st4x_get X k) by move=> X k Hk; rewrite st4x_mapE; smt(Keccakf1600_avx2x4_generic.st4x_get_pack0 Keccakf1600_avx2x4_generic.st4x_get_pack1 Keccakf1600_avx2x4_generic.st4x_get_pack2 Keccakf1600_avx2x4_generic.st4x_get_pack3).
+have GP: forall k, 0 <= k < 4 => st4x_get st{!m} k = nth witness [_st0; _st1; _st2; _st3] k by move=> k Hk; rewrite Hst; smt(Keccakf1600_avx2x4_generic.st4x_get_pack0 Keccakf1600_avx2x4_generic.st4x_get_pack1 Keccakf1600_avx2x4_generic.st4x_get_pack2 Keccakf1600_avx2x4_generic.st4x_get_pack3).
+have SQ: forall (s : FIPS202_Keccakf1600.state), SHAKE128_SQUEEZE 504 s = squeezestate_i 168 s 0 ++ squeezestate_i 168 s 1 ++ squeezestate_i 168 s 2.
+move=> s; rewrite /SHAKE128_SQUEEZE /SQUEEZE1600 /c256_r8 /=.
+rewrite /squeezeblocks -iotaredE /=.
+rewrite !flatten_cons flatten_nil !cats0 catA.
+rewrite take_oversize.
+by rewrite !size_cat !size_squeezestate_i.
+done.
+move=> Hle result2 Ec0 Ec1 Ec2 Ec3 Eo2b.
+have D10: st4x_get (st4x_map keccak_f1600_op st{!m}) 0 = keccak_f1600_op _st0 by rewrite MG 1:/# GP 1:/# /=.
+have D20: st4x_get (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op st{!m})) 0 = keccak_f1600_op (keccak_f1600_op _st0) by rewrite MG 1:/# D10.
+have D30: st4x_get (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op st{!m}))) 0 = keccak_f1600_op (keccak_f1600_op (keccak_f1600_op _st0)) by rewrite MG 1:/# D20.
+(* conjunct 1 (lane 0 rate). BL: the lane-independent byte-layout core (blocks 0/1/2). *)
+split.
+rewrite SQ; apply (eq_from_nth W8.zero); first by rewrite size_sub 1:// !size_cat !size_squeezestate_i /=.
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# /=.
+rewrite initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/#.
+rewrite Ec0 Eb10 Eo5 D30 D20 D10.
+have BL: forall (s : FIPS202_Keccakf1600.state) (b : W8.t Array536.t) (j : int), 0 <= j < 504 => (fill (fun (k : int) => (stbytes (keccak_f1600_op (keccak_f1600_op (keccak_f1600_op s)))).[k - 336]) 336 200 (fill (fun (k : int) => (stbytes (keccak_f1600_op (keccak_f1600_op s))).[k - 168]) 168 168 (fill ("_.[_]" (stbytes (keccak_f1600_op s))) 0 168 b))).[j] = ((squeezestate_i 168 s 0 ++ squeezestate_i 168 s 1) ++ squeezestate_i 168 s 2).[j].
+move=> s b j Hj; case (j < 168) => Hj1.
+rewrite filliE 1:/# ifF 1:/# filliE 1:/# ifF 1:/# filliE 1:/# ifT 1:/# /=.
+rewrite nth_cat size_cat size_squeezestate_i 1:/# size_squeezestate_i 1:/# ifT 1:/# nth_cat size_squeezestate_i 1:/# ifT 1:/#.
+rewrite /squeezestate_i /squeezestate /st_i /= iter1 nth_take //.
+by rewrite state2bytesE.
+case (j < 336) => Hj2.
+rewrite filliE 1:/# ifF 1:/# filliE 1:/# ifT 1:/# /= nth_cat size_cat size_squeezestate_i 1:/# size_squeezestate_i 1:/# ifT 1:/# nth_cat size_squeezestate_i 1:/# ifF 1:/#.
+rewrite /squeezestate_i /squeezestate /st_i /= iter2 nth_take //.
+smt().
+by rewrite state2bytesE.
+rewrite filliE 1:/# ifT 1:/# /= nth_cat size_cat size_squeezestate_i 1:/# size_squeezestate_i 1:/# ifF 1:/#.
+rewrite /squeezestate_i /squeezestate /st_i /= (_: 3 = 2 + 1) 1:// iterS 1:// iter2 nth_take //.
+smt().
+by rewrite state2bytesE.
+apply BL; exact Hi.
+(* conjuncts 2..8: re-declare BL, add cap-layout BLC and lane-1..3 D-facts, close each *)
+have BL: forall (s : FIPS202_Keccakf1600.state) (b : W8.t Array536.t) (j : int), 0 <= j < 504 => (fill (fun (k : int) => (stbytes (keccak_f1600_op (keccak_f1600_op (keccak_f1600_op s)))).[k - 336]) 336 200 (fill (fun (k : int) => (stbytes (keccak_f1600_op (keccak_f1600_op s))).[k - 168]) 168 168 (fill ("_.[_]" (stbytes (keccak_f1600_op s))) 0 168 b))).[j] = ((squeezestate_i 168 s 0 ++ squeezestate_i 168 s 1) ++ squeezestate_i 168 s 2).[j].
+move=> s b j Hj; case (j < 168) => Hj1.
+rewrite filliE 1:/# ifF 1:/# filliE 1:/# ifF 1:/# filliE 1:/# ifT 1:/# /=.
+rewrite nth_cat size_cat size_squeezestate_i 1:/# size_squeezestate_i 1:/# ifT 1:/# nth_cat size_squeezestate_i 1:/# ifT 1:/#.
+rewrite /squeezestate_i /squeezestate /st_i /= iter1 nth_take //.
+by rewrite state2bytesE.
+case (j < 336) => Hj2.
+rewrite filliE 1:/# ifF 1:/# filliE 1:/# ifT 1:/# /= nth_cat size_cat size_squeezestate_i 1:/# size_squeezestate_i 1:/# ifT 1:/# nth_cat size_squeezestate_i 1:/# ifF 1:/#.
+rewrite /squeezestate_i /squeezestate /st_i /= iter2 nth_take //.
+smt().
+by rewrite state2bytesE.
+rewrite filliE 1:/# ifT 1:/# /= nth_cat size_cat size_squeezestate_i 1:/# size_squeezestate_i 1:/# ifF 1:/#.
+rewrite /squeezestate_i /squeezestate /st_i /= (_: 3 = 2 + 1) 1:// iterS 1:// iter2 nth_take //.
+smt().
+by rewrite state2bytesE.
+have BLC: forall (s : FIPS202_Keccakf1600.state) (b : W8.t Array536.t), sub (fill (fun (k : int) => (stbytes (keccak_f1600_op (keccak_f1600_op (keccak_f1600_op s)))).[k - 336]) 336 200 (fill (fun (k : int) => (stbytes (keccak_f1600_op (keccak_f1600_op s))).[k - 168]) 168 168 (fill ("_.[_]" (stbytes (keccak_f1600_op s))) 0 168 b))) 336 200 = state2bytes (st_i s 3).
+move=> s b; apply (eq_from_nth W8.zero); first by rewrite size_sub 1:// size_state2bytes.
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# filliE 1:/# ifT 1:/# /=.
+rewrite /st_i /= (_: 3 = 2 + 1) 1:// iterS 1:// iter2.
+by rewrite state2bytesE.
+have D11: st4x_get (st4x_map keccak_f1600_op st{!m}) 1 = keccak_f1600_op _st1 by rewrite MG 1:/# GP 1:/# /=.
+have D21: st4x_get (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op st{!m})) 1 = keccak_f1600_op (keccak_f1600_op _st1) by rewrite MG 1:/# D11.
+have D31: st4x_get (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op st{!m}))) 1 = keccak_f1600_op (keccak_f1600_op (keccak_f1600_op _st1)) by rewrite MG 1:/# D21.
+have D12: st4x_get (st4x_map keccak_f1600_op st{!m}) 2 = keccak_f1600_op _st2 by rewrite MG 1:/# GP 1:/# /=.
+have D22: st4x_get (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op st{!m})) 2 = keccak_f1600_op (keccak_f1600_op _st2) by rewrite MG 1:/# D12.
+have D32: st4x_get (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op st{!m}))) 2 = keccak_f1600_op (keccak_f1600_op (keccak_f1600_op _st2)) by rewrite MG 1:/# D22.
+have D13: st4x_get (st4x_map keccak_f1600_op st{!m}) 3 = keccak_f1600_op _st3 by rewrite MG 1:/# GP 1:/# /=.
+have D23: st4x_get (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op st{!m})) 3 = keccak_f1600_op (keccak_f1600_op _st3) by rewrite MG 1:/# D13.
+have D33: st4x_get (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op (st4x_map keccak_f1600_op st{!m}))) 3 = keccak_f1600_op (keccak_f1600_op (keccak_f1600_op _st3)) by rewrite MG 1:/# D23.
+split.
+rewrite SQ; apply (eq_from_nth W8.zero); first by rewrite size_sub 1:// !size_cat !size_squeezestate_i /=.
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/#.
+rewrite Ec1 Eb20 Eo5 D31 D21 D11; apply BL; exact Hi.
+split.
+rewrite SQ; apply (eq_from_nth W8.zero); first by rewrite size_sub 1:// !size_cat !size_squeezestate_i /=.
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/#.
+rewrite Ec2 Eb30 Eo5 D32 D22 D12; apply BL; exact Hi.
+split.
+rewrite SQ; apply (eq_from_nth W8.zero); first by rewrite size_sub 1:// !size_cat !size_squeezestate_i /=.
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# /= initiE 1:/# /= ifT 1:/#.
+rewrite Ec3 Eb40 Eo5 D33 D23 D13; apply BL; exact Hi.
+split.
+apply (eq_from_nth W8.zero); first by rewrite size_sub 1:// size_state2bytes.
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/#.
+rewrite Ec0 Eb10 Eo5 D30 D20 D10 filliE 1:/# ifT 1:/# /= /st_i /= (_: 3 = 2 + 1) 1:// iterS 1:// iter2.
+by rewrite state2bytesE.
+split.
+apply (eq_from_nth W8.zero); first by rewrite size_sub 1:// size_state2bytes.
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/#.
+rewrite Ec1 Eb20 Eo5 D31 D21 D11 filliE 1:/# ifT 1:/# /= /st_i /= (_: 3 = 2 + 1) 1:// iterS 1:// iter2.
+by rewrite state2bytesE.
+split.
+apply (eq_from_nth W8.zero); first by rewrite size_sub 1:// size_state2bytes.
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# /= initiE 1:/# /= ifF 1:/# initiE 1:/# /= ifT 1:/#.
+rewrite Ec2 Eb30 Eo5 D32 D22 D12 filliE 1:/# ifT 1:/# /= /st_i /= (_: 3 = 2 + 1) 1:// iterS 1:// iter2.
+by rewrite state2bytesE.
+apply (eq_from_nth W8.zero); first by rewrite size_sub 1:// size_state2bytes.
+move=> i; rewrite size_sub 1:// => Hi; rewrite nth_sub 1:/# /= initiE 1:/# /= ifT 1:/#.
+rewrite Ec3 Eb40 Eo5 D33 D23 D13 filliE 1:/# ifT 1:/# /= /st_i /= (_: 3 = 2 + 1) 1:// iterS 1:// iter2.
+by rewrite state2bytesE.
+qed.
 
 lemma shake128x4_squeeze3blocks_ll: islossless K._shake128x4_squeeze3blocks.
 proof.
