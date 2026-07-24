@@ -11,7 +11,7 @@ env:
 jobs:
   checkCT:
     name: CT
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.ref_name == 'refactor_bindings_ci_self' && 'selfrice' || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:

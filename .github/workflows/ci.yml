@@ -19,7 +19,7 @@ jobs:
       secrets: inherit 
     compile_and_test:
         name: Compile and Test MLKEM implementation
-        runs-on: ubuntu-latest
+        runs-on: ${{ github.ref_name == 'refactor_bindings_ci_self' && 'selfrice' || 'ubuntu-latest' }}
         strategy:
           fail-fast: false
           matrix:
@@ -37,7 +37,7 @@ jobs:
         - run: nix-shell --arg full false --run "make -C tests/apitest run_test_kem_${{matrix.dir}}_${{matrix.size}}"
     check-sums:
         name: Test MLKEM implementation checksums
-        runs-on: ubuntu-latest
+        runs-on: ${{ github.ref_name == 'refactor_bindings_ci_self' && 'selfrice' || 'ubuntu-latest' }}
         steps:
         - uses: actions/checkout@v4
           with:
@@ -52,7 +52,7 @@ jobs:
           run: nix-shell --arg full false --run "./scripts/check_checksums.sh 10000"
     memory-check:
       name: Test memory safety of MLKEM implementation
-      runs-on: ubuntu-latest
+      runs-on: ${{ github.ref_name == 'refactor_bindings_ci_self' && 'selfrice' || 'ubuntu-latest' }}
       steps:
       - uses: actions/checkout@v4
         with:
